@@ -8,13 +8,9 @@ import ReportDesigner, {
 } from 'devexpress-reporting-react/dx-report-designer';
 import { ActionId } from 'devexpress-reporting/dx-reportdesigner';
 
-type MenuActionArgs = {
-  GetById: (id: ActionId) => { visible: boolean } | undefined;
-};
-
 export default function App() {
   // Example: tweak menu actions
-  const onCustomizeMenuActions = ({ args }: { args: MenuActionArgs }) => {
+  const onCustomizeMenuActions = ({ args }: { args: any }) => {
     const newReport = args.GetById(ActionId.NewReport);
     if (newReport) newReport.visible = false; // demo: hide "New Report"
   };

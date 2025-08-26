@@ -5,11 +5,6 @@ import { Input } from '@progress/kendo-react-inputs';
 import { Button } from '@progress/kendo-react-buttons';
 import { DropDownList } from '@progress/kendo-react-dropdowns';
 
-// TEMP stub – replace with your DevExpress viewer component
-const YourDevExpressViewer: React.FC = () => (
-  <div className="dx-viewport" id="report-viewer" />
-);
-
 type ReportRow = {
   id: number;
   reportName: string;
@@ -84,10 +79,6 @@ export default function ReportsPage() {
         </Grid>
       </div>
 
-      {/* DevExpress viewer area */}
-      <div style={{ padding: 16 }}>
-        <YourDevExpressViewer />
-      </div>
     </div>
   );
 }
