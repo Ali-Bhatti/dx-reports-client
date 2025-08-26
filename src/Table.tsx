@@ -3,7 +3,7 @@ import { useState } from "react";
 
 export default function Table({counterHeaderText = "Counter Header"}) {
 
-  let [count, setCount] = useState(0);
+  const [count, setCount] = useState(0);
 
   function addValue() {
     if(count < 20) {
@@ -26,5 +26,5 @@ export default function Table({counterHeaderText = "Counter Header"}) {
       <button onClick={subValue}>Decrement</button>
     </>
   );
-       
+
 }

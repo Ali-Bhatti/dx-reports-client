@@ -10,7 +10,7 @@ import {
 import { Input } from '@progress/kendo-react-inputs';
 import { Button } from '@progress/kendo-react-buttons';
 import { DropDownList } from '@progress/kendo-react-dropdowns';
-import { process, type State as DataState, type DataResult } from '@progress/kendo-data-query';
+import { process, type State as DataState } from '@progress/kendo-data-query';
 
 // TEMP stub – replace with your DevExpress viewer component
 const YourDevExpressViewer: React.FC = () => (
@@ -33,42 +33,32 @@ export default function ReportsPage(): JSX.Element {
     skip: 0,
     take: 10,
     sort: [],
-    filter: undefined // use undefined, not null
+    filter: undefined
   });
 
-  const rows = React.useMemo<ReportRow[]>(
-    () => [
-      {
-        id: 1,
-        reportName: 'Loadlist',
-        createdOn: '21.7.2024',
-        modifiedOn: '25.7.2024',
-        modifiedBy: 'Atif',
-        active: true
-      }
-      // add more rows or fetch from API
-    ],
-    []
-  );
+  const rows: ReportRow[] = [
+    {
+      id: 1,
+      reportName: 'Loadlist',
+      createdOn: '21.7.2024',
+      modifiedOn: '25.7.2024',
+      modifiedBy: 'Atif',
+      active: true
+    }
+    // add more rows or fetch from API
+  ];
 
-  const gridData: GridDataResult = React.useMemo(() => {
-    const state: DataState = {
-      ...dataState,
-      filter: query
-        ? {
-            logic: 'and',
-            filters: [{ field: 'reportName', operator: 'contains', value: query }]
-          }
-        : undefined
-    };
-    // process(...) returns DataResult which is structurally compatible with GridDataResult
-    return process(rows, state) as DataResult as GridDataResult;
-  }, [rows, dataState, query]);
+  const filteredRows = query
+    ? rows.filter((row) =>
+        row.reportName.toLowerCase().includes(query.toLowerCase())
+      )
+    : rows;
 
-  const handleDataStateChange = React.useCallback(
-    (e: GridDataStateChangeEvent) => setDataState(e.dataState),
-    []
-  );
+  const gridData: GridDataResult = process(filteredRows, dataState);
+
+  const handleDataStateChange = (e: GridDataStateChangeEvent): void => {
+    setDataState(e.dataState);
+  };
 
   return (
     <div>
