@@ -8,11 +8,11 @@ import 'devexpress-reporting/dist/css/dx-reportdesigner.css';
 import 'ace-builds/css/ace.css';
 import 'ace-builds/css/theme/dreamweaver.css';
 import '@progress/kendo-theme-default/dist/all.css';
-import Table from './Table.tsx';
+import ReportsPage from './pages/ReportsPage';
 
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Table counterHeaderText="This is a Counter with prop"/>
+    <ReportsPage />
   </StrictMode>,
 )

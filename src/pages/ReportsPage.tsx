@@ -1,21 +1,9 @@
 import * as React from 'react';
 import { AppBar, AppBarSection } from '@progress/kendo-react-layout';
-import {
-  Grid,
-  GridColumn as Column,
-  GridToolbar,
-  type GridDataResult,
-  type GridDataStateChangeEvent
-} from '@progress/kendo-react-grid';
+import { Grid, GridColumn as Column, GridToolbar } from '@progress/kendo-react-grid';
 import { Input } from '@progress/kendo-react-inputs';
 import { Button } from '@progress/kendo-react-buttons';
 import { DropDownList } from '@progress/kendo-react-dropdowns';
-import { process, type State as DataState, type DataResult } from '@progress/kendo-data-query';
-
-// TEMP stub – replace with your DevExpress viewer component
-const YourDevExpressViewer: React.FC = () => (
-  <div className="dx-viewport" id="report-viewer" />
-);
 
 type ReportRow = {
   id: number;
@@ -25,50 +13,27 @@ type ReportRow = {
   modifiedBy: string;
   active: boolean;
 };
-
-export default function ReportsPage(): JSX.Element {
+export default function ReportsPage() {
   const [company, setCompany] = React.useState<string>('Eurotacs');
   const [query, setQuery] = React.useState<string>('');
-  const [dataState, setDataState] = React.useState<DataState>({
-    skip: 0,
-    take: 10,
-    sort: [],
-    filter: undefined // use undefined, not null
-  });
 
-  const rows = React.useMemo<ReportRow[]>(
-    () => [
-      {
-        id: 1,
-        reportName: 'Loadlist',
-        createdOn: '21.7.2024',
-        modifiedOn: '25.7.2024',
-        modifiedBy: 'Atif',
-        active: true
-      }
-      // add more rows or fetch from API
-    ],
-    []
-  );
+  const rows: ReportRow[] = [
+    {
+      id: 1,
+      reportName: 'Loadlist',
+      createdOn: '21.7.2024',
+      modifiedOn: '25.7.2024',
+      modifiedBy: 'Atif',
+      active: true
+    }
+    // add more rows or fetch from API
+  ];
 
-  const gridData: GridDataResult = React.useMemo(() => {
-    const state: DataState = {
-      ...dataState,
-      filter: query
-        ? {
-            logic: 'and',
-            filters: [{ field: 'reportName', operator: 'contains', value: query }]
-          }
-        : undefined
-    };
-    // process(...) returns DataResult which is structurally compatible with GridDataResult
-    return process(rows, state) as DataResult as GridDataResult;
-  }, [rows, dataState, query]);
-
-  const handleDataStateChange = React.useCallback(
-    (e: GridDataStateChangeEvent) => setDataState(e.dataState),
-    []
-  );
+  const filteredRows = query
+    ? rows.filter((row) =>
+        row.reportName.toLowerCase().includes(query.toLowerCase())
+      )
+    : rows;
 
   return (
     <div>
@@ -99,15 +64,7 @@ export default function ReportsPage(): JSX.Element {
       </div>
 
       <div style={{ padding: 16 }}>
-        <Grid
-          data={gridData}
-          pageable
-          sortable
-          filterable
-          {...dataState}
-          onDataStateChange={handleDataStateChange}
-          style={{ height: 420 }}
-        >
+        <Grid data={filteredRows} style={{ height: 420 }}>
           <GridToolbar>
             <Button themeColor="error" icon="trash">
               Delete
@@ -122,10 +79,6 @@ export default function ReportsPage(): JSX.Element {
         </Grid>
       </div>
 
-      {/* DevExpress viewer area */}
-      <div style={{ padding: 16 }}>
-        <YourDevExpressViewer />
-      </div>
     </div>
   );
 }
