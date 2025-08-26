@@ -1,16 +1,9 @@
 import * as React from 'react';
 import { AppBar, AppBarSection } from '@progress/kendo-react-layout';
-import {
-  Grid,
-  GridColumn as Column,
-  GridToolbar,
-  type GridDataResult,
-  type GridDataStateChangeEvent
-} from '@progress/kendo-react-grid';
+import { Grid, GridColumn as Column, GridToolbar } from '@progress/kendo-react-grid';
 import { Input } from '@progress/kendo-react-inputs';
 import { Button } from '@progress/kendo-react-buttons';
 import { DropDownList } from '@progress/kendo-react-dropdowns';
-import { process, type State as DataState } from '@progress/kendo-data-query';
 
 // TEMP stub – replace with your DevExpress viewer component
 const YourDevExpressViewer: React.FC = () => (
@@ -25,16 +18,9 @@ type ReportRow = {
   modifiedBy: string;
   active: boolean;
 };
-
-export default function ReportsPage(): JSX.Element {
+export default function ReportsPage() {
   const [company, setCompany] = React.useState<string>('Eurotacs');
   const [query, setQuery] = React.useState<string>('');
-  const [dataState, setDataState] = React.useState<DataState>({
-    skip: 0,
-    take: 10,
-    sort: [],
-    filter: undefined
-  });
 
   const rows: ReportRow[] = [
     {
@@ -53,12 +39,6 @@ export default function ReportsPage(): JSX.Element {
         row.reportName.toLowerCase().includes(query.toLowerCase())
       )
     : rows;
-
-  const gridData: GridDataResult = process(filteredRows, dataState);
-
-  const handleDataStateChange = (e: GridDataStateChangeEvent): void => {
-    setDataState(e.dataState);
-  };
 
   return (
     <div>
@@ -89,15 +69,7 @@ export default function ReportsPage(): JSX.Element {
       </div>
 
       <div style={{ padding: 16 }}>
-        <Grid
-          data={gridData}
-          pageable
-          sortable
-          filterable
-          {...dataState}
-          onDataStateChange={handleDataStateChange}
-          style={{ height: 420 }}
-        >
+        <Grid data={filteredRows} style={{ height: 420 }}>
           <GridToolbar>
             <Button themeColor="error" icon="trash">
               Delete
