@@ -10,8 +10,14 @@ import { ActionId } from 'devexpress-reporting/dx-reportdesigner';
 
 export default function App() {
   // Example: tweak menu actions
-  const onCustomizeMenuActions = ({ args }: { args: any }) => {
-    const newReport = args.GetById(ActionId.NewReport);
+  const onCustomizeMenuActions = ({
+    args
+  }: {
+    args: { GetById: (id: unknown) => unknown };
+  }) => {
+    const newReport = args.GetById(ActionId.NewReport) as
+      | { visible: boolean }
+      | undefined;
     if (newReport) newReport.visible = false; // demo: hide "New Report"
   };
 
