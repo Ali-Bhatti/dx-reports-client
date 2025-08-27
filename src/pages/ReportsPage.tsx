@@ -26,15 +26,15 @@ type HistoryRow = {
 const StatBox = ({ label, value }: { label: string; value: number }) => (
   <div
     style={{
-      border: '1px solid #d9d9d9',
-      borderRadius: 4,
+      border: '1px solid #e5e5e5',
+      background: '#fff',
       padding: '8px 16px',
-      minWidth: 120,
+      minWidth: 110,
       textAlign: 'center'
     }}
- >
+  >
     <div style={{ fontSize: 18, fontWeight: 700 }}>{value}</div>
-    <div style={{ fontSize: 14 }}>{label}</div>
+    <div style={{ fontSize: 12 }}>{label}</div>
   </div>
 );
 
@@ -108,7 +108,7 @@ export default function ReportsPage() {
   // placeholders for potential custom cell renderers
 
   return (
-    <div>
+    <div style={{ background: '#f5f5f5', minHeight: '100vh' }}>
       <AppBar>
         <AppBarSection>FleetGO</AppBarSection>
         <AppBarSection className="k-spacer" />
@@ -121,48 +121,57 @@ export default function ReportsPage() {
       </AppBar>
 
       <div style={{ padding: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-          <DropDownList
-            data={['Eurotacs', 'Acme']}
-            value={company}
-            onChange={(e) => setCompany(e.value as string)}
-            style={{ width: 260 }}
-          />
-          <Input
-            placeholder="search 'report name'"
-            value={query}
-            onChange={(e) => setQuery(e.value)}
+        <div style={{ background: '#fff', border: '1px solid #e5e5e5', padding: 16 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              marginBottom: 16
+            }}
+          >
+            <DropDownList
+              data={['Eurotacs', 'Acme']}
+              value={company}
+              onChange={(e) => setCompany(e.value as string)}
+              style={{ width: 260 }}
+            />
+            <Input
+              placeholder="search 'report name'"
+              value={query}
+              onChange={(e) => setQuery(e.value)}
             style={{ width: 320 }}
-          />
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
-            <StatBox label="Total Reports" value={totals.total} />
-            <StatBox label="Active Reports" value={totals.active} />
-            <StatBox label="In-Active" value={totals.inactive} />
+            />
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
+              <StatBox label="Total Reports" value={totals.total} />
+              <StatBox label="Active Reports" value={totals.active} />
+              <StatBox label="In-Active" value={totals.inactive} />
+            </div>
           </div>
-        </div>
 
-        <Grid data={dataWithSelection} style={{ maxHeight: 360 }}>
-          <GridToolbar>
-            <Button themeColor="error" icon="trash">Delete</Button>
-            <Button icon="copy">Copy</Button>
-          </GridToolbar>
-          <Column field="reportName" title="Report Name" />
-          <Column field="createdOn" title="Creation Date" />
-          <Column field="modifiedOn" title="Modified On" />
-          <Column field="modifiedBy" title="Modified By" />
-          <Column field="status" title="Status" />
-        </Grid>
-
-        <div style={{ marginTop: 32 }}>
-          <h3 style={{ marginBottom: 8 }}>Version History</h3>
-          <Grid data={history} style={{ maxHeight: 240 }}>
+          <Grid data={dataWithSelection}>
             <GridToolbar>
               <Button themeColor="error" icon="trash">Delete</Button>
+              <Button icon="copy">Copy</Button>
             </GridToolbar>
+            <Column field="reportName" title="Report Name" />
             <Column field="createdOn" title="Creation Date" />
             <Column field="modifiedOn" title="Modified On" />
             <Column field="modifiedBy" title="Modified By" />
+            <Column field="status" title="Status" />
           </Grid>
+
+          <div style={{ marginTop: 24 }}>
+            <h3 style={{ marginBottom: 8 }}>Version History</h3>
+            <Grid data={history}>
+              <GridToolbar>
+                <Button themeColor="error" icon="trash">Delete</Button>
+              </GridToolbar>
+              <Column field="createdOn" title="Creation Date" />
+              <Column field="modifiedOn" title="Modified On" />
+              <Column field="modifiedBy" title="Modified By" />
+            </Grid>
+          </div>
         </div>
       </div>
     </div>
