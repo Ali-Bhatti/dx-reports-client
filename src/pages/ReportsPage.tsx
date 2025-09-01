@@ -16,12 +16,13 @@ import { DropDownList } from '@progress/kendo-react-dropdowns';
     status?: string;
   };
 
-type HistoryRow = {
-  id: number;
-  createdOn: string;
-  modifiedOn: string;
-  modifiedBy: string;
-};
+  type HistoryRow = {
+    id: number;
+    createdOn: string;
+    modifiedOn: string;
+    modifiedBy: string;
+    status?: string;
+  };
 
 const StatBox = ({ label, value }: { label: string; value: number }) => (
   <div
@@ -74,9 +75,9 @@ export default function ReportsPage() {
   );
 
   const history: HistoryRow[] = [
-    { id: 1, createdOn: '17.7.2025', modifiedOn: '17.7.2025', modifiedBy: 'Atif' },
-    { id: 2, createdOn: '18.7.2025', modifiedOn: '18.7.2025', modifiedBy: 'Kas' },
-    { id: 3, createdOn: '19.7.2025', modifiedOn: '19.7.2025', modifiedBy: 'Arrooba' }
+    { id: 1, createdOn: '17.7.2025', modifiedOn: '17.7.2025', modifiedBy: 'Atif', status: 'Published' },
+    { id: 2, createdOn: '18.7.2025', modifiedOn: '18.7.2025', modifiedBy: 'Kas', status: 'Published'  },
+    { id: 3, createdOn: '19.7.2025', modifiedOn: '19.7.2025', modifiedBy: 'Arooba', status: 'Not Published'  }
   ];
 
   const totals = React.useMemo(
@@ -149,7 +150,7 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <Grid data={dataWithSelection}>
+          <Grid data={dataWithSelection} sortable={true} autoProcessData={true}>
             <GridToolbar>
               <Button themeColor="error" icon="trash">Delete</Button>
               <Button icon="copy">Copy</Button>
@@ -170,6 +171,7 @@ export default function ReportsPage() {
               <Column field="createdOn" title="Creation Date" />
               <Column field="modifiedOn" title="Modified On" />
               <Column field="modifiedBy" title="Modified By" />
+              <Column field="status" title="Status" />
             </Grid>
           </div>
         </div>
