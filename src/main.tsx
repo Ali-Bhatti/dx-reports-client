@@ -8,6 +8,8 @@ import 'devexpress-reporting/dist/css/dx-reportdesigner.css';
 import 'ace-builds/css/ace.css';
 import 'ace-builds/css/theme/dreamweaver.css';
 import '@progress/kendo-theme-default/dist/all.css';
+import './styles/index.css';
+import './styles/kendo-overrides.css';
 import ReportsPage from './pages/ReportsPage';
 
 
