@@ -1,0 +1,33 @@
+.fg-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.fg-sidebar {
+  width: 240px;
+  border-right: 1px solid #e5e7eb;
+  padding: 12px;
+}
+
+.fg-link {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #374151;
+  text-decoration: none;
+}
+
+.fg-link.active {
+  background: #eef2ff;
+  color: #1d4ed8;
+}
+
+.fg-content {
+  flex: 1;
+  padding: 16px 24px;
+}
+
+.fg-appbar-title {
+  color: var(--fg-brand, #2563eb);
+  font-weight: 600;
+}

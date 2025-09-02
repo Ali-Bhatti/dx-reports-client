@@ -1,35 +1,14 @@
-// import ReportDesigner, {
-//   RequestOptions,
-//   DesignerModelSettings,
-//   PreviewSettings,
-//   DataSourceSettings,
-//   WizardSettings,
-//   Callbacks
-// } from 'devexpress-reporting-react/dx-report-designer';
-// import { ActionId } from 'devexpress-reporting/dx-reportdesigner';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { FGDesignDemoRoutes } from './FGDesignDemo/routes';
+import { componentRegistry } from './FGDesignDemo/componentRegistry';
 
-// export default function App() {
-//   // Example: tweak menu actions
-//   const onCustomizeMenuActions = ({ args }: { args: any }) => {
-//     const newReport = args.GetById(ActionId.NewReport);
-//     if (newReport) newReport.visible = false; // demo: hide "New Report"
-//   };
-
-//   return (
-//     <div style={{ height: '100dvh', width: '100%' }}>
-//       <ReportDesigner reportUrl="TestReport">
-//         <RequestOptions
-//           host={import.meta.env.VITE_DX_HOST}
-//           getDesignerModelAction="DXXRD/GetDesignerModel"
-//         />
-//         <Callbacks CustomizeMenuActions={onCustomizeMenuActions} />
-//         <DesignerModelSettings allowMDI>
-//           <DataSourceSettings allowAddDataSource={false} allowRemoveDataSource={false} />
-//           <PreviewSettings>
-//             <WizardSettings useFullscreenWizard={false} />
-//           </PreviewSettings>
-//         </DesignerModelSettings>
-//       </ReportDesigner>
-//     </div>
-//   );
-// }
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {FGDesignDemoRoutes}
+        <Route path="*" element={<Navigate to={componentRegistry[0].path} replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}

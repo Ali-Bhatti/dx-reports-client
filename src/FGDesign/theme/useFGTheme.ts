@@ -1,1 +1,2 @@
-//export { useFGTheme } from './FGThemeProvider';
+export { useFGTheme } from './FGThemeProvider';
+
