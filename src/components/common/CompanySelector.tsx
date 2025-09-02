@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Company } from '../../types';
-import apiService from '../../services/api';
+import type { Company } from '../../types';
+
+// Placeholder API service until real implementation is wired up
+const apiService = {
+  getCompanies: async () => ({ data: [] as Company[] }),
+};
 
 interface CompanySelectorProps {
   selectedCompanyId?: string;
