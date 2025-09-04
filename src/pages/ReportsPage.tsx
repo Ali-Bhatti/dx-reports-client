@@ -12,6 +12,7 @@ import {
   DropDownList,
   type DropDownListChangeEvent
 } from '@progress/kendo-react-dropdowns';
+import { useNavigate } from 'react-router-dom';
 
 type ReportRow = {
   id: number;
@@ -47,6 +48,7 @@ export default function ReportsPage() {
   const [company, setCompany] = React.useState<number | null>(null);
   const [query, setQuery] = React.useState<string>('');
   const [selectedReportId, setSelectedReportId] = React.useState<number | null>(null);
+  const navigate = useNavigate();
 
   const companies: Company[] = React.useMemo(
     () => [
@@ -111,6 +113,10 @@ export default function ReportsPage() {
   const onRowClick = (e: GridRowClickEvent) => {
     const row = e.dataItem as ReportRow;
     setSelectedReportId(row.id);
+  };
+
+  const onHistoryRowClick = () => {
+    navigate('/diagram');
   };
 
   const selectedCompanyObj = companies.find(c => c.id === company) ?? null;
@@ -179,7 +185,7 @@ export default function ReportsPage() {
           {selectedReportId != null && (
             <div>
               <h3 style={{ marginBottom: 8 }}>Version History</h3>
-              <Grid data={visibleVersions}>
+              <Grid data={visibleVersions} onRowClick={onHistoryRowClick}>
                 <GridToolbar>
                   <Button themeColor="error" icon="trash">Delete</Button>
                 </GridToolbar>

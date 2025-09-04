@@ -8,7 +8,7 @@ import ReportDesigner, {
 } from 'devexpress-reporting-react/dx-report-designer';
 import { ActionId } from 'devexpress-reporting/dx-reportdesigner';
 
-export default function App() {
+export default function DiagramTool() {
   // Example: tweak menu actions
   const onCustomizeMenuActions = ({
     args
