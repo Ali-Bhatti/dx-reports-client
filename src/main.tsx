@@ -1,6 +1,5 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-//import App from './App.tsx'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 import 'devextreme/dist/css/dx.light.css';
 import '@devexpress/analytics-core/dist/css/dx-analytics.common.css';
 import '@devexpress/analytics-core/dist/css/dx-analytics.light.css';
@@ -10,11 +9,11 @@ import 'ace-builds/css/theme/dreamweaver.css';
 import '@progress/kendo-theme-default/dist/all.css';
 import './styles/index.css';
 import './styles/kendo-overrides.css';
-import ReportsPage from './pages/ReportsPage';
-
+import App from './App';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ReportsPage />
+    <App />
   </StrictMode>,
-)
+);
+
