@@ -8,11 +8,11 @@ type Props = {
   className?: string;
 };
 
-export const CompanySelector: React.FC<Props> = ({
+export const CompanySelector = ({
   onCompanyChange,
   disabled = false,
   className = ''
-}) => {
+}: Props) => {
   // Local companies list (inside the component, as requested)
   const companies = React.useMemo<Company[]>(
     () => [

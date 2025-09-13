@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReportStatistics } from '../../types';
 import InfoCard from '../shared/InfoCard';
 
@@ -7,10 +6,10 @@ interface StatisticsCardsProps {
     loading?: boolean;
 }
 
-const StatisticsCards: React.FC<StatisticsCardsProps> = ({
+const StatisticsCards = ({
     statistics = [],
     loading = false
-}) => {
+}: StatisticsCardsProps) => {
     if (loading) {
         return (
             <div className="grid grid-cols-3 gap-6 mb-6">

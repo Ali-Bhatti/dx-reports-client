@@ -1,6 +1,4 @@
 
-import React from 'react';
-
 interface InfoCardProps {
   title: string;
   value: string | number;
@@ -8,12 +6,12 @@ interface InfoCardProps {
   onClick?: () => void;
 }
 
-const InfoCard: React.FC<InfoCardProps> = ({
+const InfoCard = ({
   title,
   value,
   className = '',
   onClick
-}) => {
+}: InfoCardProps) => {
   const baseClasses = "bg-white rounded-2xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200";
   const interactiveClasses = onClick ? "cursor-pointer hover:border-gray-300" : "";
   

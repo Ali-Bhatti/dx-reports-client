@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { Button } from '@progress/kendo-react-buttons';
 import { gearIcon, userIcon } from '@progress/kendo-svg-icons';
 
@@ -16,7 +15,7 @@ interface HeaderProps {
   onUserClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({
+export const Header = ({
   user = {
     id: '1',
     name: 'John Doe',
@@ -24,7 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
   },
   onSettingsClick = () => console.log('Settings clicked'),
   onUserClick = () => console.log('User clicked')
-}) => {
+}: HeaderProps) => {
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-3">
       <div className="flex items-center justify-between max-w-full">

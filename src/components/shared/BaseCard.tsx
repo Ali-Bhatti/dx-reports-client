@@ -12,20 +12,20 @@ type BaseCardProps = React.PropsWithChildren<{
   dividers?: boolean;
 }>;
 
-// Context to pass the root "dividers" default to sections
+// Context to pass the root "dividers" default to sections 
 const DividerCtx = React.createContext<boolean>(true);
 
-type BaseCardCompound = React.FC<BaseCardProps> & {
-  Header: React.FC<SlotProps>;
-  Body:   React.FC<SlotProps>;
-  Footer: React.FC<SlotProps>;
+type BaseCardCompound = ((props: BaseCardProps) => React.ReactElement) & {
+  Header: (props: SlotProps) => React.ReactElement;
+  Body: (props: SlotProps) => React.ReactElement;
+  Footer: (props: SlotProps) => React.ReactElement;
 };
 
-const BaseCardRoot: React.FC<BaseCardProps> = ({
+const BaseCardRoot = ({
   className = '',
   dividers = true,
   children
-}) => (
+}: BaseCardProps) => (
   <section
     className={[
       'bg-white border border-gray-200 rounded-xl shadow-sm',
@@ -37,7 +37,7 @@ const BaseCardRoot: React.FC<BaseCardProps> = ({
   </section>
 );
 
-const Header: React.FC<SlotProps> = ({ className = '', divider, children }) => {
+const Header = ({ className = '', divider, children }: SlotProps) => {
   const rootDividers = React.useContext(DividerCtx);
   const show = divider ?? rootDividers;
   return (
@@ -54,11 +54,11 @@ const Header: React.FC<SlotProps> = ({ className = '', divider, children }) => {
   );
 };
 
-const Body: React.FC<SlotProps> = ({ className = '', children }) => (
+const Body = ({ className = '', children }: SlotProps) => (
   <div className={['relative py-3 sm:py-4', className].join(' ')}>{children}</div>
 );
 
-const Footer: React.FC<SlotProps> = ({ className = '', divider, children }) => {
+const Footer = ({ className = '', divider, children }: SlotProps) => {
   const rootDividers = React.useContext(DividerCtx);
   const show = divider ?? rootDividers;
   return (

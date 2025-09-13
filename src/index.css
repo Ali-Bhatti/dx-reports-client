@@ -1,9 +1,5 @@
-/* index.css */
-@import "tailwindcss";
-
-/* 1) Load your font (Google Fonts example – or replace with @font-face below) */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap");
-
+@import "tailwindcss";
 /* If you host the font files yourself, use this instead of the Google import:*/
 /* @font-face {
   font-family: "Inter";
