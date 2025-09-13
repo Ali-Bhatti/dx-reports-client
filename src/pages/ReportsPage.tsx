@@ -3,12 +3,12 @@ import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Input } from '@progress/kendo-react-inputs';
-import { Button } from '@progress/kendo-react-buttons';
 import { Pager, type PageChangeEvent } from '@progress/kendo-react-data-tools';
 
 import StatisticsCards from '../components/dashboard/StatisticsCards';
 import BaseCard from '../components/shared/BaseCard';
 import CompanySelector from '../components/reports/CompanySelector';
+import BaseButton from '../components/shared/BaseButton';
 
 import type { ReportStatistics, Company } from '../types';
 
@@ -18,7 +18,6 @@ import {
   pencilIcon,
   linkIcon,
   downloadIcon,
-  uploadIcon,
   plusOutlineIcon
 } from '@progress/kendo-svg-icons';
 
@@ -180,7 +179,7 @@ export default function ReportsPage() {
 
   // ---------- Action button component ----------
   const RowIconBtn: React.FC<{ icon: any; title: string; onClick: () => void }> = ({ icon, title, onClick }) => (
-    <Button
+    <BaseButton
       size="small"
       rounded="full"
       fillMode="flat"
@@ -188,7 +187,8 @@ export default function ReportsPage() {
       svgIcon={icon}
       title={title}
       onClick={onClick}
-      className="!p-1.5 text-gray-600 hover:text-gray-800 hover:!bg-gray-100"
+      className="!p-1.5 !text-gray-600 hover:!text-gray-800 hover:!bg-gray-100"
+      color='none'
     />
   );
 
@@ -425,9 +425,8 @@ export default function ReportsPage() {
               <CompanySelector onCompanyChange={handleCompanyChange} />
             </div>
             <div className="flex items-center gap-2">
-
-              <Button className="action-button !rounded-md !p-2 !bg-gray-500 !text-white hover:!bg-gray-600" svgIcon={copyIcon} title="Copy"> Copy </Button>
-              <Button className="action-button !rounded-md !p-2 !bg-red-500 !text-white hover:!bg-red-600" svgIcon={trashIcon} title="Delete"> Delete </Button>
+              <BaseButton color="gray" svgIcon={copyIcon} title="Copy" onClick={() => console.log("Copy CLicked")}>Copy</BaseButton>
+              <BaseButton color="red" svgIcon={trashIcon} title="Delete" onClick={() => console.log("Delete CLicked")}>Delete</BaseButton>
             </div>
           </BaseCard.Header>
 
@@ -498,7 +497,7 @@ export default function ReportsPage() {
                 <h3 className="font-bold">Version History</h3>
               </div>
               <div className="flex items-center gap-2">
-                <Button className="action-button !rounded-md !p-2 !bg-red-500 !text-white hover:!bg-red-600" svgIcon={trashIcon} title="Delete"> Delete </Button>
+                <BaseButton color="red" svgIcon={trashIcon} title="Delete" onClick={() => console.log("Delete CLicked")}>Delete</BaseButton>
               </div>
             </BaseCard.Header>
 

@@ -1,6 +1,6 @@
 
-import { Button } from '@progress/kendo-react-buttons';
 import { gearIcon, userIcon } from '@progress/kendo-svg-icons';
+import BaseButton from '../shared/BaseButton';
 
 // Default User type for the component
 interface User {
@@ -52,20 +52,18 @@ export const Header = ({
         </div>
 
         <div className="flex items-center space-x-2">
-          <Button
-            onClick={onSettingsClick}
-            className="px-2 py-2 rounded-md transition-colors"
-            title="Settings"
+          <BaseButton
             svgIcon={gearIcon}
-            type="button"
+            title='Settings'
+            typeVariant='iconButton'
+            onClick={onSettingsClick}
           />
 
-          <Button
-            onClick={onUserClick}
-            className="flex items-center space-x-2 p-2 rounded-md transition-colors"
-            title={user?.name || 'User Profile'}
-            type="button"
+          <BaseButton
             svgIcon={userIcon}
+            title={user?.name || 'User Profile'}
+            typeVariant='iconButton'
+            onClick={onUserClick}
           >
             {/* <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-medium">
               {user?.name?.charAt(0)?.toUpperCase() || 'U'}
@@ -75,7 +73,7 @@ export const Header = ({
                 {user.name}
               </span>
             )} */}
-          </Button>
+          </BaseButton>
         </div>
       </div>
     </header>
