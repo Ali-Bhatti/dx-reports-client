@@ -9,6 +9,7 @@ import StatisticsCards from '../components/dashboard/StatisticsCards';
 import BaseCard from '../components/shared/BaseCard';
 import CompanySelector from '../components/reports/CompanySelector';
 import BaseButton from '../components/shared/BaseButton';
+import BaseModal from '../components/shared/BaseModal';
 
 import type { ReportStatistics, Company } from '../types';
 
@@ -412,8 +413,33 @@ export default function ReportsPage() {
 
   // const getAllSelectedRows = () => gridApi?.getSelectedRows() ?? [];
 
+  const [visible, setVisible] = React.useState<boolean>(false);
+
+
+  const toggleDialog = () => {
+    setVisible(!visible);
+  };
+
   return (
     <div className="min-h-screen bg-neutral-100">
+      {visible && (
+        <BaseModal
+          title={"Please Confirm"}
+          onClose={toggleDialog}
+          body={
+            <p className='text-center'>Are you sure you want to continue?</p>
+          }
+          actions={
+            <>
+              <BaseButton color='red' onClick={toggleDialog}>No</BaseButton>
+              <BaseButton color='blue'onClick={toggleDialog}>Yes</BaseButton>
+            </>
+          }
+        />
+      )}
+
+
+
       <div className="p-5 px-25">
         {/* KPIs */}
         <StatisticsCards statistics={totals} />
@@ -425,7 +451,7 @@ export default function ReportsPage() {
               <CompanySelector onCompanyChange={handleCompanyChange} />
             </div>
             <div className="flex items-center gap-2">
-              <BaseButton color="gray" svgIcon={copyIcon} title="Copy" onClick={() => console.log("Copy CLicked")}>Copy</BaseButton>
+              <BaseButton color="gray" svgIcon={copyIcon} title="Copy" onClick={toggleDialog}>Copy</BaseButton>
               <BaseButton color="red" svgIcon={trashIcon} title="Delete" onClick={() => console.log("Delete CLicked")}>Delete</BaseButton>
             </div>
           </BaseCard.Header>

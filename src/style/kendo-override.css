@@ -28,7 +28,7 @@ body,
 .k-button.k-icon-button,
 .k-button.k-button-icon {
     background-color: var(--fg-icon-btn);
-    color: #fff;
+    /* color: #fff; */
     border-color: transparent;
 }
 
@@ -83,6 +83,10 @@ body,
     color: #fff !important;
 }
 
+.k-window{
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
 
 /* AG Grid Custom Styles - Add this to your global CSS file */
 
