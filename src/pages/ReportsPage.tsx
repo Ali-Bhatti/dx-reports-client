@@ -8,7 +8,7 @@ import { Pager, type PageChangeEvent } from '@progress/kendo-react-data-tools';
 
 import StatisticsCards from '../components/dashboard/StatisticsCards';
 import BaseCard from '../components/shared/BaseCard';
-import CompanySelector from '../components/shared/CompanySelector';
+import CompanySelector from '../components/reports/CompanySelector';
 
 import type { ReportStatistics, Company } from '../types';
 

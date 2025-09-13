@@ -1,14 +1,16 @@
 import type { ReportStatistics } from '../../types';
-import InfoCard from '../shared/InfoCard';
+import BaseCard from '../shared/BaseCard';
 
 interface StatisticsCardsProps {
     statistics: ReportStatistics[] | [];
     loading?: boolean;
+    onClick?: () => void;
 }
 
 const StatisticsCards = ({
     statistics = [],
-    loading = false
+    loading = false,
+    onClick
 }: StatisticsCardsProps) => {
     if (loading) {
         return (
@@ -27,11 +29,25 @@ const StatisticsCards = ({
         return null;
     }
 
+    const baseClasses = "bg-white rounded-2xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200";
+    const interactiveClasses = onClick ? "cursor-pointer hover:border-gray-300" : "";
     return (
         <div className="bg-transparent">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 max-w-4xl">
                 {statistics.map((s) => (
-                    <InfoCard key={s.label} title={s.label} value={s.total} />
+                    <BaseCard
+                        dividers={false}
+                        className={`${baseClasses} ${interactiveClasses}`}
+                    >
+                        <div className="space-y-1">
+                            <p className="text-sm text-gray-500 font-medium">
+                                {s.label}
+                            </p>
+                            <p className="text-2xl font-semibold text-gray-900">
+                                {s.total}
+                            </p>
+                        </div>
+                    </BaseCard>
                 ))}
             </div>
         </div>
