@@ -8,11 +8,17 @@ import 'devexpress-reporting/dist/css/dx-reportdesigner.css';
 import 'ace-builds/css/ace.css';
 import 'ace-builds/css/theme/dreamweaver.css';
 import '@progress/kendo-theme-default/dist/all.css';
-import ReportsPage from './pages/ReportsPage';
+import { RouterProvider } from 'react-router-dom';
+import router from './routes/index.tsx';
+import './style/tokens.css';
+import './index.css';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-quartz.css';
+import './style/kendo-override.css'
 
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ReportsPage />
+    <RouterProvider router={router} />
   </StrictMode>,
 )

@@ -23,7 +23,7 @@ export interface ReportVersion {
 }
 
 export interface Company {
-    id: string;
+    id: number;
     name: string;
     status: string;
     licenseInfo?: string;
@@ -37,9 +37,8 @@ export interface User {
 }
 
 export interface ReportStatistics {
-    totalReports: number;
-    activeReports: number;
-    inactiveReports: number;
+    label: string,
+    total: number
 }
 
 // API Response types

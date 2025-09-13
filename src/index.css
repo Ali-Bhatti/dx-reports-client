@@ -1,0 +1,49 @@
+/* index.css */
+@import "tailwindcss";
+
+/* 1) Load your font (Google Fonts example – or replace with @font-face below) */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap");
+
+/* If you host the font files yourself, use this instead of the Google import:*/
+/* @font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+} */
+
+
+/* Map CSS variables -> Tailwind tokens */
+@theme {
+  --color-fg-icon-btn: var(--fg-icon-btn);
+  --color-fg-icon-btn-hover: var(--fg-icon-btn-hover);
+
+  --color-global-2: var(--e-global-color-global_color_2);
+  --color-global-3: var(--e-global-color-global_color_3);
+  --color-global-4: var(--e-global-color-global_color_4);
+  --color-global-5: var(--e-global-color-global_color_5);
+  --color-global-6: var(--e-global-color-global_color_6);
+  --color-global-7: var(--e-global-color-global_color_7);
+  --color-fg-gray: var(--fg-gray);
+  --color-global-9: var(--e-global-color-global_color_9);
+  --color-field: var(--fg-bg-fields);
+  --color-fg-green: var(--fg-green);
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, Segoe UI,
+               Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+
+
+
+
+/* simple utility class; v4 lets you write plain CSS in the same file */
+.fg-icon-btn {
+  background-color: var(--color-fg-icon-btn);
+  color: #fff;
+  border-color: transparent;
+}
+
+.fg-icon-btn:hover {
+  background-color: var(--color-fg-icon-btn-hover);
+}
