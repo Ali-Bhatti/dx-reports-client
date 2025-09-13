@@ -1,10 +1,10 @@
 // import React, { useState, useEffect } from 'react';
-// import { Header } from '../components/layout/Header';
-// import { CompanySelector } from '../components/common/CompanySelector';
+// import { Header } from '../components/header/Header';
+// import { CompanySelector } from '../components/shared/CompanySelector';
 // import { StatisticsCards } from '../components/dashboard/StatisticsCards';
 // import { ReportList } from '../components/reports/ReportList';
 // import { VersionHistory } from '../components/reports/VersionHistory';
-// import { InfoBox } from '../components/common/InfoBox';
+// import { InfoBox } from '../components/shared/InfoBox';
 // import { useReports } from '../hooks/useReports';
 // import { Report, ReportVersion, User } from '../types';
 

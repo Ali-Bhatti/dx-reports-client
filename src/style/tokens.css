@@ -1,0 +1,16 @@
+:root {
+    --fg-icon-btn: #2fc0cc;
+    --fg-icon-btn-hover: #28b4be;
+    --fg-grid-row-select: #bdd731;
+    --e-global-color-global_color_2: #b73d3d;
+    --e-global-color-global_color_3: #233452;
+    --e-global-color-global_color_4: #00102E;
+    --e-global-color-global_color_5: #6d7685;
+    --e-global-color-global_color_6: #00102E;
+    --e-global-color-global_color_7: #F4F5F7;
+    --fg-gray: #dbdbdb;
+    --e-global-color-global_color_9: #ffffff;
+    --app-padding: clamp(12px, 2vw, 24px);
+    --fg-bg-fields: #f5f5f5;
+    --fg-green: #c8e6c9;
+}

@@ -1,0 +1,187 @@
+:root {
+    /* Works on newer Kendo themes */
+    --kendo-color-primary: var(--fg-icon-btn);
+    --kendo-font-family: "Inter Variable", Inter, system-ui, -apple-system,
+        "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, Segoe UI,
+        Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+
+html,
+body,
+#root {
+    font-family: var(--kendo-font-family);
+}
+
+.ag-theme-quartz,
+.ag-theme-quartz .ag-root,
+.ag-theme-quartz .ag-header,
+.ag-theme-quartz .ag-header-cell,
+.ag-theme-quartz .ag-cell,
+.ag-theme-quartz .ag-menu,
+.ag-theme-quartz .ag-overlay {
+    font-family: var(--kendo-font-family) !important;
+    --ag-font-family: var(--kendo-font-family);
+}
+
+.k-button.k-icon-button,
+.k-button.k-button-icon {
+    background-color: var(--fg-icon-btn);
+    color: #fff;
+    border-color: transparent;
+}
+
+.k-button.k-icon-button:hover,
+.k-button.k-button-icon:hover {
+    background-color: var(--fg-icon-btn-hover);
+}
+
+.k-button.k-input-button,
+.k-button.k-input-button:hover {
+    background-color: transparent;
+    color: var(--e-global-color-global_color_6);
+}
+
+.k-pager {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 1rem;
+    border: none;
+    background-color: transparent;
+}
+
+/* Generic style for all pager buttons (numbers + prev/next) */
+.k-pager .k-button,
+.k-pager .k-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 1.75rem;
+    min-width: 1.75rem;
+    padding: 0 .5rem;
+    border-radius: 9999px !important;
+    background-color: #f9fafb !important;
+    color: #4b5563 !important;
+    border: 1px solid transparent !important;
+    transition: background-color .15s ease, color .15s ease;
+    margin: 0 5px;
+}
+
+/* Hover */
+.k-pager .k-button:hover,
+.k-pager .k-link:hover {
+    background-color: #f3f4f6 !important;
+    /* gray-100 */
+}
+
+/* Selected page */
+.k-pager .k-selected .k-button,
+.k-pager .k-selected .k-link,
+.k-pager .k-button.k-selected {
+    background-color: var(--fg-icon-btn, #2fc0cc) !important;
+    color: #fff !important;
+}
+
+
+/* AG Grid Custom Styles - Add this to your global CSS file */
+
+/* Header styling with background color and bold text */
+
+/* ag-theme-overrides.css */
+.ag-theme-quartz {
+    /* Global defaults for all Quartz grids */
+    --ag-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    --ag-row-hover-color: #F9FAFC;
+    --ag-selected-row-background-color: #c8e6c9;
+    --ag-cell-horizontal-padding: 10px;
+    --ag-header-background-color: #fafafa;
+    --ag-cell-focus-border-color: transparent;
+}
+
+.ag-theme-quartz .ag-header {
+    background-color: #2fbfcc3a;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.ag-theme-quartz .ag-header-cell {
+    border-right: 1px solid #e5e7eb;
+}
+
+.ag-theme-quartz .ag-header-cell-text {
+    font-weight: 700;
+    color: #374151;
+}
+
+.ag-row-selected::before {
+    background-color: #c8e6c971 !important;
+}
+
+/* .ag-row-selected::before .ag-row-hover {
+    background-color: #e4d0be !important;
+} */
+
+/* .ag-theme-quartz .ag-row.ag-row-hover .ag-cell, */
+.ag-theme-quartz .ag-row.ag-row-selected.ag-row-hover .ag-cell {
+    /* background-color: #F9FAFC !important; */
+    background-color: #c8e6c9B3  !important;
+    /* background-color: #c8e6c971  !important; */
+
+}
+
+
+/* Remove the old selected row styling and add new class-based styling */
+/* .ag-theme-quartz .ag-row.selected-report-row {
+    background-color: #c8e6c9 !important;
+}
+
+.ag-theme-quartz .ag-row.selected-report-row:hover {
+    background-color: #a5d6a7 !important;
+} */
+
+.ag-theme-quartz .ag-row {
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.ag-theme-quartz .ag-cell {
+    display: flex;
+    align-items: center;
+    border-right: none;
+    font-weight: 400;
+    font-size: 13px;
+    color: #4b5563;
+}
+
+.ag-theme-quartz .ag-root-wrapper {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.ag-theme-quartz .ag-body-horizontal-scroll,
+.ag-theme-quartz .ag-body-vertical-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f9fafb;
+}
+
+.ag-theme-quartz .ag-row:hover {
+    background-color: #f8fafc;
+}
+
+.ag-theme-quartz .ag-cell button[title] {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.ag-theme-quartz .ag-cell button[title]:hover {
+    background-color: #e2e8f0;
+    color: #475569;
+    border-color: #cbd5e1;
+}
+
+/* Selected row styling (keep your existing green background) */
+.ag-theme-quartz .ag-row-selected .fg-row-selected {
+    background-color: #c8e6c9 !important;
+}
