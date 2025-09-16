@@ -1,4 +1,4 @@
-import type { Report, ReportVersion, Company, User, ReportStatistics, ApiResponse, PaginatedResponse } from '../types';
+import type { Report, ReportVersion, Company, User, ReportStatistics, PaginatedResponse } from '../types';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fleetgo.com';
@@ -13,7 +13,7 @@ class ApiService {
     private async request<T>(
         endpoint: string,
         options: RequestInit = {}
-    ): Promise<ApiResponse<T>> {
+    ): Promise<T> {
         const url = `${this.baseURL}${endpoint}`;
 
         const defaultHeaders = {
@@ -38,7 +38,7 @@ class ApiService {
             }
 
             const data = await response.json();
-            return data;
+            return data as T;
         } catch (error) {
             console.error('API request failed:', error);
             throw error;
@@ -73,7 +73,7 @@ class ApiService {
     }
 
     async deleteReport(id: string): Promise<void> {
-        return this.request<void>(`/api/reports/${id}`, {
+        await this.request(`/api/reports/${id}`, {
             method: 'DELETE',
         });
     }

@@ -1,371 +1,179 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-
-import { Input } from '@progress/kendo-react-inputs';
-import { Pager, type PageChangeEvent } from '@progress/kendo-react-data-tools';
-
 import StatisticsCards from '../components/dashboard/StatisticsCards';
 import BaseCard from '../components/shared/BaseCard';
 import CompanySelector from '../components/reports/CompanySelector';
 import BaseButton from '../components/shared/BaseButton';
 import BaseModal from '../components/shared/BaseModal';
-import BaseTable from '../components/shared/BaseTable';
-
-import type { ReportStatistics, Company } from '../types';
-
+import ReportList from '../components/reports/ReportList';
+import ReportVersion from '../components/reports/ReportVersion';
 import {
   copyIcon,
   trashIcon,
-  pencilIcon,
-  linkIcon,
-  downloadIcon,
-  plusOutlineIcon
 } from '@progress/kendo-svg-icons';
+import type { Company } from '../types';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { reportsActions } from '../store/reportsSlice';
+import { reportVersionsActions } from '../store/reportVerisonSlice';
+import {
+  fetchCompanyKpis,
+  fetchReportVersions,
+  fetchReportsByCompany,
+  type ReportListItem,
+} from '../data/reportData';
+import type { PageChangeEvent } from '@progress/kendo-react-data-tools';
 
-import type {
-  ColDef, ICellRendererParams,
-  GridApi,
-  ColumnApiModule,
-  GridReadyEvent,
-  RowSelectedEvent,
-  SelectionChangedEvent,
-  RowClassParams,
-  RowClickedEvent
-} from 'ag-grid-community';
+const PAGE_SIZE = 10;
+const VERSION_PAGE_SIZE = 10;
 
-type ReportRow = {
-  id: number;
-  reportName: string;
-  createdOn: string;
-  modifiedOn: string;
-  modifiedBy: string;
-  active: boolean;
-  companyId: number;
-};
+type PageState = { skip: number; take: number };
 
-type HistoryRow = {
-  id: number;
-  version?: string;
-  createdOn: string;
-  modifiedOn: string;
-  modifiedBy: string;
-  status?: string;
-  reportId: number;
-};
+const initialPageState: PageState = { skip: 0, take: PAGE_SIZE };
+const initialVersionPageState: PageState = { skip: 0, take: VERSION_PAGE_SIZE };
 
 export default function ReportsPage() {
-  const [company, setCompany] = React.useState<number | null>(null);
-  const [query, setQuery] = React.useState<string>('');
-  const [selectedReportId, setSelectedReportId] = React.useState<number | null>(null);
-  const [columnApi, setColumnApi] = React.useState(null);
-  const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
-  const [gridApi, setGridApi] = React.useState<GridApi | null>(null);
-
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const reportsState = useAppSelector(state => state.reports);
+  const versionsState = useAppSelector(state => state.reportVersions);
 
-  // ---------- Demo data ----------
-  const reports: ReportRow[] = React.useMemo(
-    () => [
-      { id: 1, reportName: 'Loadlist', createdOn: '21/7/2024', modifiedOn: '25/7/2024', modifiedBy: 'Atif', active: true, companyId: 1 },
-      { id: 2, reportName: 'Unloadlist', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 3, reportName: 'Unloadlist1', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 4, reportName: 'Unloadlist2', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: false, companyId: 1 },
-      { id: 5, reportName: 'Unloadlist3', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 6, reportName: 'Unloadlist4', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 7, reportName: 'Unloadlist5', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: false, companyId: 1 },
-      { id: 8, reportName: 'Unloadlist6', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 9, reportName: 'Unloadlist7', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 10, reportName: 'Unloadlist8', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 11, reportName: 'Unloadlist9', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 12, reportName: 'Unloadlist00', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: false, companyId: 1 },
-      { id: 13, reportName: 'Unloadlist11', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 14, reportName: 'Unloadlist12', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 15, reportName: 'Unloadlist13', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 16, reportName: 'Unloadlist14', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 17, reportName: 'Unloadlist', createdOn: '12/7/2024', modifiedOn: '23/7/2024', modifiedBy: 'Kas', active: true, companyId: 1 },
-      { id: 18, reportName: 'Order label A6', createdOn: '30/6/2024', modifiedOn: '15/7/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 19, reportName: 'Order label 110x50', createdOn: '30/7/2024', modifiedOn: '19/8/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 20, reportName: 'Order label1 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 21, reportName: 'Order label2 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 22, reportName: 'Order label3 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 23, reportName: 'Order label4 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 24, reportName: 'Order label5 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 25, reportName: 'Order label6 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 26, reportName: 'Order label7 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 27, reportName: 'Order label8 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 28, reportName: 'Order label9 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 29, reportName: 'Order label00 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 30, reportName: 'Order label11 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 31, reportName: 'Order label12 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 32, reportName: 'Order label13 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 33, reportName: 'Order label14 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 34, reportName: 'Order label15 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 35, reportName: 'Order label16 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 36, reportName: 'Order label17 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 37, reportName: 'Order label18 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 38, reportName: 'Order label19 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-      { id: 39, reportName: 'Order label20 70x37', createdOn: '30/8/2024', modifiedOn: '18/9/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
-    ],
-    []
-  );
+  const [query, setQuery] = React.useState('');
+  const [page, setPage] = React.useState<PageState>(initialPageState);
+  const [versionPage, setVersionPage] = React.useState<PageState>(initialVersionPageState);
+  const [modalVisible, setModalVisible] = React.useState(false);
 
-  const history: HistoryRow[] = [
-    { id: 1, version: 'v1', createdOn: '17/7/2025', modifiedOn: '17/7/2025', modifiedBy: 'Atif', status: 'Published', reportId: 1 },
-    { id: 2, version: 'v2', createdOn: '16/8/2025', modifiedOn: '17/8/2025', modifiedBy: 'Atif', status: 'Not Published', reportId: 1 },
-    { id: 3, version: 'v1', createdOn: '18/7/2025', modifiedOn: '18/7/2025', modifiedBy: 'Kas', status: 'Published', reportId: 2 },
-    { id: 4, version: 'v1', createdOn: '19/7/2025', modifiedOn: '19/7/2025', modifiedBy: 'Arooba', status: 'Not Published', reportId: 3 }
-  ];
+  const reportListDisabled = reportsState.selectedCompanyId == null;
 
-  // ---------- Filtering & KPIs ----------
-  const visibleReports = React.useMemo(() => {
-    if (company == null) return [];
-    const q = query.trim().toLowerCase();
-    return reports
-      .filter(r => r.companyId === company)
-      .filter(r => (q ? r.reportName.toLowerCase().includes(q) : true))
-      .map(r => r)
-  }, [reports, company, query]);
-
-  const totals = React.useMemo<ReportStatistics[]>(() => {
-    const totalReports = visibleReports.length;
-    const activeReports = visibleReports.filter(r => r.active).length;
-    const inactiveReports = totalReports - activeReports;
-    return [
-      { label: 'Total Reports', total: totalReports },
-      { label: 'Active Reports', total: activeReports },
-      { label: 'In-Active Reports', total: inactiveReports }
-    ];
-  }, [visibleReports]);
-
-  // ---------- External paging (Reports) ----------
-  const [page, setPage] = React.useState<{ skip: number; take: number }>({ skip: 0, take: 10 });
-  const onPageChange = (e: PageChangeEvent) => setPage({ skip: e.skip, take: e.take });
-  const pageData = React.useMemo(
-    () => visibleReports.slice(page.skip, page.skip + page.take),
-    [visibleReports, page]
-  );
-
-  // ---------- Versions (map to include boolean 'published') ----------
-  const visibleVersions = React.useMemo(
-    () =>
-      selectedReportId == null
-        ? []
-        : history
-          .filter(h => h.reportId === selectedReportId)
-          .map(h => ({ ...h, published: h.status === 'Published' })),
-    [history, selectedReportId]
-  );
-
-  // External paging (Versions)
-  const [verPage, setVerPage] = React.useState<{ skip: number; take: number }>({ skip: 0, take: 10 });
-  React.useEffect(() => { setVerPage(p => ({ ...p, skip: 0 })); }, [selectedReportId]);
-  const onVersionsPageChange = (e: PageChangeEvent) => setVerPage({ skip: e.skip, take: e.take });
-  const versionsPageData = React.useMemo(
-    () => visibleVersions.slice(verPage.skip, verPage.skip + verPage.take),
-    [visibleVersions, verPage]
-  );
-
-  // ---------- Company change ----------
-  const handleCompanyChange = (c: Company | null) => {
-    setCompany(c ? Number(c.id) : null);
-    setSelectedReportId(null);
-    setPage(p => ({ ...p, skip: 0 }));
-  };
-
-  // ---------- Action button component ----------
-  const RowIconBtn: React.FC<{ icon: any; title: string; onClick: () => void }> = ({ icon, title, onClick }) => (
-    <BaseButton
-      size="small"
-      rounded="full"
-      fillMode="flat"
-      themeColor="base"
-      svgIcon={icon}
-      title={title}
-      onClick={onClick}
-      className="!p-1.5 !text-gray-600 hover:!text-gray-800 hover:!bg-gray-100"
-      color='none'
-    />
-  );
-
-  // Reports action renderer
-  const ReportActionsRenderer: React.FC<ICellRendererParams<ReportRow>> = (p) => {
-    const row = p.data!;
-    return (
-      <div className="flex items-center gap-1.5">
-        <RowIconBtn icon={copyIcon} title="Copy" onClick={() => console.log('copy', row.id)} />
-        <RowIconBtn icon={linkIcon} title="Link" onClick={() => console.log('link', row.id)} />
-        <RowIconBtn icon={trashIcon} title="Delete" onClick={() => console.log('delete', row.id)} />
-      </div>
+  const filteredReports = React.useMemo<ReportListItem[]>(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return reportsState.reports;
+    return reportsState.reports.filter(report =>
+      report.reportName.toLowerCase().includes(normalized)
     );
-  };
+  }, [query, reportsState.reports]);
 
-  // Reports status checkbox renderer
-  const StatusCheckboxRenderer: React.FC<ICellRendererParams<ReportRow, boolean>> = (p) => (
-    <input type="checkbox" checked={!!p.value} readOnly className="cursor-default" />
+  const pagedReports = React.useMemo(
+    () => filteredReports.slice(page.skip, page.skip + page.take),
+    [filteredReports, page]
   );
 
-  // Versions published toggle
-  const PublishedToggleRenderer: React.FC<ICellRendererParams<HistoryRow & { published: boolean }, boolean>> = (p) => {
-    const value = !!p.value;
-    const toggle = () => p.node.setDataValue('published', !value);
-    return (
-      <label className="inline-flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" className="sr-only peer" checked={value} onChange={toggle} />
-        <span className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-teal-400 relative">
-          <span className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-5" />
-        </span>
-      </label>
-    );
-  };
-
-  // Versions actions
-  const VersionActionsRenderer: React.FC<ICellRendererParams<HistoryRow>> = (p) => {
-    const row = p.data!;
-    return (
-      <div className="flex items-center gap-1.5">
-        <RowIconBtn icon={downloadIcon} title="Download" onClick={() => console.log('download', row.id)} />
-        <RowIconBtn icon={plusOutlineIcon} title="New Version" onClick={() => console.log('New Version', row.id)} />
-        <RowIconBtn icon={pencilIcon} title="Edit" onClick={() => console.log('edit', row.id)} />
-        <RowIconBtn icon={trashIcon} title="Delete" onClick={() => console.log('delete', row.id)} />
-      </div>
-    );
-  };
-
-  // ---------- Column definitions for BaseTable ----------
-  const reportColDefs = React.useMemo<ColDef<ReportRow>[]>(() => [
-    {
-      headerName: 'Report Name',
-      field: 'reportName',
-      flex: 2,
-      minWidth: 140
-    },
-    {
-      headerName: 'Creation Date',
-      field: 'createdOn',
-      flex: 1,
-      minWidth: 140
-    },
-    {
-      headerName: 'Modified On',
-      field: 'modifiedOn',
-      flex: 1,
-      minWidth: 140
-    },
-    {
-      headerName: 'Modified By',
-      field: 'modifiedBy',
-      flex: 1,
-      minWidth: 140
-    },
-    {
-      headerName: 'Status',
-      field: 'active',
-      flex: 0,
-      width: 80,
-      minWidth: 80,
-      maxWidth: 80,
-      cellRenderer: StatusCheckboxRenderer,
-      sortable: false
-    },
-    {
-      headerName: 'Actions',
-      field: 'id',
-      flex: 0,
-      width: 220,
-      minWidth: 220,
-      maxWidth: 220,
-      cellRenderer: ReportActionsRenderer,
-      sortable: false
-    }
-  ], []);
-
-  const versionsColDefs = React.useMemo<ColDef<(HistoryRow & { published: boolean })>[]>(() => [
-    {
-      headerName: 'Version',
-      field: 'version',
-      flex: 1,
-      minWidth: 100
-    },
-    {
-      headerName: 'Creation Date',
-      field: 'createdOn',
-      flex: 1,
-      minWidth: 140
-    },
-    {
-      headerName: 'Modified On',
-      field: 'modifiedOn',
-      flex: 1,
-      minWidth: 140
-    },
-    {
-      headerName: 'Modified By',
-      field: 'modifiedBy',
-      flex: 1,
-      minWidth: 140
-    },
-    {
-      headerName: 'Published',
-      field: 'published',
-      flex: 0,
-      width: 100,
-      minWidth: 100,
-      maxWidth: 100,
-      cellRenderer: PublishedToggleRenderer,
-      sortable: false
-    },
-    {
-      headerName: 'Actions',
-      field: 'id',
-      flex: 0,
-      width: 260,
-      minWidth: 180,
-      maxWidth: 250,
-      cellRenderer: VersionActionsRenderer,
-      sortable: false
-    }
-  ], []);
-
-  // Selected row styling
-  const getRowStyle = React.useCallback(
-    (p: RowClassParams) =>
-      p.data?.id === selectedReportId
-        ? { backgroundColor: '#c8e6c971' }
-        : undefined,
-    [selectedReportId]
+  const pagedVersions = React.useMemo(
+    () => versionsState.reportVersions.slice(versionPage.skip, versionPage.skip + versionPage.take),
+    [versionsState.reportVersions, versionPage]
   );
 
-  function gridRowClicked(e: any) {
-    console.log(e);
-    console.log(e.node.isSelected());
-    setSelectedReportId(e.data?.id ?? null);
-  }
+  React.useEffect(() => {
+    setPage(prev => ({ ...prev, skip: 0 }));
+  }, [query, reportsState.selectedCompanyId]);
 
-  function gridRowSelected(e: any) {
-    console.log(e);
-    console.log(e.node.isSelected());
+  React.useEffect(() => {
+    setVersionPage(prev => ({ ...prev, skip: 0 }));
+  }, [versionsState.selectedReportId]);
 
-    if (e.node.isSelected()) {
-      setSelectedReportId(e.data.id);
-    } else {
-      setSelectedReportId(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    const companyId = reportsState.selectedCompanyId;
+
+    if (companyId == null) {
+      dispatch(reportsActions.clear());
+      return;
     }
-  }
 
-  const onGridReady = (e: any) => {
-    setGridApi(e.api);
-    setColumnApi(e.columnApi);
-  };
+    const load = async () => {
+      dispatch(reportsActions.setReportsLoading(true));
+      dispatch(reportsActions.setStatisticsLoading(true));
+      dispatch(reportsActions.setError(null));
+      try {
+        const [reports, statistics] = await Promise.all([
+          fetchReportsByCompany(companyId),
+          fetchCompanyKpis(companyId),
+        ]);
+        if (cancelled) return;
+        dispatch(reportsActions.setReports(reports));
+        dispatch(reportsActions.setStatistics(statistics));
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : 'Failed to load reports';
+        dispatch(reportsActions.setError(message));
+        dispatch(reportsActions.setReports([]));
+        dispatch(reportsActions.setStatistics([]));
+      } finally {
+        if (cancelled) return;
+        dispatch(reportsActions.setReportsLoading(false));
+        dispatch(reportsActions.setStatisticsLoading(false));
+      }
+    };
 
-  const [visible, setVisible] = React.useState<boolean>(false);
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, reportsState.selectedCompanyId]);
 
-  const toggleDialog = () => {
-    setVisible(!visible);
-  };
+  React.useEffect(() => {
+    let cancelled = false;
+    const reportId = versionsState.selectedReportId;
+
+    if (reportId == null) {
+      return;
+    }
+
+    const loadVersions = async () => {
+      dispatch(reportVersionsActions.setLoading(true));
+      dispatch(reportVersionsActions.setError(null));
+      try {
+        const versions = await fetchReportVersions(reportId);
+        if (cancelled) return;
+        dispatch(reportVersionsActions.setReportVersions(versions));
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : 'Failed to load report versions';
+        dispatch(reportVersionsActions.setError(message));
+        dispatch(reportVersionsActions.setReportVersions([]));
+      } finally {
+        if (cancelled) return;
+        dispatch(reportVersionsActions.setLoading(false));
+      }
+    };
+
+    void loadVersions();
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, versionsState.selectedReportId]);
+
+  const handleCompanyChange = React.useCallback((company: Company | null) => {
+    const companyId = company ? Number(company.id) : null;
+    dispatch(reportsActions.setSelectedCompanyId(companyId));
+    dispatch(reportVersionsActions.setSelectedReportId(null));
+    setQuery('');
+    setPage(initialPageState);
+    setVersionPage(initialVersionPageState);
+  }, [dispatch]);
+
+  const handleReportSelect = React.useCallback((reportId: number | null) => {
+    dispatch(reportVersionsActions.setSelectedReportId(reportId));
+  }, [dispatch]);
+
+  const handleVersionRowClick = React.useCallback(() => {
+    navigate('/diagram');
+  }, [navigate]);
+
+  const handleReportPageChange = React.useCallback((event: PageChangeEvent) => {
+    setPage({ skip: event.skip, take: event.take });
+  }, []);
+
+  const handleVersionPageChange = React.useCallback((event: PageChangeEvent) => {
+    setVersionPage({ skip: event.skip, take: event.take });
+  }, []);
+
+  const toggleDialog = React.useCallback(() => {
+    setModalVisible(prev => !prev);
+  }, []);
 
   return (
     <div className="min-h-screen bg-neutral-100">
-      {visible && (
+      {modalVisible && (
         <BaseModal
           title={"Please Confirm"}
           onClose={toggleDialog}
@@ -382,10 +190,11 @@ export default function ReportsPage() {
       )}
 
       <div className="p-5 px-25">
-        {/* KPIs */}
-        <StatisticsCards statistics={totals} />
+        <StatisticsCards
+          statistics={reportsState.statistics}
+          loading={reportsState.loadingStatistics}
+        />
 
-        {/* Reports Card */}
         <BaseCard className="mt-5" dividers={false}>
           <BaseCard.Header>
             <div className="flex items-center gap-2">
@@ -393,96 +202,44 @@ export default function ReportsPage() {
             </div>
             <div className="flex items-center gap-2">
               <BaseButton color="gray" svgIcon={copyIcon} title="Copy" onClick={toggleDialog}>Copy</BaseButton>
-              <BaseButton color="red" svgIcon={trashIcon} title="Delete" onClick={() => console.log("Delete CLicked")}>Delete</BaseButton>
+              <BaseButton color="red" svgIcon={trashIcon} title="Delete" onClick={toggleDialog}>Delete</BaseButton>
             </div>
           </BaseCard.Header>
 
-          <BaseCard.Body className="space-y-4">
-            <div>
-              <Input
-                placeholder="search 'report name'"
-                value={query}
-                onChange={(e) => setQuery(e.value)}
-                disabled={company == null}
-                className="w-full h-10 !bg-field"
-              />
-            </div>
-
-            {/* BaseTable — Reports */}
-            <BaseTable<ReportRow>
-              rowData={pageData}
-              columnDefs={reportColDefs}
-              getRowId={(p) => String(p.data.id)}
-              onRowClicked={gridRowClicked}
-              getRowStyle={getRowStyle}
-              onGridReady={onGridReady}
-              onRowSelected={gridRowSelected}
-              height={420}
-            />
-          </BaseCard.Body>
-
-          <BaseCard.Footer>
-            <span className="text-sm text-gray-500">
-              {visibleReports.length
-                ? `Showing ${page.skip + 1}-${Math.min(page.skip + page.take, visibleReports.length)} of ${visibleReports.length}`
-                : `Showing 0–0 of 0`}
-            </span>
-            <Pager
-              className="fg-pager"
-              skip={page.skip}
-              take={page.take}
-              total={visibleReports.length}
-              buttonCount={5}
-              info={false}
-              type="numeric"
-              previousNext
-              onPageChange={onPageChange}
-              navigatable={false}
-            />
-          </BaseCard.Footer>
+          <ReportList
+            pageData={pagedReports}
+            total={filteredReports.length}
+            page={page}
+            onPageChange={handleReportPageChange}
+            query={query}
+            onQueryChange={setQuery}
+            selectedReportId={versionsState.selectedReportId}
+            onSelectReport={handleReportSelect}
+            disabled={reportListDisabled}
+            loading={reportsState.loadingReports}
+          />
         </BaseCard>
 
-        {/* Versions Card */}
-        {selectedReportId != null && (
+        {versionsState.selectedReportId != null && (
           <BaseCard className="mt-5" dividers={false}>
             <BaseCard.Header>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold">Version History</h3>
               </div>
               <div className="flex items-center gap-2">
-                <BaseButton color="red" svgIcon={trashIcon} title="Delete" onClick={() => console.log("Delete CLicked")}>Delete</BaseButton>
+                <BaseButton color="red" svgIcon={trashIcon} title="Delete" onClick={toggleDialog}>Delete</BaseButton>
               </div>
             </BaseCard.Header>
 
-            <BaseCard.Body>
-              {/* BaseTable — Versions */}
-              <BaseTable<HistoryRow & { published: boolean }>
-                rowData={versionsPageData}
-                columnDefs={versionsColDefs}
-                getRowId={(p) => String(p.data.id)}
-                onRowClicked={() => navigate('/diagram')}
-                height={400}
-              />
-            </BaseCard.Body>
-
-            <BaseCard.Footer>
-              <span className="text-sm text-gray-500">
-                {visibleVersions.length
-                  ? `Showing ${verPage.skip + 1}-${Math.min(verPage.skip + verPage.take, visibleVersions.length)} of ${visibleVersions.length}`
-                  : 'Showing 0–0 of 0'}
-              </span>
-              <Pager
-                className="fg-pager"
-                skip={verPage.skip}
-                take={verPage.take}
-                total={visibleVersions.length}
-                buttonCount={5}
-                info={false}
-                type="numeric"
-                previousNext
-                onPageChange={onVersionsPageChange}
-              />
-            </BaseCard.Footer>
+            <ReportVersion
+              versions={versionsState.reportVersions}
+              pageData={pagedVersions}
+              total={versionsState.reportVersions.length}
+              page={versionPage}
+              onPageChange={handleVersionPageChange}
+              onRowClick={handleVersionRowClick}
+              loading={versionsState.loading}
+            />
           </BaseCard>
         )}
       </div>

@@ -1,208 +1,230 @@
-// import React, { useState } from 'react';
-// import { Report } from '../../types';
+import * as React from 'react';
+import { Input } from '@progress/kendo-react-inputs';
+import { Pager, type PageChangeEvent } from '@progress/kendo-react-data-tools';
+import {
+  copyIcon,
+  linkIcon,
+  trashIcon,
+} from '@progress/kendo-svg-icons';
+import type {
+  ColDef,
+  GridReadyEvent,
+  ICellRendererParams,
+  RowClassParams,
+} from 'ag-grid-community';
+import BaseCard from '../shared/BaseCard';
+import BaseTable from '../shared/BaseTable';
+import BaseButton from '../shared/BaseButton';
+import type { ReportListItem } from '../../data/reportData';
 
-// interface ReportListProps {
-//   reports: Report[];
-//   selectedReports: string[];
-//   onReportSelect: (reportId: string) => void;
-//   onSelectAll: () => void;
-//   onCopyReport: (reportId: string) => void;
-//   onDeleteReport: (reportId: string) => void;
-//   onLinkToWeb: (reportId: string) => void;
-//   onEditReport: (reportId: string) => void;
-//   loading?: boolean;
-// }
+export type ReportListProps = {
+  pageData: ReportListItem[];
+  total: number;
+  page: { skip: number; take: number };
+  onPageChange: (event: PageChangeEvent) => void;
+  query: string;
+  onQueryChange: (value: string) => void;
+  selectedReportId: number | null;
+  onSelectReport: (reportId: number | null) => void;
+  disabled?: boolean;
+  loading?: boolean;
+};
 
-// export const ReportList: React.FC<ReportListProps> = ({
-//   reports,
-//   selectedReports,
-//   onReportSelect,
-//   onSelectAll,
-//   onCopyReport,
-//   onDeleteReport,
-//   onLinkToWeb,
-//   onEditReport,
-//   loading = false
-// }) => {
-//   const [searchTerm, setSearchTerm] = useState('');
+const RowActionButton: React.FC<{
+  icon: any;
+  title: string;
+  onClick: () => void;
+}> = ({ icon, title, onClick }) => (
+  <BaseButton
+    size="small"
+    rounded="full"
+    fillMode="flat"
+    themeColor="base"
+    svgIcon={icon}
+    title={title}
+    onClick={onClick}
+    className="!p-1.5 !text-gray-600 hover:!text-gray-800 hover:!bg-gray-100"
+    color='none'
+  />
+);
 
-//   const filteredReports = reports.filter(report =>
-//     report.name.toLowerCase().includes(searchTerm.toLowerCase())
-//   );
+const ReportList: React.FC<ReportListProps> = ({
+  pageData,
+  total,
+  page,
+  onPageChange,
+  query,
+  onQueryChange,
+  selectedReportId,
+  onSelectReport,
+  disabled = false,
+  loading = false,
+}) => {
+  const gridApiRef = React.useRef<GridReadyEvent<ReportListItem>["api"] | null>(null);
 
-//   const allSelected = reports.length > 0 && selectedReports.length === reports.length;
+  const handleGridReady = React.useCallback((event: GridReadyEvent<ReportListItem>) => {
+    gridApiRef.current = event.api;
+  }, []);
 
-//   return (
-//     <div className="bg-white rounded-lg shadow">
-//       {/* Search and Actions Header */}
-//       <div className="p-4 border-b border-gray-200">
-//         <div className="flex items-center justify-between">
-//           <div className="flex-1 max-w-md">
-//             <div className="relative">
-//               <input
-//                 type="text"
-//                 placeholder="Q search 'report name'"
-//                 value={searchTerm}
-//                 onChange={(e) => setSearchTerm(e.target.value)}
-//                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//               />
-//               <svg
-//                 className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-//                 fill="none"
-//                 stroke="currentColor"
-//                 viewBox="0 0 24 24"
-//               >
-//                 <path
-//                   strokeLinecap="round"
-//                   strokeLinejoin="round"
-//                   strokeWidth={2}
-//                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-//                 />
-//               </svg>
-//             </div>
-//           </div>
-          
-//           <div className="flex items-center space-x-2">
-//             <button
-//               onClick={() => selectedReports.forEach(id => onDeleteReport(id))}
-//               disabled={selectedReports.length === 0}
-//               className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-//               title="Delete Selected"
-//             >
-//               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-//               </svg>
-//             </button>
-//             <button
-//               onClick={() => selectedReports.forEach(id => onCopyReport(id))}
-//               disabled={selectedReports.length === 0}
-//               className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-//               title="Copy Selected"
-//             >
-//               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-//               </svg>
-//             </button>
-//           </div>
-//         </div>
-//       </div>
+  const handleRowClicked = React.useCallback(
+    (event: any) => {
+      const reportId = event.data?.id ?? null;
+      onSelectReport(reportId);
+    },
+    [onSelectReport]
+  );
 
-//       {/* Reports Table */}
-//       <div className="overflow-x-auto">
-//         <table className="w-full">
-//           <thead className="bg-gray-50">
-//             <tr>
-//               <th className="px-4 py-3 text-left">
-//                 <input
-//                   type="checkbox"
-//                   checked={allSelected}
-//                   onChange={onSelectAll}
-//                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-//                 />
-//               </th>
-//               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Report Name</th>
-//               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Creation Date</th>
-//               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Modified On</th>
-//               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Modified By</th>
-//               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-//               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
-//             </tr>
-//           </thead>
-//           <tbody className="divide-y divide-gray-200">
-//             {loading ? (
-//               <tr>
-//                 <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
-//                   Loading reports...
-//                 </td>
-//               </tr>
-//             ) : filteredReports.length === 0 ? (
-//               <tr>
-//                 <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
-//                   No reports found
-//                 </td>
-//               </tr>
-//             ) : (
-//               filteredReports.map((report) => (
-//                 <tr
-//                   key={report.id}
-//                   className={`hover:bg-gray-50 ${
-//                     selectedReports.includes(report.id) ? 'bg-blue-50' : ''
-//                   }`}
-//                 >
-//                   <td className="px-4 py-3">
-//                     <input
-//                       type="checkbox"
-//                       checked={selectedReports.includes(report.id)}
-//                       onChange={() => onReportSelect(report.id)}
-//                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-//                     />
-//                   </td>
-//                   <td className="px-4 py-3 text-sm font-medium text-gray-900">
-//                     {report.name}
-//                   </td>
-//                   <td className="px-4 py-3 text-sm text-gray-500">
-//                     {new Date(report.creationDate).toLocaleDateString()}
-//                   </td>
-//                   <td className="px-4 py-3 text-sm text-gray-500">
-//                     {new Date(report.modifiedOn).toLocaleDateString()}
-//                   </td>
-//                   <td className="px-4 py-3 text-sm text-gray-500">
-//                     {report.modifiedBy}
-//                   </td>
-//                   <td className="px-4 py-3">
-//                     <input
-//                       type="checkbox"
-//                       checked={report.status}
-//                       readOnly
-//                       className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-//                     />
-//                   </td>
-//                   <td className="px-4 py-3">
-//                     <div className="flex items-center space-x-2">
-//                       <button
-//                         onClick={() => onLinkToWeb(report.id)}
-//                         className="p-1 text-blue-600 hover:bg-blue-100 rounded"
-//                         title="Link to Web Page"
-//                       >
-//                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-//                         </svg>
-//                       </button>
-//                       <button
-//                         onClick={() => onCopyReport(report.id)}
-//                         className="p-1 text-blue-600 hover:bg-blue-100 rounded"
-//                         title="Copy"
-//                       >
-//                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-//                         </svg>
-//                       </button>
-//                       <button
-//                         onClick={() => onEditReport(report.id)}
-//                         className="p-1 text-gray-600 hover:bg-gray-100 rounded"
-//                         title="Edit"
-//                       >
-//                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-//                         </svg>
-//                       </button>
-//                       <button
-//                         onClick={() => onDeleteReport(report.id)}
-//                         className="p-1 text-red-600 hover:bg-red-100 rounded"
-//                         title="Delete"
-//                       >
-//                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-//                         </svg>
-//                       </button>
-//                     </div>
-//                   </td>
-//                 </tr>
-//               ))
-//             )}
-//           </tbody>
-//         </table>
-//       </div>
-//     </div>
-//   );
-// };
+  const handleSelectionChanged = React.useCallback(() => {
+    if (!gridApiRef.current) return;
+    const selected = gridApiRef.current.getSelectedRows?.() ?? [];
+    const first = selected[0] as ReportListItem | undefined;
+    onSelectReport(first?.id ?? null);
+  }, [onSelectReport]);
+
+  React.useEffect(() => {
+    const api = gridApiRef.current;
+    if (!api) return;
+
+    if (selectedReportId == null) {
+      api.deselectAll?.();
+      return;
+    }
+
+    api.forEachNode?.(node => {
+      const isMatch = node.data?.id === selectedReportId;
+      if (isMatch && !node.isSelected()) {
+        node.setSelected(true);
+      } else if (!isMatch && node.isSelected()) {
+        node.setSelected(false);
+      }
+    });
+  }, [selectedReportId, pageData]);
+
+  const colDefs = React.useMemo<ColDef<ReportListItem>[]>(() => [
+    {
+      headerName: 'Report Name',
+      field: 'reportName',
+      flex: 2,
+      minWidth: 160,
+    },
+    {
+      headerName: 'Creation Date',
+      field: 'createdOn',
+      flex: 1,
+      minWidth: 140,
+    },
+    {
+      headerName: 'Modified On',
+      field: 'modifiedOn',
+      flex: 1,
+      minWidth: 140,
+    },
+    {
+      headerName: 'Modified By',
+      field: 'modifiedBy',
+      flex: 1,
+      minWidth: 140,
+    },
+    {
+      headerName: 'Status',
+      field: 'active',
+      flex: 0,
+      width: 90,
+      minWidth: 90,
+      maxWidth: 90,
+      cellRenderer: (params: ICellRendererParams<ReportListItem, boolean>) => (
+        <input type="checkbox" checked={Boolean(params.value)} readOnly className="cursor-default" />
+      ),
+      sortable: false,
+    },
+    {
+      headerName: 'Actions',
+      field: 'id',
+      flex: 0,
+      width: 220,
+      minWidth: 220,
+      maxWidth: 220,
+      cellRenderer: (params: ICellRendererParams<ReportListItem>) => {
+        const row = params.data;
+        if (!row) return null;
+        return (
+          <div className="flex items-center gap-1.5">
+            <RowActionButton icon={copyIcon} title="Copy" onClick={() => console.log('copy', row.id)} />
+            <RowActionButton icon={linkIcon} title="Link" onClick={() => console.log('link', row.id)} />
+            <RowActionButton icon={trashIcon} title="Delete" onClick={() => console.log('delete', row.id)} />
+          </div>
+        );
+      },
+      sortable: false,
+    },
+  ], []);
+
+  const rowClass = React.useCallback(
+    (params: RowClassParams<ReportListItem>) => (
+      params.data?.id === selectedReportId ? { backgroundColor: '#c8e6c971' } : undefined
+    ),
+    [selectedReportId]
+  );
+
+  const overlayText = React.useMemo(() => {
+    if (disabled) return 'Select a company to view reports';
+    if (loading) return 'Loading reports...';
+    return 'No reports found';
+  }, [disabled, loading]);
+
+  return (
+    <>
+      <BaseCard.Body className="space-y-4">
+        <Input
+          placeholder="search 'report name'"
+          value={query}
+          onChange={(event) => onQueryChange(event.value)}
+          disabled={disabled}
+          className="w-full h-10 !bg-field"
+        />
+
+        <BaseTable<ReportListItem>
+          rowData={loading ? [] : pageData}
+          columnDefs={colDefs}
+          getRowId={params => String(params.data?.id ?? '')}
+          onRowClicked={handleRowClicked}
+          onSelectionChanged={handleSelectionChanged}
+          getRowStyle={rowClass}
+          onGridReady={handleGridReady}
+          height={420}
+          showCheckboxColumn={false}
+          gridOptions={{
+            rowSelection: {
+              mode: 'singleRow',
+              checkboxes: false,
+              enableClickSelection: true,
+            },
+            overlayNoRowsTemplate: `<span class="text-gray-500">${overlayText}</span>`,
+          }}
+        />
+      </BaseCard.Body>
+
+      <BaseCard.Footer>
+        <span className="text-sm text-gray-500">
+          {total
+            ? `Showing ${page.skip + 1}-${Math.min(page.skip + page.take, total)} of ${total}`
+            : 'Showing 0–0 of 0'}
+        </span>
+        <Pager
+          className="fg-pager"
+          skip={page.skip}
+          take={page.take}
+          total={total}
+          buttonCount={5}
+          info={false}
+          type="numeric"
+          previousNext
+          onPageChange={onPageChange}
+          navigatable={false}
+        />
+      </BaseCard.Footer>
+    </>
+  );
+};
+
+export default ReportList;
