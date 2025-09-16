@@ -1,4 +1,3 @@
-// ReportsPage.tsx - Updated with improved styling
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +9,7 @@ import BaseCard from '../components/shared/BaseCard';
 import CompanySelector from '../components/reports/CompanySelector';
 import BaseButton from '../components/shared/BaseButton';
 import BaseModal from '../components/shared/BaseModal';
+import BaseTable from '../components/shared/BaseTable';
 
 import type { ReportStatistics, Company } from '../types';
 
@@ -21,11 +21,6 @@ import {
   downloadIcon,
   plusOutlineIcon
 } from '@progress/kendo-svg-icons';
-
-/* ---------- AG Grid imports (Community) ---------- */
-import { AgGridReact } from 'ag-grid-react';
-import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 import type {
   ColDef, ICellRendererParams,
@@ -69,7 +64,6 @@ export default function ReportsPage() {
   const navigate = useNavigate();
 
   // ---------- Demo data ----------
-
   const reports: ReportRow[] = React.useMemo(
     () => [
       { id: 1, reportName: 'Loadlist', createdOn: '21/7/2024', modifiedOn: '25/7/2024', modifiedBy: 'Atif', active: true, companyId: 1 },
@@ -198,7 +192,6 @@ export default function ReportsPage() {
     const row = p.data!;
     return (
       <div className="flex items-center gap-1.5">
-        {/* <RowIconBtn icon={eyeIcon} title="View Versions" onClick={() => console.log('View Version', row.id)} /> */}
         <RowIconBtn icon={copyIcon} title="Copy" onClick={() => console.log('copy', row.id)} />
         <RowIconBtn icon={linkIcon} title="Link" onClick={() => console.log('link', row.id)} />
         <RowIconBtn icon={trashIcon} title="Delete" onClick={() => console.log('delete', row.id)} />
@@ -230,7 +223,6 @@ export default function ReportsPage() {
     const row = p.data!;
     return (
       <div className="flex items-center gap-1.5">
-        {/* <RowIconBtn icon={uploadIcon} title="Publish" onClick={() => console.log('publish', row.id)} /> */}
         <RowIconBtn icon={downloadIcon} title="Download" onClick={() => console.log('download', row.id)} />
         <RowIconBtn icon={plusOutlineIcon} title="New Version" onClick={() => console.log('New Version', row.id)} />
         <RowIconBtn icon={pencilIcon} title="Edit" onClick={() => console.log('edit', row.id)} />
@@ -239,31 +231,13 @@ export default function ReportsPage() {
     );
   };
 
-  // ---------- AG Grid column defs ----------
-  const defaultColDef = React.useMemo<ColDef>(() => ({
-    sortable: true,
-    resizable: true,
-    flex: 1,
-    minWidth: 120,
-  }), []);
-
+  // ---------- Column definitions for BaseTable ----------
   const reportColDefs = React.useMemo<ColDef<ReportRow>[]>(() => [
-    {
-      headerName: '',
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      width: 50,
-      minWidth: 50,
-      maxWidth: 50,
-      flex: 0,
-      sortable: false,
-      resizable: false
-    },
     {
       headerName: 'Report Name',
       field: 'reportName',
       flex: 2,
-      minWidth: 200
+      minWidth: 140
     },
     {
       headerName: 'Creation Date',
@@ -306,17 +280,6 @@ export default function ReportsPage() {
   ], []);
 
   const versionsColDefs = React.useMemo<ColDef<(HistoryRow & { published: boolean })>[]>(() => [
-    {
-      headerName: '',
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      width: 50,
-      minWidth: 50,
-      maxWidth: 50,
-      flex: 0,
-      sortable: false,
-      resizable: false
-    },
     {
       headerName: 'Version',
       field: 'version',
@@ -367,15 +330,10 @@ export default function ReportsPage() {
   const getRowStyle = React.useCallback(
     (p: RowClassParams) =>
       p.data?.id === selectedReportId
-        ? { backgroundColor: '#c8e6c971' }  // --fg-green
+        ? { backgroundColor: '#c8e6c971' }
         : undefined,
     [selectedReportId]
   );
-
-  const gridOptions = {
-    rowHeight: 40,
-    headerHeight: 40,
-  };
 
   function gridRowClicked(e: any) {
     console.log(e);
@@ -389,8 +347,9 @@ export default function ReportsPage() {
 
     if (e.node.isSelected()) {
       setSelectedReportId(e.data.id);
+    } else {
+      setSelectedReportId(null);
     }
-    else setSelectedReportId(null)
   }
 
   const onGridReady = (e: any) => {
@@ -398,23 +357,7 @@ export default function ReportsPage() {
     setColumnApi(e.columnApi);
   };
 
-  const getRowClass = React.useCallback((p: any) => {
-    return p.data?.id === selectedReportId ? 'selected-report-row' : '';
-  }, [selectedReportId]);
-
-  // Fires any time the selection set changes
-  // const onSelectionChanged = (e: SelectionChangedEvent) => {
-  //   const rows = e.api.getSelectedRows();      // all selected row data
-  //   const ids = rows.map(r => r.id as number); // example: collect ids
-  //   setSelectedIds(ids);
-  //   console.log('Selected rows:', rows);
-  // };
-
-
-  // const getAllSelectedRows = () => gridApi?.getSelectedRows() ?? [];
-
   const [visible, setVisible] = React.useState<boolean>(false);
-
 
   const toggleDialog = () => {
     setVisible(!visible);
@@ -432,13 +375,11 @@ export default function ReportsPage() {
           actions={
             <>
               <BaseButton color='red' onClick={toggleDialog}>No</BaseButton>
-              <BaseButton color='blue'onClick={toggleDialog}>Yes</BaseButton>
+              <BaseButton color='blue' onClick={toggleDialog}>Yes</BaseButton>
             </>
           }
         />
       )}
-
-
 
       <div className="p-5 px-25">
         {/* KPIs */}
@@ -467,31 +408,17 @@ export default function ReportsPage() {
               />
             </div>
 
-            {/* AG Grid — Reports with improved styling */}
-            <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white">
-              <div
-                className="ag-theme-quartz"
-                style={{ height: 420, width: '100%' }}
-              >
-                <AgGridReact<ReportRow>
-                  rowData={pageData}
-                  columnDefs={reportColDefs}
-                  defaultColDef={defaultColDef}
-                  rowSelection="multiple"
-                  getRowId={p => String(p.data.id)}
-                  onRowClicked={gridRowClicked}
-                  getRowStyle={getRowStyle}
-                  suppressHorizontalScroll={false}
-                  suppressColumnVirtualisation={false}
-                  suppressRowClickSelection={true}
-                  animateRows={true}
-                  gridOptions={gridOptions}
-                  onGridReady={onGridReady}
-                  onRowSelected={gridRowSelected}
-                  suppressCellFocus={true}
-                />
-              </div>
-            </div>
+            {/* BaseTable — Reports */}
+            <BaseTable<ReportRow>
+              rowData={pageData}
+              columnDefs={reportColDefs}
+              getRowId={(p) => String(p.data.id)}
+              onRowClicked={gridRowClicked}
+              getRowStyle={getRowStyle}
+              onGridReady={onGridReady}
+              onRowSelected={gridRowSelected}
+              height={420}
+            />
           </BaseCard.Body>
 
           <BaseCard.Footer>
@@ -528,26 +455,14 @@ export default function ReportsPage() {
             </BaseCard.Header>
 
             <BaseCard.Body>
-              <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white">
-                <div
-                  className="ag-theme-quartz"
-                  style={{ height: 400, width: '100%' }}
-                >
-                  <AgGridReact<HistoryRow & { published: boolean }>
-                    rowData={versionsPageData}
-                    columnDefs={versionsColDefs}
-                    defaultColDef={defaultColDef}
-                    rowSelection="multiple"
-                    getRowId={p => String(p.data.id)}
-                    onRowClicked={() => navigate('/diagram')}
-                    //getRowStyle={getRowStyle}
-                    suppressHorizontalScroll={false}
-                    suppressColumnVirtualisation={false}
-                    animateRows={true}
-                    gridOptions={gridOptions}
-                  />
-                </div>
-              </div>
+              {/* BaseTable — Versions */}
+              <BaseTable<HistoryRow & { published: boolean }>
+                rowData={versionsPageData}
+                columnDefs={versionsColDefs}
+                getRowId={(p) => String(p.data.id)}
+                onRowClicked={() => navigate('/diagram')}
+                height={400}
+              />
             </BaseCard.Body>
 
             <BaseCard.Footer>

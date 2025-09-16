@@ -34,10 +34,11 @@ const StatisticsCards = ({
     return (
         <div className="bg-transparent">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 max-w-4xl">
-                {statistics.map((s) => (
+                {statistics.map((s, index) => (
                     <BaseCard
                         dividers={false}
                         className={`${baseClasses} ${interactiveClasses}`}
+                        key={`${s.label}_${index}`}
                     >
                         <div className="space-y-1">
                             <p className="text-sm text-gray-500 font-medium">
