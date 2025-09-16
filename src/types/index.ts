@@ -25,7 +25,7 @@ export interface ReportVersion {
 export interface Company {
     id: number;
     name: string;
-    status: string;
+    status?: string;
     licenseInfo?: string;
 }
 
