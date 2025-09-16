@@ -5,7 +5,6 @@ import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import type {
     ColDef,
     GridOptions,
-    RowSelectionOptions
 } from 'ag-grid-community';
 import type { AgGridReactProps } from 'ag-grid-react';
 
@@ -52,7 +51,7 @@ const BaseTable = <TData extends any = any>({
 
     // Merge column definitions with checkbox column if enabled
     const mergedColumnDefs = React.useMemo<ColDef<TData>[]>(() => {
-        return [defaultCheckboxColumn, ...columnDefs];
+        return showCheckboxColumn ? [defaultCheckboxColumn, ...columnDefs] : columnDefs;
     }, [columnDefs, defaultCheckboxColumn, showCheckboxColumn]);
 
     // Default grid options

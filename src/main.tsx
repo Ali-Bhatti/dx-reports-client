@@ -1,6 +1,5 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-//import App from './App.tsx'
 import 'devextreme/dist/css/dx.light.css';
 import '@devexpress/analytics-core/dist/css/dx-analytics.common.css';
 import '@devexpress/analytics-core/dist/css/dx-analytics.light.css';
@@ -15,10 +14,12 @@ import './index.css';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import './style/kendo-override.css'
-
+import { StoreProvider } from './store';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <StoreProvider>
+      <RouterProvider router={router} />
+    </StoreProvider>
   </StrictMode>,
 )
