@@ -33,9 +33,9 @@ const BaseTable = <TData extends any = any>({
     // Default checkbox column configuration
     const defaultCheckboxColumn: ColDef<TData> = React.useMemo(() => ({
         headerName: '',
-        width: 50,
-        minWidth: 50,
-        maxWidth: 50,
+        width: 20,
+        minWidth: 20,
+        maxWidth: 35,
         flex: 0,
         sortable: false,
         resizable: false,

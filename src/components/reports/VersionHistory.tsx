@@ -1,192 +1,436 @@
-// import React, { useState } from 'react';
-// import { ReportVersion } from '../../types';
+// components/reports/VersionHistory.tsx
+import * as React from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { Pager, type PageChangeEvent } from '@progress/kendo-react-data-tools';
 
-// interface VersionHistoryProps {
-//   versions: ReportVersion[];
-//   selectedVersions: string[];
-//   onVersionSelect: (versionId: string) => void;
-//   onSelectAll: () => void;
-//   onDownloadVersion: (versionId: string) => void;
-//   onPublishVersion: (versionId: string) => void;
-//   onNewVersion: () => void;
-//   onEditVersion: (versionId: string) => void;
-//   onDeleteVersion: (versionId: string) => void;
-//   loading?: boolean;
-// }
+import BaseCard from '../shared/BaseCard';
+import BaseButton from '../shared/BaseButton';
+import BaseTable from '../shared/BaseTable';
+import DeleteModal from '../modals/DeleteModal';
+import PublishModal from '../modals/PublishModal';
 
-// export const VersionHistory: React.FC<VersionHistoryProps> = ({
-//   versions,
-//   selectedVersions,
-//   onVersionSelect,
-//   onSelectAll,
-//   onDownloadVersion,
-//   onPublishVersion,
-//   onNewVersion,
-//   onEditVersion,
-//   onDeleteVersion,
-//   loading = false
-// }) => {
-//   const allSelected = versions.length > 0 && selectedVersions.length === versions.length;
+import type { ReportVersion as HistoryRow } from "../../types";
+import {
+    setVersionsPagination,
+    updateVersionPublishedStatus,
+    setSelectedVersionIds,
+    clearSelectedVersionIds,
+} from '../../features/reports/reportsSlice';
 
-//   return (
-//     <div className="bg-white rounded-lg shadow">
-//       {/* Header */}
-//       <div className="p-4 border-b border-gray-200">
-//         <div className="flex items-center justify-between">
-//           <h3 className="text-lg font-medium text-gray-900">Version History</h3>
-//           <div className="flex items-center space-x-2">
-//             <button
-//               onClick={onNewVersion}
-//               className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-//             >
-//               New Version
-//             </button>
-//             <button
-//               onClick={() => selectedVersions.forEach(id => onDeleteVersion(id))}
-//               disabled={selectedVersions.length === 0}
-//               className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-//               title="Delete Selected"
-//             >
-//               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-//               </svg>
-//             </button>
-//           </div>
-//         </div>
-//       </div>
+import {
+    selectVersionsForSelectedReport,
+    selectPaginatedVersions,
+    selectVersionsPagination,
+    selectShouldShowVersionHistory,
+    selectReports,
+    selectSelectedReportId,
+} from '../../features/reports/reportsSelectors';
 
-//       {/* Information Box */}
-//       <div className="p-4 bg-yellow-50 border-b border-yellow-200">
-//         <p className="text-sm text-yellow-800">
-//           Every report will have an initial version (v1) by default.
-//         </p>
-//       </div>
+import {
+    trashIcon,
+    pencilIcon,
+    downloadIcon,
+    plusOutlineIcon
+} from '@progress/kendo-svg-icons';
 
-//       {/* Versions Table */}
-//       <div className="overflow-x-auto">
-//         <table className="w-full">
-//           <thead className="bg-gray-50">
-//             <tr>
-//               <th className="px-4 py-3 text-left">
-//                 <input
-//                   type="checkbox"
-//                   checked={allSelected}
-//                   onChange={onSelectAll}
-//                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-//                 />
-//               </th>
-//               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Version</th>
-//               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Creation Date</th>
-//               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Modified On</th>
-//               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Modified By</th>
-//               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Publish</th>
-//               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
-//             </tr>
-//           </thead>
-//           <tbody className="divide-y divide-gray-200">
-//             {loading ? (
-//               <tr>
-//                 <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
-//                   Loading versions...
-//                 </td>
-//               </tr>
-//             ) : versions.length === 0 ? (
-//               <tr>
-//                 <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
-//                   No versions found
-//                 </td>
-//               </tr>
-//             ) : (
-//               versions.map((version) => (
-//                 <tr
-//                   key={version.id}
-//                   className={`hover:bg-gray-50 ${
-//                     selectedVersions.includes(version.id) ? 'bg-blue-50' : ''
-//                   }`}
-//                 >
-//                   <td className="px-4 py-3">
-//                     <input
-//                       type="checkbox"
-//                       checked={selectedVersions.includes(version.id)}
-//                       onChange={() => onVersionSelect(version.id)}
-//                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-//                     />
-//                   </td>
-//                   <td className="px-4 py-3 text-sm font-medium text-gray-900">
-//                     {version.version}
-//                   </td>
-//                   <td className="px-4 py-3 text-sm text-gray-500">
-//                     {new Date(version.creationDate).toLocaleDateString()}
-//                   </td>
-//                   <td className="px-4 py-3 text-sm text-gray-500">
-//                     {new Date(version.modifiedOn).toLocaleDateString()}
-//                   </td>
-//                   <td className="px-4 py-3 text-sm text-gray-500">
-//                     {version.modifiedBy}
-//                   </td>
-//                   <td className="px-4 py-3">
-//                     <input
-//                       type="checkbox"
-//                       checked={version.isPublished}
-//                       readOnly
-//                       className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-//                     />
-//                   </td>
-//                   <td className="px-4 py-3">
-//                     <div className="flex items-center space-x-2">
-//                       <button
-//                         onClick={() => onDownloadVersion(version.id)}
-//                         className="p-1 text-blue-600 hover:bg-blue-100 rounded"
-//                         title="Download"
-//                       >
-//                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-//                         </svg>
-//                       </button>
-//                       <button
-//                         onClick={() => onPublishVersion(version.id)}
-//                         className="p-1 text-green-600 hover:bg-green-100 rounded"
-//                         title="Publish"
-//                       >
-//                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-//                         </svg>
-//                       </button>
-//                       <button
-//                         onClick={onNewVersion}
-//                         className="p-1 text-blue-600 hover:bg-blue-100 rounded"
-//                         title="New Version"
-//                       >
-//                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-//                         </svg>
-//                       </button>
-//                       <button
-//                         onClick={() => onEditVersion(version.id)}
-//                         className="p-1 text-gray-600 hover:bg-gray-100 rounded"
-//                         title="Edit"
-//                       >
-//                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-//                         </svg>
-//                       </button>
-//                       <button
-//                         onClick={() => onDeleteVersion(version.id)}
-//                         className="p-1 text-red-600 hover:bg-red-100 rounded"
-//                         title="Delete"
-//                       >
-//                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-//                         </svg>
-//                       </button>
-//                     </div>
-//                   </td>
-//                 </tr>
-//               ))
-//             )}
-//           </tbody>
-//         </table>
-//       </div>
-//     </div>
-//   );
-// };
+import type {
+    ColDef,
+    ICellRendererParams,
+    RowClickedEvent,
+} from 'ag-grid-community';
+
+type VersionRowWithPublished = HistoryRow & { published: boolean };
+
+export default function VersionHistory() {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    // Redux selectors
+    const versions = useSelector(selectVersionsForSelectedReport);
+    const paginatedVersions = useSelector(selectPaginatedVersions);
+    const pagination = useSelector(selectVersionsPagination);
+    const shouldShow = useSelector(selectShouldShowVersionHistory);
+    const selectedVersionIds = useSelector((state: any) => state.reports.selectedVersionIds);
+    const reports = useSelector(selectReports);
+    const selectedReportId = useSelector(selectSelectedReportId);
+
+    // Modal states
+    const [deleteModal, setDeleteModal] = React.useState({
+        isOpen: false,
+        versionId: null as number | null,
+        isMultiple: false
+    });
+    const [publishModal, setPublishModal] = React.useState({
+        isOpen: false,
+        versionId: null as number | null
+    });
+
+    // Don't render if conditions not met
+    if (!shouldShow) {
+        return null;
+    }
+
+    const getVersionById = (id: number) => {
+        return versions.find(v => v.id === id);
+    };
+
+    const getSelectedVersionNames = () => {
+        return versions
+            .filter(v => selectedVersionIds.includes(v.id))
+            .map(v => `${v.version}`);
+    };
+
+    const getReportNameForVersion = (versionId: number) => {
+        // Get the version to find its reportId
+        const version = getVersionById(versionId);
+        if (!version) return 'Unknown Report';
+
+        // Find the report with matching reportId
+        const report = reports.find(r => r.id === version.reportId);
+        if (!report) return 'Unknown Report';
+
+        return report.reportName;
+    };
+
+    // Alternative: Get report name directly for current selected report
+    const getCurrentReportName = () => {
+        console.log("Selected Report ID", selectedReportId);
+        if (!selectedReportId) return 'Unknown Report';
+        const report = reports.find(r => r.id === selectedReportId);
+        return report?.reportName || 'Unknown Report';
+    };
+
+    // Get the appropriate message for empty state
+    const getNoVersionsMessage = () => {
+        const reportName = getCurrentReportName();
+        if (reportName === 'Unknown Report') {
+            return 'No report selected';
+        }
+        return `No versions available for "${reportName}"`;
+    };
+
+    // Action button component
+    const RowIconBtn: React.FC<{ icon: any; title: string; onClick: (e: React.MouseEvent) => void }> = ({ icon, title, onClick }) => (
+        <BaseButton
+            size="small"
+            rounded="full"
+            fillMode="flat"
+            themeColor="base"
+            svgIcon={icon}
+            title={title}
+            onClick={onClick}
+            className="!p-1.5 !text-gray-600 hover:!text-gray-800 hover:!bg-gray-100"
+            color='none'
+        />
+    );
+
+    // Published toggle renderer
+    const PublishedToggleRenderer: React.FC<ICellRendererParams<VersionRowWithPublished, boolean>> = (p) => {
+        const value = !!p.value;
+        const versionData = p.data!;
+
+        const handleToggle = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            // Clear selections when toggling
+            dispatch(clearSelectedVersionIds());
+
+            if (!value) {
+                // If trying to publish, show confirmation modal
+                setPublishModal({ isOpen: true, versionId: Number(versionData.id) });
+            } else {
+                // If unpublishing, do it directly
+                dispatch(updateVersionPublishedStatus({ id: Number(versionData.id), published: false }));
+            }
+        };
+
+        return (
+            <div className="flex w-full p-2" onClick={handleToggle}>
+                <label className="inline-flex items-center cursor-pointer">
+                    <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={value}
+                        readOnly
+                    />
+                    <span
+                        className="
+                            relative w-10 h-5 rounded-full bg-gray-300
+                            peer-checked:bg-teal-400
+                            after:content-[''] after:absolute after:left-0.5 after:top-0.5
+                            after:w-4 after:h-4 after:bg-white after:rounded-full
+                            after:transition-transform after:duration-200
+                            peer-checked:after:translate-x-5
+                        "
+                    />
+                </label>
+            </div>
+        );
+    };
+
+    // Version actions renderer
+    const VersionActionsRenderer: React.FC<ICellRendererParams<VersionRowWithPublished>> = (p) => {
+        const row = p.data!;
+
+        const handleDownloadClick = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            dispatch(clearSelectedVersionIds());
+            console.log('download', row.id);
+        };
+
+        const handleNewVersionClick = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            dispatch(clearSelectedVersionIds());
+            // Navigate to diagram page with action context
+            navigate('/diagram', { state: { action: 'new_version', versionId: row.id } });
+        };
+
+        const handleEditClick = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            dispatch(clearSelectedVersionIds());
+            // Navigate to diagram page with action context
+            navigate('/diagram', { state: { action: 'edit', versionId: row.id } });
+        };
+
+        const handleDeleteClick = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            dispatch(clearSelectedVersionIds());
+            setDeleteModal({ isOpen: true, versionId: Number(row.id), isMultiple: false });
+        };
+
+        return (
+            <div className="flex items-center gap-1.5">
+                <RowIconBtn
+                    icon={downloadIcon}
+                    title="Download"
+                    onClick={handleDownloadClick}
+                />
+                <RowIconBtn
+                    icon={plusOutlineIcon}
+                    title="New Version"
+                    onClick={handleNewVersionClick}
+                />
+                <RowIconBtn
+                    icon={pencilIcon}
+                    title="Edit"
+                    onClick={handleEditClick}
+                />
+                {!row.isDefault && (
+                    <RowIconBtn
+                        icon={trashIcon}
+                        title="Delete"
+                        onClick={handleDeleteClick}
+                    />
+                )}
+            </div>
+        );
+    };
+
+    // Column definitions
+    const columnDefs = React.useMemo<ColDef<VersionRowWithPublished>[]>(() => [
+        {
+            headerName: undefined,
+            width: 50,
+            minWidth: 50,
+            maxWidth: 50,
+            checkboxSelection: true,
+            headerCheckboxSelection: true,
+            sortable: false,
+            filter: false,
+            suppressMenu: true,
+            pinned: 'left',
+        },
+        {
+            headerName: 'Version',
+            field: 'version',
+            flex: 1,
+            minWidth: 100
+        },
+        {
+            headerName: 'Creation Date',
+            field: 'createdOn',
+            flex: 1,
+            minWidth: 140
+        },
+        {
+            headerName: 'Modified On',
+            field: 'modifiedOn',
+            flex: 1,
+            minWidth: 140
+        },
+        {
+            headerName: 'Modified By',
+            field: 'modifiedBy',
+            flex: 1,
+            minWidth: 140
+        },
+        {
+            headerName: 'Published',
+            field: 'published',
+            flex: 0,
+            width: 100,
+            minWidth: 100,
+            maxWidth: 100,
+            cellRenderer: PublishedToggleRenderer,
+            sortable: false
+        },
+        {
+            headerName: 'Actions',
+            flex: 0,
+            width: 200,
+            minWidth: 180,
+            maxWidth: 250,
+            cellRenderer: VersionActionsRenderer,
+            sortable: false,
+            pinned: 'right',
+        }
+    ], []);
+
+    // Event handlers
+    const handlePageChange = (e: PageChangeEvent) => {
+        dispatch(setVersionsPagination({ skip: e.skip, take: e.take }));
+    };
+
+    const handleRowClicked = (e: RowClickedEvent<VersionRowWithPublished>) => {
+        // Only navigate if not clicking on checkbox, action buttons, or toggle
+        if (e.event?.target &&
+            !(e.event.target as HTMLElement).closest('.ag-checkbox-input') &&
+            !(e.event.target as HTMLElement).closest('button') &&
+            !(e.event.target as HTMLElement).closest('label') &&
+            !(e.event.target as HTMLElement).closest('.flex.w-full.p-2')) {
+            navigate('/diagram');
+        }
+    };
+
+    // Selection handler for AG Grid
+    const handleSelectionChanged = (e: any) => {
+        const selectedRows = e.api.getSelectedRows();
+        const selectedIds = selectedRows.map((row: any) => Number(row.id));
+        dispatch(setSelectedVersionIds(selectedIds));
+    };
+
+    const handleDeleteVersion = () => {
+        setDeleteModal({ isOpen: true, versionId: null, isMultiple: true });
+    };
+
+    // Modal handlers
+    const handleDeleteConfirm = () => {
+        if (deleteModal.isMultiple) {
+            console.log("Delete Version History", selectedVersionIds);
+            dispatch(clearSelectedVersionIds());
+        } else if (deleteModal.versionId) {
+            console.log("Delete version", deleteModal.versionId);
+        }
+    };
+
+    const handlePublishConfirm = () => {
+        if (publishModal.versionId) {
+            dispatch(updateVersionPublishedStatus({ id: publishModal.versionId, published: true }));
+            console.log("Published version", publishModal.versionId);
+        }
+    };
+
+    return (
+        <>
+            <BaseCard className="mt-5" dividers={false}>
+                <BaseCard.Header>
+                    <div className="flex items-center gap-2">
+                        <h3 className="font-bold">Version History</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <BaseButton
+                            color="red"
+                            svgIcon={trashIcon}
+                            title="Delete"
+                            onClick={handleDeleteVersion}
+                            disabled={selectedVersionIds.length === 0}
+                        >
+                            Delete
+                        </BaseButton>
+                    </div>
+                </BaseCard.Header>
+
+                <BaseCard.Body>
+                    <BaseTable<VersionRowWithPublished>
+                        rowData={paginatedVersions}
+                        columnDefs={columnDefs}
+                        getRowId={(p) => String(p.data.id)}
+                        onRowClicked={handleRowClicked}
+                        onSelectionChanged={handleSelectionChanged}
+                        height={400}
+                        rowSelection="multiple"
+                        suppressRowClickSelection={true}
+                        noRowsOverlayComponent={() => (
+                            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                                <svg
+                                    className="w-16 h-16 mb-4 text-gray-300"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={1.5}
+                                        d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                                    />
+                                </svg>
+                                <span className="text-lg font-medium">{getNoVersionsMessage()}</span>
+                                <span className="text-sm mt-2">Version history will appear here once created</span>
+                            </div>
+                        )}
+                    />
+                </BaseCard.Body>
+
+                <BaseCard.Footer>
+                    <span className="text-sm text-gray-500">
+                        {versions.length
+                            ? `Showing ${pagination.skip + 1}-${Math.min(pagination.skip + pagination.take, versions.length)} of ${versions.length}`
+                            : 'Showing 0–0 of 0'}
+                    </span>
+                    <Pager
+                        className="fg-pager"
+                        skip={pagination.skip}
+                        take={pagination.take}
+                        total={versions.length}
+                        buttonCount={5}
+                        info={false}
+                        type="numeric"
+                        previousNext
+                        onPageChange={handlePageChange}
+                    />
+                </BaseCard.Footer>
+            </BaseCard>
+
+            {/* Modals */}
+            <DeleteModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, versionId: null, isMultiple: false })}
+                onConfirm={handleDeleteConfirm}
+                itemNames={deleteModal.isMultiple
+                    ? getSelectedVersionNames()
+                    : deleteModal.versionId
+                        ? [getVersionById(deleteModal.versionId)?.version || '']
+                        : []
+                }
+                itemType="version"
+                versionInfo={
+                    !deleteModal.isMultiple && deleteModal.versionId
+                        ? {
+                            version: getVersionById(deleteModal.versionId)?.version || '',
+                            reportName: getReportNameForVersion(deleteModal.versionId)
+                        }
+                        : undefined
+                }
+            />
+
+            <PublishModal
+                isOpen={publishModal.isOpen}
+                onClose={() => setPublishModal({ isOpen: false, versionId: null })}
+                onConfirm={handlePublishConfirm}
+                version={publishModal.versionId ? getVersionById(publishModal.versionId)?.version || '' : ''}
+                reportName={publishModal.versionId ? getReportNameForVersion(publishModal.versionId) : ''}
+            />
+        </>
+    );
+}

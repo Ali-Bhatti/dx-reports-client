@@ -14,6 +14,9 @@ export type BaseModalProps = Omit<DialogProps, 'title' | 'className'> & {
     actionButtonsLayout?: ActionsLayout,
     type?: 'default' | 'success' | 'warning' | 'danger' | 'confirmation',
     size?: 'sm' | 'md' | 'lg' | 'xl';
+    autoHeight?: boolean;
+    customMinHeight?: number;
+    customMaxHeight?: number;
 };
 
 export default function BaseModal(props: BaseModalProps) {
@@ -23,9 +26,12 @@ export default function BaseModal(props: BaseModalProps) {
         actions,
         body,
         children,
-        actionButtonsLayout = 'stretched',
+        actionButtonsLayout = 'end',
         type = 'default',
         size = 'sm',
+        autoHeight = false,
+        customMinHeight,
+        customMaxHeight,
         ...rest
     } = props;
 
@@ -45,19 +51,29 @@ export default function BaseModal(props: BaseModalProps) {
     };
 
     const sizeMap = {
-        sm: 360,
-        md: 480,
-        lg: 720,
-        xl: 1080
+        sm: { w: 360, h: 260, minH: 200, maxH: 400 },
+        md: { w: 480, h: 360, minH: 250, maxH: 500 },
+        lg: { w: 720, h: 480, minH: 300, maxH: 600 },
+        xl: { w: 1080, h: 720, minH: 400, maxH: 800 }
     };
 
     const surfaceColor = getKendoSurfaceColor(type);
-    const dialogWidth = sizeMap[size as keyof typeof sizeMap];
+    const dialogDimensions = sizeMap[size as keyof typeof sizeMap];
+
+    // Determine height configuration
+    const heightProps = autoHeight
+        ? {
+            minHeight: customMinHeight || dialogDimensions.minH,
+            maxHeight: customMaxHeight || dialogDimensions.maxH,
+            height: undefined
+        }
+        : {
+            height: dialogDimensions.h
+        };
 
     const dialogStyle: React.CSSProperties = surfaceColor
         ? { '--kendo-color-surface': surfaceColor } as React.CSSProperties
         : {};
-
 
     const kendoTitle =
         title != null ? <div className={cx('font-semibold', titleClassName)}>{title}</div> : undefined;
@@ -65,8 +81,21 @@ export default function BaseModal(props: BaseModalProps) {
     const bodyContent = body ?? children;
 
     return (
-        <Dialog {...rest} title={kendoTitle} style={{ ...dialogStyle }} width={dialogWidth} height={dialogWidth}>
-            {bodyContent && <div>{bodyContent}</div>}
+        <Dialog
+            {...rest}
+            title={kendoTitle}
+            style={{ ...dialogStyle }}
+            width={dialogDimensions.w}
+            {...heightProps}
+        >
+            {bodyContent && (
+                <div className={cx(
+                    'pb-3',
+                    autoHeight && 'overflow-y-auto'
+                )}>
+                    {bodyContent}
+                </div>
+            )}
 
             {actions != null && (
                 <DialogActionsBar layout={actionButtonsLayout}>{actions}</DialogActionsBar>

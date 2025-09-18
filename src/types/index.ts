@@ -1,24 +1,24 @@
 // Core data types for the Web Report Designer
 
 export interface Report {
-    id: string;
-    name: string;
-    creationDate: string;
-    modifiedOn: string;
-    modifiedBy: string;
-    status: boolean; // active/inactive
-    companyId: string;
-    companyName: string;
+    id: string | number;
+    reportName: string;
+    createdOn?: string;
+    modifiedOn?: string;
+    modifiedBy?: string;
+    active: boolean; // active/inactive
+    companyId: string | number;
 }
 
 export interface ReportVersion {
-    id: string;
-    reportId: string;
+    id: string | number;
+    reportId: string | number;
     version: string;
-    creationDate: string;
+    createdOn: string;
     modifiedOn: string;
     modifiedBy: string;
-    isPublished: boolean;
+    status: string; // Published/Not Published
+    isDefault: boolean; // Is this the default version for the report
     content?: any; // Report content/configuration
 }
 
