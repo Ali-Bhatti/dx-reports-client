@@ -22,9 +22,9 @@ import {
     selectVersionsForSelectedReport,
     selectPaginatedVersions,
     selectVersionsPagination,
-    selectShouldShowVersionHistory,
     selectReports,
     selectSelectedReportId,
+    selectSelectedReportIds,
 } from '../../features/reports/reportsSelectors';
 
 import {
@@ -50,10 +50,10 @@ export default function VersionHistory() {
     const versions = useSelector(selectVersionsForSelectedReport);
     const paginatedVersions = useSelector(selectPaginatedVersions);
     const pagination = useSelector(selectVersionsPagination);
-    const shouldShow = useSelector(selectShouldShowVersionHistory);
     const selectedVersionIds = useSelector((state: any) => state.reports.selectedVersionIds);
     const reports = useSelector(selectReports);
     const selectedReportId = useSelector(selectSelectedReportId);
+    const selectedReportIds = useSelector(selectSelectedReportIds);
 
     // Modal states
     const [deleteModal, setDeleteModal] = React.useState({
@@ -65,11 +65,6 @@ export default function VersionHistory() {
         isOpen: false,
         versionId: null as number | null
     });
-
-    // Don't render if conditions not met
-    if (!shouldShow) {
-        return null;
-    }
 
     const getVersionById = (id: number) => {
         return versions.find(v => v.id === id);
@@ -93,22 +88,32 @@ export default function VersionHistory() {
         return report.reportName;
     };
 
-    // Alternative: Get report name directly for current selected report
-    const getCurrentReportName = () => {
+    // Memoize the current report name to ensure it updates when selectedReportId changes
+    const currentReportName = React.useMemo(() => {
         console.log("Selected Report ID", selectedReportId);
         if (!selectedReportId) return 'Unknown Report';
         const report = reports.find(r => r.id === selectedReportId);
         return report?.reportName || 'Unknown Report';
-    };
+    }, [selectedReportId, reports]);
 
-    // Get the appropriate message for empty state
-    const getNoVersionsMessage = () => {
-        const reportName = getCurrentReportName();
-        if (reportName === 'Unknown Report') {
+    // Memoize the no versions message to ensure it updates when dependencies change
+    const noVersionsMessage = React.useMemo(() => {
+        // Check if multiple reports are selected
+        if (selectedReportIds.length > 0) {
+            return 'Select a single report to view version history';
+        }
+
+        // Check if no report is selected
+        if (!selectedReportId) {
             return 'No report selected';
         }
-        return `No versions available for "${reportName}"`;
-    };
+
+        // Single report is selected
+        if (currentReportName === 'Unknown Report') {
+            return 'No report selected';
+        }
+        return `No versions available for "${currentReportName}"`;
+    }, [selectedReportIds.length, selectedReportId, currentReportName]);
 
     // Action button component
     const RowIconBtn: React.FC<{ icon: any; title: string; onClick: (e: React.MouseEvent) => void }> = ({ icon, title, onClick }) => (
@@ -286,6 +291,11 @@ export default function VersionHistory() {
         }
     ], []);
 
+    // Create a unique key that changes when the message should update
+    const tableKey = React.useMemo(() => {
+        return `${selectedReportId}-${selectedReportIds.length}-${currentReportName}`;
+    }, [selectedReportId, selectedReportIds.length, currentReportName]);
+
     // Event handlers
     const handlePageChange = (e: PageChangeEvent) => {
         dispatch(setVersionsPagination({ skip: e.skip, take: e.take }));
@@ -352,6 +362,7 @@ export default function VersionHistory() {
 
                 <BaseCard.Body>
                     <BaseTable<VersionRowWithPublished>
+                        key={tableKey}
                         rowData={paginatedVersions}
                         columnDefs={columnDefs}
                         getRowId={(p) => String(p.data.id)}
@@ -375,7 +386,7 @@ export default function VersionHistory() {
                                         d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
                                     />
                                 </svg>
-                                <span className="text-lg font-medium">{getNoVersionsMessage()}</span>
+                                <span className="text-lg font-medium">{noVersionsMessage}</span>
                                 <span className="text-sm mt-2">Version history will appear here once created</span>
                             </div>
                         )}
