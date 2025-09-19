@@ -27,7 +27,7 @@ const COLOR_CLASSES: Record<FGColor, string> = {
     gray: `!bg-gray-500 hover:!bg-gray-600 ${BASE_TEXT_COLOR}`,
     red: `!bg-red-500 hover:!bg-red-600 ${BASE_TEXT_COLOR}`,
     green: `!bg-green-500 hover:!bg-green-600 ${BASE_TEXT_COLOR}`,
-    blue: `!bg-fg-icon-btn hover:!bg-fg-icon-btn-hover ${BASE_TEXT_COLOR}`,
+    blue: `!bg-fg-primary hover:!bg-fg-primary-hover ${BASE_TEXT_COLOR}`,
     yellow: `!bg-yellow-500 hover:!bg-yellow-600 ${BASE_TEXT_COLOR}`,
     purple: `!bg-purple-500 hover:!bg-purple-600 ${BASE_TEXT_COLOR}`,
     orange: `!bg-orange-500 hover:!bg-orange-600 ${BASE_TEXT_COLOR}`,

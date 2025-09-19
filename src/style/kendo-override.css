@@ -1,11 +1,25 @@
 :root {
     /* Works on newer Kendo themes */
-    --kendo-color-primary: var(--fg-icon-btn);
-    --kendo-color-primary-hover: var(--fg-icon-btn-hover);
+    --kendo-color-primary: var(--fg-primary);
+    --kendo-color-primary-hover: var(--fg-primary-hover);
     --kendo-font-family: "Inter Variable", Inter, system-ui, -apple-system,
         "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, Segoe UI,
         Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    --kendo-color-success: var(--fg-primary);
+    --kendo-color-on-info: var(--e-global-color-global_color_9);
+    --kendo-color-error: var(--fg-dark-red);
+    --kendo-color-warning: var(--fg-dark-yellow);
+    /* --kendo-color-base: #ddf;
+    --kendo-color-base-hover: #eef;
+    --kendo-color-base-active: #ccf;
+    --kendo-color-on-base: #00c;
+    --kendo-color-primary: #c00;
+    --kendo-color-primary-hover: #c66;
+    --kendo-color-primary-active: #900;
+    --kendo-color-on-primary: #fee;
+    --kendo-border-radius-md: 1rem;
+    --kendo-font-size: 18px; */
 }
 
 html,
@@ -27,13 +41,13 @@ body,
 
 .k-button.k-icon-button,
 .k-button.k-button-icon {
-    background-color: var(--fg-icon-btn);
+    background-color: var(--fg-primary);
     border-color: transparent;
 }
 
 .k-button.k-icon-button:hover,
 .k-button.k-button-icon:hover {
-    background-color: var(--fg-icon-btn-hover);
+    background-color: var(--fg-primary-hover);
 }
 
 .k-button.k-input-button,
@@ -77,13 +91,22 @@ body,
 .k-pager .k-selected .k-button,
 .k-pager .k-selected .k-link,
 .k-pager .k-button.k-selected {
-    background-color: var(--fg-icon-btn, #2fc0cc) !important;
+    background-color: var(--fg-primary, #2fc0cc) !important;
     color: #fff !important;
 }
 
 .k-window {
     border-radius: 12px !important;
     overflow: hidden !important;
+}
+
+/* Fade animation improvements */
+.k-animation-container-shown {
+    animation: slideInFromLeft 0.3s ease-out;
+}
+
+.k-animation-container-hidden {
+    animation: slideOutToLeft 0.3s ease-in;
 }
 
 /* AG Grid Minimal Styling - FIXED VERSION */

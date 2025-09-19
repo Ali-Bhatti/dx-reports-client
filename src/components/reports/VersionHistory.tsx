@@ -10,6 +10,8 @@ import BaseTable from '../shared/BaseTable';
 import DeleteModal from '../modals/DeleteModal';
 import PublishModal from '../modals/PublishModal';
 
+import { useNotifications } from '../../hooks/useNotifications';
+
 import type { ReportVersion as HistoryRow } from "../../types";
 import {
     setVersionsPagination,
@@ -25,6 +27,7 @@ import {
     selectReports,
     selectSelectedReportId,
     selectSelectedReportIds,
+    selectShouldShowVersionHistory,
 } from '../../features/reports/reportsSelectors';
 
 import {
@@ -33,6 +36,7 @@ import {
     downloadIcon,
     plusOutlineIcon
 } from '@progress/kendo-svg-icons';
+import moment from 'moment';
 
 import type {
     ColDef,
@@ -46,7 +50,11 @@ export default function VersionHistory() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
+    // Notification hook
+    const { showNotification } = useNotifications();
+
     // Redux selectors
+    const shouldShow = useSelector(selectShouldShowVersionHistory);
     const versions = useSelector(selectVersionsForSelectedReport);
     const paginatedVersions = useSelector(selectPaginatedVersions);
     const pagination = useSelector(selectVersionsPagination);
@@ -65,6 +73,12 @@ export default function VersionHistory() {
         isOpen: false,
         versionId: null as number | null
     });
+
+
+    // Don't render if conditions not met
+    if (!shouldShow) {
+        return null;
+    }
 
     const getVersionById = (id: number) => {
         return versions.find(v => v.id === id);
@@ -132,30 +146,32 @@ export default function VersionHistory() {
 
     // Published toggle renderer
     const PublishedToggleRenderer: React.FC<ICellRendererParams<VersionRowWithPublished, boolean>> = (p) => {
-        const value = !!p.value;
         const versionData = p.data!;
 
-        const handleToggle = (e: React.MouseEvent) => {
+        console.log("Rendering PublishedToggle for version", versionData.id, "published:", versionData.published);
+
+        const handleToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
             e.stopPropagation();
             // Clear selections when toggling
             dispatch(clearSelectedVersionIds());
 
-            if (!value) {
-                // If trying to publish, show confirmation modal
+            const checked = e.target.checked;
+
+            if (checked) {
                 setPublishModal({ isOpen: true, versionId: Number(versionData.id) });
             } else {
-                // If unpublishing, do it directly
                 dispatch(updateVersionPublishedStatus({ id: Number(versionData.id), published: false }));
+                showNotification('success', `Version <strong>${versionData.version}</strong> unpublished successfully`);
             }
         };
 
         return (
-            <div className="flex w-full p-2" onClick={handleToggle}>
+            <div className="flex w-full p-2">
                 <label className="inline-flex items-center cursor-pointer">
                     <input
                         type="checkbox"
                         className="sr-only peer"
-                        checked={value}
+                        onChange={handleToggle}
                         readOnly
                     />
                     <span
@@ -181,6 +197,7 @@ export default function VersionHistory() {
             e.stopPropagation();
             dispatch(clearSelectedVersionIds());
             console.log('download', row.id);
+            showNotification('success', `Downloading version <strong>${row.version}</strong>...`);
         };
 
         const handleNewVersionClick = (e: React.MouseEvent) => {
@@ -188,6 +205,7 @@ export default function VersionHistory() {
             dispatch(clearSelectedVersionIds());
             // Navigate to diagram page with action context
             navigate('/diagram', { state: { action: 'new_version', versionId: row.id } });
+            showNotification('success', `Creating new version from <strong>${row.version}</strong>...`);
         };
 
         const handleEditClick = (e: React.MouseEvent) => {
@@ -195,6 +213,7 @@ export default function VersionHistory() {
             dispatch(clearSelectedVersionIds());
             // Navigate to diagram page with action context
             navigate('/diagram', { state: { action: 'edit', versionId: row.id } });
+            showNotification('success', `Opening version <strong>${row.version}</strong> for editing...`);
         };
 
         const handleDeleteClick = (e: React.MouseEvent) => {
@@ -255,13 +274,15 @@ export default function VersionHistory() {
             headerName: 'Creation Date',
             field: 'createdOn',
             flex: 1,
-            minWidth: 140
+            minWidth: 140,
+            valueFormatter: (p) => formatDateTimeMoment(p.value)
         },
         {
             headerName: 'Modified On',
             field: 'modifiedOn',
             flex: 1,
-            minWidth: 140
+            minWidth: 140,
+            valueFormatter: (p) => formatDateTimeMoment(p.value)
         },
         {
             headerName: 'Modified By',
@@ -290,6 +311,19 @@ export default function VersionHistory() {
             pinned: 'right',
         }
     ], []);
+
+    // Date formatting utility function using Moment.js
+    const formatDateTimeMoment = (dateValue: any): string => {
+        if (!dateValue) return '';
+
+        const momentDate = moment(dateValue);
+
+        // Check if the date is valid
+        if (!momentDate.isValid()) return '';
+
+        // Format: DD/MM/YYYY HH:MM:SS (24-hour format)
+        return momentDate.format('DD/MM/YYYY HH:mm:ss');
+    };
 
     // Create a unique key that changes when the message should update
     const tableKey = React.useMemo(() => {
@@ -323,21 +357,39 @@ export default function VersionHistory() {
         setDeleteModal({ isOpen: true, versionId: null, isMultiple: true });
     };
 
-    // Modal handlers
+    // Modal handlers with notifications
     const handleDeleteConfirm = () => {
         if (deleteModal.isMultiple) {
             console.log("Delete Version History", selectedVersionIds);
             dispatch(clearSelectedVersionIds());
+
+            const versionCount = selectedVersionIds.length;
+            const versionText = versionCount === 1 ? 'version' : 'versions';
+            showNotification('success', `Successfully deleted <strong>${versionCount} ${versionText}</strong>`);
         } else if (deleteModal.versionId) {
+            const version = getVersionById(deleteModal.versionId);
             console.log("Delete version", deleteModal.versionId);
+
+            showNotification('success', `Version <strong>${version?.version || ''}</strong> deleted successfully`);
         }
     };
 
     const handlePublishConfirm = () => {
         if (publishModal.versionId) {
+            const version = getVersionById(publishModal.versionId);
             dispatch(updateVersionPublishedStatus({ id: publishModal.versionId, published: true }));
             console.log("Published version", publishModal.versionId);
+
+            showNotification('success', `Version <strong>${version?.version || ''}</strong> published successfully`);
         }
+    };
+
+    const handlePublishConfirmCancel = () => {
+        if (publishModal.versionId) {
+            dispatch(updateVersionPublishedStatus({ id: publishModal.versionId, published: false }));
+            console.log("Publish cancelled for version", publishModal.versionId);
+        }
+        setPublishModal({ isOpen: false, versionId: null });
     };
 
     return (
@@ -437,7 +489,7 @@ export default function VersionHistory() {
 
             <PublishModal
                 isOpen={publishModal.isOpen}
-                onClose={() => setPublishModal({ isOpen: false, versionId: null })}
+                onClose={handlePublishConfirmCancel}
                 onConfirm={handlePublishConfirm}
                 version={publishModal.versionId ? getVersionById(publishModal.versionId)?.version || '' : ''}
                 reportName={publishModal.versionId ? getReportNameForVersion(publishModal.versionId) : ''}

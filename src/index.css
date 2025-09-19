@@ -1,19 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap");
 @import "tailwindcss";
-/* If you host the font files yourself, use this instead of the Google import:*/
-/* @font-face {
-  font-family: "Inter";
-  src: url("/fonts/Inter-Variable.woff2") format("woff2");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-} */
 
 
 /* Map CSS variables -> Tailwind tokens */
 @theme {
-  --color-fg-icon-btn: var(--fg-icon-btn);
-  --color-fg-icon-btn-hover: var(--fg-icon-btn-hover);
+  --color-fg-primary: var(--fg-primary);
+  --color-fg-primary-hover: var(--fg-primary-hover);
 
   --color-global-2: var(--e-global-color-global_color_2);
   --color-global-3: var(--e-global-color-global_color_3);
@@ -34,12 +26,12 @@
 
 
 /* simple utility class; v4 lets you write plain CSS in the same file */
-.fg-icon-btn {
-  background-color: var(--color-fg-icon-btn);
+.fg-primary {
+  background-color: var(--color-fg-primary);
   color: #fff;
   border-color: transparent;
 }
 
-.fg-icon-btn:hover {
-  background-color: var(--color-fg-icon-btn-hover);
+.fg-primary:hover {
+  background-color: var(--color-fg-primary-hover);
 }

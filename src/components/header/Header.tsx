@@ -35,7 +35,7 @@ export const Header = ({
             className="h-8 w-auto"
           />
           <span
-            className="text-xl font-bold fg-icon-btn:hover hidden"
+            className="text-xl font-bold fg-primary:hover hidden"
             style={{ display: 'none' }}
           >
             FleetGO
@@ -44,7 +44,7 @@ export const Header = ({
           <nav className="pl-10">
             <a
               href="/"
-              className="px-4 py-2 fg-icon-btn hover:fg-icon-btn:hover font-medium transition-colors rounded-md hover:bg-gray-50"
+              className="px-4 py-2 fg-primary hover:fg-primary:hover font-medium transition-colors rounded-md hover:bg-gray-50"
             >
               Home
             </a>

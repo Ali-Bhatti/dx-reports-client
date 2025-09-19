@@ -1,7 +1,5 @@
-// components/reports/ReportsList.tsx
 import * as React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import { Input } from '@progress/kendo-react-inputs';
 import { Pager, type PageChangeEvent } from '@progress/kendo-react-data-tools';
 
@@ -12,9 +10,12 @@ import CompanySelector from './CompanySelector';
 import CopyModal from '../modals/CopyModal';
 import DeleteModal from '../modals/DeleteModal';
 import LinkModal from '../modals/LinkModal';
+import { useNotifications } from '../../hooks/useNotifications';
 
 import type { Company } from '../../types';
 import type { Report as ReportRow } from '../../types';
+import moment from 'moment';
+
 import {
   setCurrentCompany,
   setQuery,
@@ -51,7 +52,8 @@ import type {
 
 export default function ReportsList() {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
+
+  const { showNotification } = useNotifications();
 
   // Redux selectors
   const currentCompany = useSelector(selectCurrentCompany);
@@ -174,13 +176,15 @@ export default function ReportsList() {
       headerName: 'Creation Date',
       field: 'createdOn',
       flex: 1,
-      minWidth: 140
+      minWidth: 140,
+      valueFormatter: (params) => formatDateTimeMoment(params.value),
     },
     {
       headerName: 'Modified On',
       field: 'modifiedOn',
       flex: 1,
-      minWidth: 140
+      minWidth: 140,
+      valueFormatter: (params) => formatDateTimeMoment(params.value),
     },
     {
       headerName: 'Modified By',
@@ -211,13 +215,41 @@ export default function ReportsList() {
     }
   ], []);
 
+  // Date formatting utility function using Moment.js
+  const formatDateTimeMoment = (dateValue: any): string => {
+    if (!dateValue) return '';
+
+    const momentDate = moment(dateValue);
+
+    // Check if the date is valid
+    if (!momentDate.isValid()) return '';
+
+    // Format: DD/MM/YYYY HH:MM:SS (24-hour format)
+    return momentDate.format('DD/MM/YYYY HH:mm:ss');
+  };
+
+
   // Event handlers
   const handleCompanyChange = (company: Company | null) => {
+    const previousCompany = currentCompany;
     dispatch(setCurrentCompany(company ? Number(company.id) : null));
+
+    if (company && company.id !== previousCompany) {
+      showNotification('success', `Loading reports for <strong>${company.name}</strong>`);
+    }
   };
 
   const handleQueryChange = (e: any) => {
-    dispatch(setQuery(e.value));
+    const newQuery = e.value;
+    dispatch(setQuery(newQuery));
+
+    // Show info notification for search
+    if (newQuery && newQuery.length > 2) {
+      const resultCount = filteredReports.length;
+      if (resultCount === 0) {
+        showNotification('warning', `No reports found matching "<strong>${newQuery}</strong>"`);
+      }
+    }
   };
 
   const handlePageChange = (e: PageChangeEvent) => {
@@ -259,31 +291,102 @@ export default function ReportsList() {
   );
 
   const handleCopySelected = () => {
+    if (selectedReportIds.length === 0) {
+      showNotification('warning', 'Please select reports to copy');
+      return;
+    }
     setCopyModal({ isOpen: true, reportId: null, isMultiple: true });
   };
 
   const handleDeleteSelected = () => {
+    if (selectedReportIds.length === 0) {
+      showNotification('warning', 'Please select reports to delete');
+      return;
+    }
     setDeleteModal({ isOpen: true, reportId: null, isMultiple: true });
   };
 
-  // Modal handlers
-  const handleCopyConfirm = (destinationCompany: Company) => {
-    const reportNames = copyModal.isMultiple ? getSelectedReportNames() : [getReportById(copyModal.reportId!)?.reportName || ''];
-    console.log('Copy reports to company:', destinationCompany, 'Reports:', reportNames);
-  };
+  // Modal handlers with notifications
+  const handleCopyConfirm = async (destinationCompany: Company) => {
+    try {
+      const reportNames = copyModal.isMultiple ? getSelectedReportNames() : [getReportById(copyModal.reportId!)?.reportName || ''];
 
-  const handleDeleteConfirm = () => {
-    const reportNames = deleteModal.isMultiple ? getSelectedReportNames() : [getReportById(deleteModal.reportId!)?.reportName || ''];
-    console.log('Delete reports:', reportNames);
+      // Simulate API call
+      console.log('Copy reports to company:', destinationCompany, 'Reports:', reportNames);
 
-    if (deleteModal.isMultiple) {
-      dispatch(clearSelectedReportIds());
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const reportCount = reportNames.length;
+      const reportText = reportCount === 1 ? 'report' : 'reports';
+
+      showNotification('success', `Successfully copied <strong>${reportCount} ${reportText}</strong> to <strong>${destinationCompany.name}</strong>`);
+
+      // Close modal
+      setCopyModal({ isOpen: false, reportId: null, isMultiple: false });
+
+      // Clear selections if multiple copy
+      if (copyModal.isMultiple) {
+        dispatch(clearSelectedReportIds());
+      }
+    } catch (error) {
+      showNotification('error', 'Failed to copy reports. Please try again.');
     }
   };
 
-  const handleLinkConfirm = (selectedPages: string[]) => {
-    const report = getReportById(linkModal.reportId!);
-    console.log('Link report to pages:', report?.reportName, selectedPages);
+  const handleDeleteConfirm = async () => {
+    try {
+      const reportNames = deleteModal.isMultiple ? getSelectedReportNames() : [getReportById(deleteModal.reportId!)?.reportName || ''];
+
+      // Simulate API call
+      console.log('Delete reports:', reportNames);
+
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const reportCount = reportNames.length;
+      const reportText = reportCount === 1 ? 'report' : 'reports';
+
+
+      showNotification(
+        'success',
+        `Successfully deleted <strong>${reportCount} ${reportText}</strong>`
+      );
+
+      // Close modal
+      setDeleteModal({ isOpen: false, reportId: null, isMultiple: false });
+
+      if (deleteModal.isMultiple) {
+        dispatch(clearSelectedReportIds());
+      }
+    } catch (error) {
+      showNotification('error', 'Failed to delete reports. Please try again.');
+    }
+  };
+
+  const handleLinkConfirm = async (selectedPages: string[]) => {
+    try {
+      const report = getReportById(linkModal.reportId!);
+
+      // Simulate API call
+      console.log('Link report to pages:', report?.reportName, selectedPages);
+
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      const pageCount = selectedPages.length;
+      const pageText = pageCount === 1 ? 'page' : 'pages';
+
+      showNotification(
+        'success',
+        `Successfully linked <strong>${report?.reportName}</strong> to <strong>${pageCount} ${pageText}</strong>`
+      );
+
+      // Close modal
+      setLinkModal({ isOpen: false, reportId: null });
+    } catch (error) {
+      showNotification('error', 'Failed to link report to pages. Please try again.');
+    }
   };
 
   return (
