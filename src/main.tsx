@@ -1,6 +1,5 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-//import App from './App.tsx'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 import 'devextreme/dist/css/dx.light.css';
 import '@devexpress/analytics-core/dist/css/dx-analytics.common.css';
 import '@devexpress/analytics-core/dist/css/dx-analytics.light.css';
@@ -26,4 +25,5 @@ createRoot(document.getElementById('root')!).render(
       <RouterProvider router={router} />
     </Provider>
   </StrictMode>,
-)
+);
+

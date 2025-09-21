@@ -1,14 +1,14 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { FGDesignDemoRoutes } from './FGDesignDemo/routes';
-import { componentRegistry } from './FGDesignDemo/componentRegistry';
+// import { BrowserRouter, Routes, Route } from 'react-router-dom';
+// import ReportsPage from './pages/ReportsPage';
+// import DiagramTool from './components/DiagramTool';
 
-export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        {FGDesignDemoRoutes}
-        <Route path="*" element={<Navigate to={componentRegistry[0].path} replace />} />
-      </Routes>
-    </BrowserRouter>
-  );
-}
+// export default function App() {
+//   return (
+//     <BrowserRouter>
+//       <Routes>
+//         <Route path="/" element={<ReportsPage />} />
+//         <Route path="/diagram" element={<DiagramTool />} />
+//       </Routes>
+//     </BrowserRouter>
+//   );
+// }
