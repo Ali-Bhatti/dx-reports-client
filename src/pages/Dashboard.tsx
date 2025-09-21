@@ -14,22 +14,19 @@ export default function ReportsPage() {
 
 
     return (
-        <div className="min-h-screen bg-neutral-100">
+        <div className="p-5 px-25">
+            {/* KPIs */}
+            <StatisticsCards statistics={statistics} />
 
-            <div className="p-5 px-25">
-                {/* KPIs */}
-                <StatisticsCards statistics={statistics} />
-
-                {/* Reports List */}
-                <div className="mt-5">
-                    <ReportsList />
-                </div>
-
-                {/* Version History - Only shows when single report is selected */}
-                {selectedReport && (
-                    <VersionHistory />
-                )}
+            {/* Reports List */}
+            <div className="mt-5">
+                <ReportsList />
             </div>
+
+            {/* Version History - Only shows when single report is selected */}
+            {selectedReport && (
+                <VersionHistory />
+            )}
         </div>
     );
 }

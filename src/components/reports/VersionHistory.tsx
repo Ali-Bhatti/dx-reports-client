@@ -18,6 +18,7 @@ import {
     updateVersionPublishedStatus,
     setSelectedVersionIds,
     clearSelectedVersionIds,
+    setActionContext,
 } from '../../features/reports/reportsSlice';
 
 import {
@@ -203,16 +204,24 @@ export default function VersionHistory() {
         const handleNewVersionClick = (e: React.MouseEvent) => {
             e.stopPropagation();
             dispatch(clearSelectedVersionIds());
-            // Navigate to diagram page with action context
-            navigate('/report-designer', { state: { action: 'new_version', versionId: row.id } });
+            dispatch(setActionContext({
+                type: 'new_version',
+                versionId: Number(row.id),
+                reportId: Number(row.reportId)
+            }))
+            navigate('/report-designer');
             showNotification('success', `Creating new version from <strong>${row.version}</strong>...`);
         };
 
         const handleEditClick = (e: React.MouseEvent) => {
             e.stopPropagation();
             dispatch(clearSelectedVersionIds());
-            // Navigate to diagram page with action context
-            navigate('/report-designer', { state: { action: 'edit', versionId: row.id } });
+            dispatch(setActionContext({
+                type: 'edit',
+                versionId: Number(row.id),
+                reportId: Number(row.reportId)
+            }))
+            navigate('/report-designer');
             showNotification('success', `Opening version <strong>${row.version}</strong> for editing...`);
         };
 
@@ -342,7 +351,7 @@ export default function VersionHistory() {
             !(e.event.target as HTMLElement).closest('button') &&
             !(e.event.target as HTMLElement).closest('label') &&
             !(e.event.target as HTMLElement).closest('.flex.w-full.p-2')) {
-            navigate('/report-designer');
+            //navigate('/report-designer');
         }
     };
 
