@@ -5,7 +5,6 @@ import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import type {
     ColDef,
     GridOptions,
-    RowSelectionOptions
 } from 'ag-grid-community';
 import type { AgGridReactProps } from 'ag-grid-react';
 

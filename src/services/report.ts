@@ -51,55 +51,64 @@ class ApiService {
         if (companyId) params.append('companyId', companyId);
         if (search) params.append('search', search);
 
-        return this.request<PaginatedResponse<Report>>(`/api/reports?${params}`);
+        const response = await this.request<PaginatedResponse<Report>>(`/api/reports?${params}`);
+        return response.data;
     }
 
     async getReport(id: string): Promise<Report> {
-        return this.request<Report>(`/api/reports/${id}`);
+        const response = await this.request<Report>(`/api/reports/${id}`);
+        return response.data;
     }
 
     async createReport(report: Partial<Report>): Promise<Report> {
-        return this.request<Report>('/api/reports', {
+        const response = await this.request<Report>('/api/reports', {
             method: 'POST',
             body: JSON.stringify(report),
         });
+        return response.data;
     }
 
     async updateReport(id: string, report: Partial<Report>): Promise<Report> {
-        return this.request<Report>(`/api/reports/${id}`, {
+        const response = await this.request<Report>(`/api/reports/${id}`, {
             method: 'PUT',
             body: JSON.stringify(report),
         });
+        return response.data;
     }
 
     async deleteReport(id: string): Promise<void> {
-        return this.request<void>(`/api/reports/${id}`, {
+        await this.request<void>(`/api/reports/${id}`, {
             method: 'DELETE',
         });
+        // No return needed for void
     }
 
     async copyReport(id: string): Promise<Report> {
-        return this.request<Report>(`/api/reports/${id}/copy`, {
+        const response = await this.request<Report>(`/api/reports/${id}/copy`, {
             method: 'POST',
         });
+        return response.data;
     }
 
     // Report Versions API
     async getReportVersions(reportId: string): Promise<ReportVersion[]> {
-        return this.request<ReportVersion[]>(`/api/reports/${reportId}/versions`);
+        const response = await this.request<ReportVersion[]>(`/api/reports/${reportId}/versions`);
+        return response.data;
     }
 
     async createReportVersion(reportId: string, version: Partial<ReportVersion>): Promise<ReportVersion> {
-        return this.request<ReportVersion>(`/api/reports/${reportId}/versions`, {
+        const response = await this.request<ReportVersion>(`/api/reports/${reportId}/versions`, {
             method: 'POST',
             body: JSON.stringify(version),
         });
+        return response.data;
     }
 
     async publishVersion(reportId: string, versionId: string): Promise<ReportVersion> {
-        return this.request<ReportVersion>(`/api/reports/${reportId}/versions/${versionId}/publish`, {
+        const response = await this.request<ReportVersion>(`/api/reports/${reportId}/versions/${versionId}/publish`, {
             method: 'POST',
         });
+        return response.data;
     }
 
     async downloadVersion(reportId: string, versionId: string): Promise<Blob> {
@@ -109,26 +118,31 @@ class ApiService {
 
     // Companies API
     async getCompanies(): Promise<Company[]> {
-        return this.request<Company[]>('/api/companies');
+        const response = await this.request<Company[]>('/api/companies');
+        return response.data;
     }
 
     async getCompany(id: string): Promise<Company> {
-        return this.request<Company>(`/api/companies/${id}`);
+        const response = await this.request<Company>(`/api/companies/${id}`);
+        return response.data;
     }
 
     // Statistics API
     async getReportStatistics(companyId?: string): Promise<ReportStatistics> {
         const params = companyId ? `?companyId=${companyId}` : '';
-        return this.request<ReportStatistics>(`/api/reports/statistics${params}`);
+        const response = await this.request<ReportStatistics>(`/api/reports/statistics${params}`);
+        return response.data;
     }
 
     // Users API
     async getCurrentUser(): Promise<User> {
-        return this.request<User>('/api/users/me');
+        const response = await this.request<User>('/api/users/me');
+        return response.data;
     }
 
     async getUsers(): Promise<User[]> {
-        return this.request<User[]>('/api/users');
+        const response = await this.request<User[]>('/api/users');
+        return response.data;
     }
 }
 
