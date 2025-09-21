@@ -6,10 +6,12 @@ import { Pager, type PageChangeEvent } from '@progress/kendo-react-data-tools';
 
 import BaseCard from '../shared/BaseCard';
 import BaseButton from '../shared/BaseButton';
+import BaseSwitch from '../shared/BaseSwitch';
 import BaseTable from '../shared/BaseTable';
 import DeleteModal from '../modals/DeleteModal';
 import PublishModal from '../modals/PublishModal';
-
+import { ActionButton } from '../table/renderers/CommonRenderers';
+import { formatDateTime } from '../../utils/dateFormatters';
 import { useNotifications } from '../../hooks/useNotifications';
 
 import type { ReportVersion as HistoryRow } from "../../types";
@@ -37,7 +39,6 @@ import {
     downloadIcon,
     plusOutlineIcon
 } from '@progress/kendo-svg-icons';
-import moment from 'moment';
 
 import type {
     ColDef,
@@ -50,8 +51,6 @@ type VersionRowWithPublished = HistoryRow & { published: boolean };
 export default function VersionHistory() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-
-    // Notification hook
     const { showNotification } = useNotifications();
 
     // Redux selectors
@@ -75,12 +74,12 @@ export default function VersionHistory() {
         versionId: null as number | null
     });
 
-
     // Don't render if conditions not met
     if (!shouldShow) {
         return null;
     }
 
+    // Helper functions
     const getVersionById = (id: number) => {
         return versions.find(v => v.id === id);
     };
@@ -92,71 +91,48 @@ export default function VersionHistory() {
     };
 
     const getReportNameForVersion = (versionId: number) => {
-        // Get the version to find its reportId
         const version = getVersionById(versionId);
         if (!version) return 'Unknown Report';
 
-        // Find the report with matching reportId
         const report = reports.find(r => r.id === version.reportId);
         if (!report) return 'Unknown Report';
 
         return report.reportName;
     };
 
-    // Memoize the current report name to ensure it updates when selectedReportId changes
     const currentReportName = React.useMemo(() => {
-        console.log("Selected Report ID", selectedReportId);
         if (!selectedReportId) return 'Unknown Report';
         const report = reports.find(r => r.id === selectedReportId);
         return report?.reportName || 'Unknown Report';
     }, [selectedReportId, reports]);
 
-    // Memoize the no versions message to ensure it updates when dependencies change
     const noVersionsMessage = React.useMemo(() => {
-        // Check if multiple reports are selected
         if (selectedReportIds.length > 0) {
             return 'Select a single report to view version history';
         }
 
-        // Check if no report is selected
         if (!selectedReportId) {
             return 'No report selected';
         }
 
-        // Single report is selected
         if (currentReportName === 'Unknown Report') {
             return 'No report selected';
         }
         return `No versions available for "${currentReportName}"`;
     }, [selectedReportIds.length, selectedReportId, currentReportName]);
 
-    // Action button component
-    const RowIconBtn: React.FC<{ icon: any; title: string; onClick: (e: React.MouseEvent) => void }> = ({ icon, title, onClick }) => (
-        <BaseButton
-            size="small"
-            rounded="full"
-            fillMode="flat"
-            themeColor="base"
-            svgIcon={icon}
-            title={title}
-            onClick={onClick}
-            className="!p-1.5 !text-gray-600 hover:!text-gray-800 hover:!bg-gray-100"
-            color='none'
-        />
-    );
+    // Published toggle renderer using BaseSwitch
+    const PublishedToggleRenderer = ({ data, value }: ICellRendererParams<VersionRowWithPublished, boolean>) => {
+        const versionData = data!;
 
-    // Published toggle renderer
-    const PublishedToggleRenderer: React.FC<ICellRendererParams<VersionRowWithPublished, boolean>> = (p) => {
-        const versionData = p.data!;
+        const handleSwitchChange = (event: any) => {
+            if (event.syntheticEvent && event.syntheticEvent.stopPropagation) {
+                event.syntheticEvent.stopPropagation();
+            }
 
-        console.log("Rendering PublishedToggle for version", versionData.id, "published:", versionData.published);
-
-        const handleToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
-            e.stopPropagation();
-            // Clear selections when toggling
             dispatch(clearSelectedVersionIds());
 
-            const checked = e.target.checked;
+            const checked = event.target.value;
 
             if (checked) {
                 setPublishModal({ isOpen: true, versionId: Number(versionData.id) });
@@ -167,32 +143,18 @@ export default function VersionHistory() {
         };
 
         return (
-            <div className="flex w-full p-2">
-                <label className="inline-flex items-center cursor-pointer">
-                    <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        onChange={handleToggle}
-                        readOnly
-                    />
-                    <span
-                        className="
-                            relative w-10 h-5 rounded-full bg-gray-300
-                            peer-checked:bg-teal-400
-                            after:content-[''] after:absolute after:left-0.5 after:top-0.5
-                            after:w-4 after:h-4 after:bg-white after:rounded-full
-                            after:transition-transform after:duration-200
-                            peer-checked:after:translate-x-5
-                        "
-                    />
-                </label>
+            <div className="flex w-full justify-center p-2">
+                <BaseSwitch
+                    checked={!!value}
+                    onChange={handleSwitchChange}
+                />
             </div>
         );
     };
 
     // Version actions renderer
-    const VersionActionsRenderer: React.FC<ICellRendererParams<VersionRowWithPublished>> = (p) => {
-        const row = p.data!;
+    const VersionActionsRenderer: React.FC<ICellRendererParams<VersionRowWithPublished>> = ({ data }) => {
+        const row = data!;
 
         const handleDownloadClick = (e: React.MouseEvent) => {
             e.stopPropagation();
@@ -208,9 +170,8 @@ export default function VersionHistory() {
                 type: 'new_version',
                 versionId: Number(row.id),
                 reportId: Number(row.reportId)
-            }))
+            }));
             navigate('/report-designer');
-            showNotification('success', `Creating new version from <strong>${row.version}</strong>...`);
         };
 
         const handleEditClick = (e: React.MouseEvent) => {
@@ -220,9 +181,8 @@ export default function VersionHistory() {
                 type: 'edit',
                 versionId: Number(row.id),
                 reportId: Number(row.reportId)
-            }))
+            }));
             navigate('/report-designer');
-            showNotification('success', `Opening version <strong>${row.version}</strong> for editing...`);
         };
 
         const handleDeleteClick = (e: React.MouseEvent) => {
@@ -233,23 +193,23 @@ export default function VersionHistory() {
 
         return (
             <div className="flex items-center gap-1.5">
-                <RowIconBtn
+                <ActionButton
                     icon={downloadIcon}
                     title="Download"
                     onClick={handleDownloadClick}
                 />
-                <RowIconBtn
+                <ActionButton
                     icon={plusOutlineIcon}
                     title="New Version"
                     onClick={handleNewVersionClick}
                 />
-                <RowIconBtn
+                <ActionButton
                     icon={pencilIcon}
                     title="Edit"
                     onClick={handleEditClick}
                 />
                 {!row.isDefault && (
-                    <RowIconBtn
+                    <ActionButton
                         icon={trashIcon}
                         title="Delete"
                         onClick={handleDeleteClick}
@@ -284,14 +244,14 @@ export default function VersionHistory() {
             field: 'createdOn',
             flex: 1,
             minWidth: 140,
-            valueFormatter: (p) => formatDateTimeMoment(p.value)
+            valueFormatter: (p) => formatDateTime(p.value)
         },
         {
             headerName: 'Modified On',
             field: 'modifiedOn',
             flex: 1,
             minWidth: 140,
-            valueFormatter: (p) => formatDateTimeMoment(p.value)
+            valueFormatter: (p) => formatDateTime(p.value)
         },
         {
             headerName: 'Modified By',
@@ -301,7 +261,7 @@ export default function VersionHistory() {
         },
         {
             headerName: 'Published',
-            field: 'published',
+            field: 'isPublished',
             flex: 0,
             width: 100,
             minWidth: 100,
@@ -321,20 +281,6 @@ export default function VersionHistory() {
         }
     ], []);
 
-    // Date formatting utility function using Moment.js
-    const formatDateTimeMoment = (dateValue: any): string => {
-        if (!dateValue) return '';
-
-        const momentDate = moment(dateValue);
-
-        // Check if the date is valid
-        if (!momentDate.isValid()) return '';
-
-        // Format: DD/MM/YYYY HH:MM:SS (24-hour format)
-        return momentDate.format('DD/MM/YYYY HH:mm:ss');
-    };
-
-    // Create a unique key that changes when the message should update
     const tableKey = React.useMemo(() => {
         return `${selectedReportId}-${selectedReportIds.length}-${currentReportName}`;
     }, [selectedReportId, selectedReportIds.length, currentReportName]);
@@ -355,7 +301,6 @@ export default function VersionHistory() {
         }
     };
 
-    // Selection handler for AG Grid
     const handleSelectionChanged = (e: any) => {
         const selectedRows = e.api.getSelectedRows();
         const selectedIds = selectedRows.map((row: any) => Number(row.id));
@@ -395,7 +340,6 @@ export default function VersionHistory() {
 
     const handlePublishConfirmCancel = () => {
         if (publishModal.versionId) {
-            dispatch(updateVersionPublishedStatus({ id: publishModal.versionId, published: false }));
             console.log("Publish cancelled for version", publishModal.versionId);
         }
         setPublishModal({ isOpen: false, versionId: null });

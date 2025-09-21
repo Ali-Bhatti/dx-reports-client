@@ -76,12 +76,12 @@ const initialState: ReportsState = {
     { id: 39, reportName: 'Order label20 70x37', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Abdul Kareem', active: false, companyId: 2 },
   ],
   history: [
-    { id: 1, version: 'v1', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Atif', status: 'Published', reportId: 1, isDefault: true },
-    { id: 2, version: 'v2', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Atif', status: 'Not Published', reportId: 1, isDefault: false },
-    { id: 3, version: 'v1', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Kas', status: 'Published', reportId: 2, isDefault: true },
-    { id: 4, version: 'v2', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Kas', status: 'Published', reportId: 2, isDefault: false },
-    { id: 5, version: 'v1', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Arooba', status: 'Not Published', reportId: 3, isDefault: true },
-    { id: 6, version: 'v2', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Arooba', status: 'Not Published', reportId: 3, isDefault: false },
+    { id: 1, version: 'v1', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Atif', isPublished: true, reportId: 1, isDefault: true },
+    { id: 2, version: 'v2', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Atif', isPublished: false, reportId: 1, isDefault: false },
+    { id: 3, version: 'v1', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Kas', isPublished: true, reportId: 2, isDefault: true },
+    { id: 4, version: 'v2', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Kas', isPublished: true, reportId: 2, isDefault: false },
+    { id: 5, version: 'v1', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Arooba', isPublished: false, reportId: 3, isDefault: true },
+    { id: 6, version: 'v2', createdOn: '12/7/2024', modifiedOn: '12/7/2024', modifiedBy: 'Arooba', isPublished: false, reportId: 3, isDefault: false },
   ],
   selectedReportId: null,
   selectedReportIds: [],
@@ -138,7 +138,7 @@ const reportsSlice = createSlice({
     updateVersionPublishedStatus: (state, action: PayloadAction<{ id: number; published: boolean }>) => {
       const version = state.history.find(h => h.id === action.payload.id);
       if (version) {
-        version.status = action.payload.published ? 'Published' : 'Not Published';
+        version.isPublished = action.payload.published;
       }
     },
     setSelectedVersionIds: (state, action: PayloadAction<number[]>) => {
