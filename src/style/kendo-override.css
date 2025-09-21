@@ -1,0 +1,149 @@
+:root {
+    /* Works on newer Kendo themes */
+    --kendo-color-primary: var(--fg-primary);
+    --kendo-color-primary-hover: var(--fg-primary-hover);
+    --kendo-font-family: "Inter Variable", Inter, system-ui, -apple-system,
+        "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, Segoe UI,
+        Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    --kendo-color-success: var(--fg-primary);
+    --kendo-color-on-info: var(--e-global-color-global_color_9);
+    --kendo-color-error: var(--fg-dark-red);
+    --kendo-color-warning: var(--fg-dark-yellow);
+    /* --kendo-color-base: #ddf;
+    --kendo-color-base-hover: #eef;
+    --kendo-color-base-active: #ccf;
+    --kendo-color-on-base: #00c;
+    --kendo-color-primary: #c00;
+    --kendo-color-primary-hover: #c66;
+    --kendo-color-primary-active: #900;
+    --kendo-color-on-primary: #fee;
+    --kendo-border-radius-md: 1rem;
+    --kendo-font-size: 18px; */
+}
+
+html,
+body,
+#root {
+    font-family: var(--kendo-font-family);
+}
+
+.ag-theme-quartz,
+.ag-theme-quartz .ag-root,
+.ag-theme-quartz .ag-header,
+.ag-theme-quartz .ag-header-cell,
+.ag-theme-quartz .ag-cell,
+.ag-theme-quartz .ag-menu,
+.ag-theme-quartz .ag-overlay {
+    font-family: var(--kendo-font-family) !important;
+    --ag-font-family: var(--kendo-font-family);
+}
+
+.k-button.k-icon-button,
+.k-button.k-button-icon {
+    background-color: var(--fg-primary);
+    border-color: transparent;
+}
+
+.k-button.k-icon-button:hover,
+.k-button.k-button-icon:hover {
+    background-color: var(--fg-primary-hover);
+}
+
+.k-button.k-input-button,
+.k-button.k-input-button:hover {
+    background-color: transparent;
+    color: var(--e-global-color-global_color_6);
+}
+
+.k-pager {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 1rem;
+    border: none;
+    background-color: transparent;
+}
+
+/* Generic style for all pager buttons (numbers + prev/next) */
+.k-pager .k-button,
+.k-pager .k-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 1.75rem;
+    min-width: 1.75rem;
+    padding: 0 .5rem;
+    border-radius: 9999px !important;
+    background-color: #f9fafb !important;
+    color: #4b5563 !important;
+    border: 1px solid transparent !important;
+    transition: background-color .15s ease, color .15s ease;
+    margin: 0 5px;
+}
+
+/* Hover */
+.k-pager .k-button:hover,
+.k-pager .k-link:hover {
+    background-color: #f3f4f6 !important;
+}
+
+/* Selected page */
+.k-pager .k-selected .k-button,
+.k-pager .k-selected .k-link,
+.k-pager .k-button.k-selected {
+    background-color: var(--fg-primary, #2fc0cc) !important;
+    color: #fff !important;
+}
+
+.k-window {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
+
+/* Fade animation improvements */
+.k-animation-container-shown {
+    animation: slideInFromLeft 0.3s ease-out;
+}
+
+.k-animation-container-hidden {
+    animation: slideOutToLeft 0.3s ease-in;
+}
+
+/* AG Grid Minimal Styling - FIXED VERSION */
+.ag-theme-quartz {
+    --ag-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    /* --ag-row-hover-color: #F9FAFC; */
+    --ag-row-hover-color: #d3ebd43a;
+    --ag-selected-row-background-color1: #c8e6c9;
+    --ag-selected-row-background-color: #c8e6c971;
+    --ag-cell-horizontal-padding: 10px;
+    --ag-header-background-color: #2fbfcc3a;
+    --ag-cell-focus-border-color: transparent;
+}
+
+/* Header styling */
+.ag-theme-quartz .ag-header-cell-text {
+    font-weight: 700;
+    color: #374151;
+}
+
+/* Root wrapper styling */
+.ag-theme-quartz .ag-root-wrapper {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Row hover effect */
+.ag-theme-quartz .ag-row:hover {
+    background-color: #f8fafc;
+}
+
+/* Custom row highlighting (not selection) */
+.ag-theme-quartz .ag-row[style*="background-color: rgb(200, 230, 201)"] {
+    background-color: #c8e6c971 !important;
+}
+
+.ag-theme-quartz .ag-row[style*="background-color: rgb(200, 230, 201)"]:hover {
+    background-color: #c8e6c9B3 !important;
+}
