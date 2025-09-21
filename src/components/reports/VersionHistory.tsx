@@ -204,7 +204,7 @@ export default function VersionHistory() {
             e.stopPropagation();
             dispatch(clearSelectedVersionIds());
             // Navigate to diagram page with action context
-            navigate('/diagram', { state: { action: 'new_version', versionId: row.id } });
+            navigate('/report-designer', { state: { action: 'new_version', versionId: row.id } });
             showNotification('success', `Creating new version from <strong>${row.version}</strong>...`);
         };
 
@@ -212,7 +212,7 @@ export default function VersionHistory() {
             e.stopPropagation();
             dispatch(clearSelectedVersionIds());
             // Navigate to diagram page with action context
-            navigate('/diagram', { state: { action: 'edit', versionId: row.id } });
+            navigate('/report-designer', { state: { action: 'edit', versionId: row.id } });
             showNotification('success', `Opening version <strong>${row.version}</strong> for editing...`);
         };
 
@@ -342,7 +342,7 @@ export default function VersionHistory() {
             !(e.event.target as HTMLElement).closest('button') &&
             !(e.event.target as HTMLElement).closest('label') &&
             !(e.event.target as HTMLElement).closest('.flex.w-full.p-2')) {
-            navigate('/diagram');
+            navigate('/report-designer');
         }
     };
 
