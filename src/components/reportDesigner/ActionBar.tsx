@@ -38,6 +38,7 @@ function ActionBar() {
     const isNewVersion = actionContext.type === 'new_version';
     const actionButtonText = isNewVersion ? 'Add Version' : 'Save';
     const ActionIcon = isNewVersion ? plusIcon : saveIcon;
+    const publishStatusColor = selectedVersion?.isPublished ? 'green' : 'yellow';
 
     const handleSaveAction = () => {
         setShowSaveModal(true);
@@ -48,10 +49,10 @@ function ActionBar() {
     };
 
     const confirmSaveAction = () => {
-        showNotification('success', 
+        showNotification('success',
             isNewVersion
-            ? `New version created successfully for <strong>${selectedReport?.reportName}</strong>`
-            : `Report <strong>${selectedReport?.reportName}</strong> saved successfully`
+                ? `New version created successfully for <strong>${selectedReport?.reportName}</strong>`
+                : `Report <strong>${selectedReport?.reportName}</strong> saved successfully`
         );
         setShowSaveModal(false);
         // You can dispatch appropriate actions here
@@ -89,20 +90,11 @@ function ActionBar() {
                                 <span className="text-lg font-semibold text-gray-900">
                                     {selectedVersion?.version || 'N/A'}
                                 </span>
-                                {selectedVersion?.status === 'Published' && (
-                                    <BaseChip
-                                        type="green"
-                                        text="Published"
-                                        className="ml-2"
-                                    />
-                                )}
-                                {selectedVersion?.status === 'Not Published' && (
-                                    <BaseChip
-                                        type="yellow"
-                                        text="Draft"
-                                        className="ml-2"
-                                    />
-                                )}
+                                <BaseChip
+                                    type={publishStatusColor}
+                                    text="Draft"
+                                    className="ml-2"
+                                />
                             </div>
                         </div>
                     </div>
