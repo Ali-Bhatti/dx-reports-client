@@ -231,12 +231,12 @@ export default function ReportsList() {
 
   // Event handlers
   const handleCompanyChange = (company: Company | null) => {
-    const previousCompany = currentCompany;
+    //const previousCompany = currentCompany;
     dispatch(setCurrentCompany(company ? Number(company.id) : null));
 
-    if (company && company.id !== previousCompany) {
-      showNotification('success', `Loading reports for <strong>${company.name}</strong>`);
-    }
+    // if (company && company.id !== previousCompany) {
+    //   showNotification('success', `Loading reports for <strong>${company.name}</strong>`);
+    // }
   };
 
   const handleQueryChange = (e: any) => {

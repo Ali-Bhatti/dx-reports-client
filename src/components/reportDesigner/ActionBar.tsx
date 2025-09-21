@@ -6,6 +6,7 @@ import BaseCard from '../shared/BaseCard';
 import DownloadConfirmationModal from '../modals/DownloadConfirmationModal ';
 import SaveConfirmationModal from '../modals/SaveConfirmationModal';
 import BaseChip from '../shared/BaseChip';
+import { useNotifications } from '../../hooks/useNotifications';
 
 import {
     saveIcon,
@@ -16,6 +17,8 @@ import {
 function ActionBar() {
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
+
+    const { showNotification } = useNotifications();
 
     // Get data from Redux store
     const { reports, history, selectedReportId, actionContext } = useSelector((state: RootState) => ({
@@ -45,15 +48,18 @@ function ActionBar() {
     };
 
     const confirmSaveAction = () => {
-        // Handle save/add logic here
-        console.log(isNewVersion ? 'Adding new version...' : 'Saving report...');
+        showNotification('success', 
+            isNewVersion
+            ? `New version created successfully for <strong>${selectedReport?.reportName}</strong>`
+            : `Report <strong>${selectedReport?.reportName}</strong> saved successfully`
+        );
         setShowSaveModal(false);
         // You can dispatch appropriate actions here
     };
 
     const confirmDownload = () => {
         // Handle download logic here
-        console.log('Downloading report...');
+        showNotification('success', `Report <strong>${selectedReport?.reportName}</strong> is being downloaded...`);
         setShowDownloadModal(false);
     };
 

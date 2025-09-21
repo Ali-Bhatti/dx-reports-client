@@ -9,6 +9,7 @@ import ReportDesigner, {
 } from 'devexpress-reporting-react/dx-report-designer';
 import { ActionId } from 'devexpress-reporting/dx-reportdesigner';
 import { Loader } from '@progress/kendo-react-indicators';
+import BaseCard from '../shared/BaseCard';
 
 function DesignerTool() {
     const [isLoading, setIsLoading] = useState(true);
@@ -41,7 +42,7 @@ function DesignerTool() {
         <div className="relative mt-5">
             {/* Loading Overlay */}
             {isLoading && (
-                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white bg-opacity-95 backdrop-blur-sm">
+                <BaseCard>
                     <div className="flex flex-col items-center space-y-4 p-8">
                         <Loader
                             type="pulsing"
@@ -53,14 +54,14 @@ function DesignerTool() {
                             </h3>
                         </div>
                     </div>
-                </div>
+                </BaseCard>
             )}
 
             {/* Designer Container */}
             <div
                 className={
                     `bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-opacity duration-300 
-                    ${isLoading ? 'opacity-30' : 'opacity-100'}`
+                    ${isLoading ? 'opacity-0' : 'opacity-100'}`
                 }
             >
                 <ReportDesigner
