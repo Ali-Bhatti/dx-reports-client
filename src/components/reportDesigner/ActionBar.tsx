@@ -29,9 +29,9 @@ function ActionBar() {
     }));
 
     // Find selected report and version
-    const selectedReport = reports.find(report => report.id === selectedReportId);
+    const selectedReport = reports.find(report => report.id === actionContext.reportId);
     const selectedVersion = selectedReportId
-        ? history.find(version => version.reportId === selectedReportId && version.isDefault)
+        ? history.find(version => version.id === actionContext.versionId)
         : null;
 
     // Determine action button text and icon
@@ -39,6 +39,7 @@ function ActionBar() {
     const actionButtonText = isNewVersion ? 'Add Version' : 'Save';
     const ActionIcon = isNewVersion ? plusIcon : saveIcon;
     const publishStatusColor = selectedVersion?.isPublished ? 'green' : 'yellow';
+    const publishText = `${!selectedVersion?.isPublished ? 'Not' : ``} Published`
 
     const handleSaveAction = () => {
         setShowSaveModal(true);
@@ -92,7 +93,7 @@ function ActionBar() {
                                 </span>
                                 <BaseChip
                                     type={publishStatusColor}
-                                    text="Draft"
+                                    text={publishText}
                                     className="ml-2"
                                 />
                             </div>
