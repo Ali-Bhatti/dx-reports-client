@@ -86,7 +86,7 @@ export const useReports = (companyId?: string) => {
     }, []);
 
     const selectAllReports = useCallback(() => {
-        setSelectedReports(reports.map(report => report.id));
+        setSelectedReports(reports.map(report => String(report.id)));
     }, [reports]);
 
     const clearSelection = useCallback(() => {

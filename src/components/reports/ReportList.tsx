@@ -10,11 +10,12 @@ import CompanySelector from './CompanySelector';
 import CopyModal from '../modals/CopyModal';
 import DeleteModal from '../modals/DeleteModal';
 import LinkModal from '../modals/LinkModal';
+import { ActionButton, CheckboxRenderer } from '../table/renderers/CommonRenderers';
+import { formatDateTime } from '../../utils/dateFormatters';
 import { useNotifications } from '../../hooks/useNotifications';
 
 import type { Company } from '../../types';
 import type { Report as ReportRow } from '../../types';
-import moment from 'moment';
 
 import {
   setCurrentCompany,
@@ -52,7 +53,6 @@ import type {
 
 export default function ReportsList() {
   const dispatch = useDispatch();
-
   const { showNotification } = useNotifications();
 
   // Redux selectors
@@ -70,7 +70,7 @@ export default function ReportsList() {
   const [deleteModal, setDeleteModal] = React.useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
   const [linkModal, setLinkModal] = React.useState({ isOpen: false, reportId: null as number | null });
 
-  // Get report names for selected reports
+  // Helper functions
   const getSelectedReportNames = () => {
     return filteredReports
       .filter(r => selectedReportIds.includes(Number(r.id)))
@@ -81,7 +81,6 @@ export default function ReportsList() {
     return filteredReports.find(r => r.id === id);
   };
 
-  // Determine the appropriate empty message
   const getNoRowsMessage = () => {
     if (currentCompany == null) {
       return 'Please select a company to view reports';
@@ -95,28 +94,12 @@ export default function ReportsList() {
     return 'No rows to show';
   };
 
-  // Action button component
-  const RowIconBtn: React.FC<{ icon: any; title: string; onClick: (e: React.MouseEvent) => void }> = ({ icon, title, onClick }) => (
-    <BaseButton
-      size="small"
-      rounded="full"
-      fillMode="flat"
-      themeColor="base"
-      svgIcon={icon}
-      title={title}
-      onClick={onClick}
-      className="!p-1.5 !text-gray-600 hover:!text-gray-800 hover:!bg-gray-100"
-      color='none'
-    />
-  );
-
   // Reports action renderer
-  const ReportActionsRenderer: React.FC<ICellRendererParams<ReportRow>> = (p) => {
-    const row = p.data!;
+  const ReportActionsRenderer = ({ data }: ICellRendererParams<ReportRow>) => {
+    const row = data!;
 
     const handleCopyClick = (e: React.MouseEvent) => {
       e.stopPropagation();
-      // Clear selections and highlighting
       dispatch(clearSelectedReportIds());
       dispatch(setSelectedReportId(null));
       setCopyModal({ isOpen: true, reportId: Number(row.id), isMultiple: false });
@@ -124,7 +107,6 @@ export default function ReportsList() {
 
     const handleLinkClick = (e: React.MouseEvent) => {
       e.stopPropagation();
-      // Clear selections and highlighting
       dispatch(clearSelectedReportIds());
       dispatch(setSelectedReportId(null));
       setLinkModal({ isOpen: true, reportId: Number(row.id) });
@@ -132,7 +114,6 @@ export default function ReportsList() {
 
     const handleDeleteClick = (e: React.MouseEvent) => {
       e.stopPropagation();
-      // Clear selections and highlighting
       dispatch(clearSelectedReportIds());
       dispatch(setSelectedReportId(null));
       setDeleteModal({ isOpen: true, reportId: Number(row.id), isMultiple: false });
@@ -140,17 +121,12 @@ export default function ReportsList() {
 
     return (
       <div className="flex items-center gap-1.5">
-        <RowIconBtn icon={copyIcon} title="Copy" onClick={handleCopyClick} />
-        <RowIconBtn icon={linkIcon} title="Link" onClick={handleLinkClick} />
-        <RowIconBtn icon={trashIcon} title="Delete" onClick={handleDeleteClick} />
+        <ActionButton icon={copyIcon} title="Copy" onClick={handleCopyClick} />
+        <ActionButton icon={linkIcon} title="Link" onClick={handleLinkClick} />
+        <ActionButton icon={trashIcon} title="Delete" onClick={handleDeleteClick} />
       </div>
     );
   };
-
-  // Reports status checkbox renderer
-  const StatusCheckboxRenderer: React.FC<ICellRendererParams<ReportRow, boolean>> = (p) => (
-    <input type="checkbox" checked={!!p.value} readOnly className="cursor-default" />
-  );
 
   // Column definitions
   const columnDefs = React.useMemo<ColDef<ReportRow>[]>(() => [
@@ -177,14 +153,14 @@ export default function ReportsList() {
       field: 'createdOn',
       flex: 1,
       minWidth: 140,
-      valueFormatter: (params) => formatDateTimeMoment(params.value),
+      valueFormatter: (params) => formatDateTime(params.value),
     },
     {
       headerName: 'Modified On',
       field: 'modifiedOn',
       flex: 1,
       minWidth: 140,
-      valueFormatter: (params) => formatDateTimeMoment(params.value),
+      valueFormatter: (params) => formatDateTime(params.value),
     },
     {
       headerName: 'Modified By',
@@ -199,7 +175,7 @@ export default function ReportsList() {
       width: 80,
       minWidth: 80,
       maxWidth: 80,
-      cellRenderer: StatusCheckboxRenderer,
+      cellRenderer: CheckboxRenderer,
       sortable: false
     },
     {
@@ -215,35 +191,15 @@ export default function ReportsList() {
     }
   ], []);
 
-  // Date formatting utility function using Moment.js
-  const formatDateTimeMoment = (dateValue: any): string => {
-    if (!dateValue) return '';
-
-    const momentDate = moment(dateValue);
-
-    // Check if the date is valid
-    if (!momentDate.isValid()) return '';
-
-    // Format: DD/MM/YYYY HH:MM:SS (24-hour format)
-    return momentDate.format('DD/MM/YYYY HH:mm:ss');
-  };
-
-
   // Event handlers
   const handleCompanyChange = (company: Company | null) => {
-    const previousCompany = currentCompany;
     dispatch(setCurrentCompany(company ? Number(company.id) : null));
-
-    if (company && company.id !== previousCompany) {
-      showNotification('success', `Loading reports for <strong>${company.name}</strong>`);
-    }
   };
 
   const handleQueryChange = (e: any) => {
     const newQuery = e.value;
     dispatch(setQuery(newQuery));
 
-    // Show info notification for search
     if (newQuery && newQuery.length > 2) {
       const resultCount = filteredReports.length;
       if (resultCount === 0) {
@@ -257,12 +213,10 @@ export default function ReportsList() {
   };
 
   const handleRowClicked = (e: RowClickedEvent<ReportRow>) => {
-    // Only set selected report for version history if not clicking on checkbox or action buttons
     if (e.event?.target &&
       !(e.event.target as HTMLElement).closest('.ag-checkbox-input') &&
       !(e.event.target as HTMLElement).closest('button')) {
       dispatch(setSelectedReportId(Number(e.data?.id) ?? null));
-      // Clear multiple selections when clicking on a row
       dispatch(clearSelectedReportIds());
     }
   };
@@ -273,13 +227,11 @@ export default function ReportsList() {
 
     dispatch(setSelectedReportIds(selectedIds));
 
-    // If multiple rows are selected, clear the single selected report ID
     if (selectedIds.length > 0) {
       dispatch(setSelectedReportId(null));
     }
   };
 
-  // Row styling for clicked report (not selected via checkbox)
   const getRowStyle = React.useCallback(
     (p: RowClassParams) => {
       if (p.data?.id === selectedReportId && selectedReportIds.length === 0) {
@@ -306,15 +258,12 @@ export default function ReportsList() {
     setDeleteModal({ isOpen: true, reportId: null, isMultiple: true });
   };
 
-  // Modal handlers with notifications
+  // Modal handlers
   const handleCopyConfirm = async (destinationCompany: Company) => {
     try {
       const reportNames = copyModal.isMultiple ? getSelectedReportNames() : [getReportById(copyModal.reportId!)?.reportName || ''];
 
-      // Simulate API call
       console.log('Copy reports to company:', destinationCompany, 'Reports:', reportNames);
-
-      // Simulate loading delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const reportCount = reportNames.length;
@@ -322,10 +271,8 @@ export default function ReportsList() {
 
       showNotification('success', `Successfully copied <strong>${reportCount} ${reportText}</strong> to <strong>${destinationCompany.name}</strong>`);
 
-      // Close modal
       setCopyModal({ isOpen: false, reportId: null, isMultiple: false });
 
-      // Clear selections if multiple copy
       if (copyModal.isMultiple) {
         dispatch(clearSelectedReportIds());
       }
@@ -338,22 +285,14 @@ export default function ReportsList() {
     try {
       const reportNames = deleteModal.isMultiple ? getSelectedReportNames() : [getReportById(deleteModal.reportId!)?.reportName || ''];
 
-      // Simulate API call
       console.log('Delete reports:', reportNames);
-
-      // Simulate loading delay
       await new Promise(resolve => setTimeout(resolve, 800));
 
       const reportCount = reportNames.length;
       const reportText = reportCount === 1 ? 'report' : 'reports';
 
+      showNotification('success', `Successfully deleted <strong>${reportCount} ${reportText}</strong>`);
 
-      showNotification(
-        'success',
-        `Successfully deleted <strong>${reportCount} ${reportText}</strong>`
-      );
-
-      // Close modal
       setDeleteModal({ isOpen: false, reportId: null, isMultiple: false });
 
       if (deleteModal.isMultiple) {
@@ -368,10 +307,7 @@ export default function ReportsList() {
     try {
       const report = getReportById(linkModal.reportId!);
 
-      // Simulate API call
       console.log('Link report to pages:', report?.reportName, selectedPages);
-
-      // Simulate loading delay
       await new Promise(resolve => setTimeout(resolve, 600));
 
       const pageCount = selectedPages.length;
@@ -382,7 +318,6 @@ export default function ReportsList() {
         `Successfully linked <strong>${report?.reportName}</strong> to <strong>${pageCount} ${pageText}</strong>`
       );
 
-      // Close modal
       setLinkModal({ isOpen: false, reportId: null });
     } catch (error) {
       showNotification('error', 'Failed to link report to pages. Please try again.');
@@ -437,7 +372,7 @@ export default function ReportsList() {
             onSelectionChanged={handleSelectionChanged}
             getRowStyle={getRowStyle}
             height={420}
-            rowSelection="multiple"
+            rowSelection={"multiple"}
             suppressRowClickSelection={true}
             noRowsOverlayComponent={() => (
               <div className="flex flex-col items-center justify-center h-full text-gray-500">

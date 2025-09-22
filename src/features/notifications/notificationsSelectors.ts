@@ -15,7 +15,7 @@ export const selectNotificationCount = createSelector(
 );
 
 export const selectNotificationsByType = createSelector(
-    [selectAllNotifications, (state: RootState, type: string) => type],
+    [selectAllNotifications, (_: RootState, type: string) => type],
     (notifications, type) => notifications.filter(notification => notification.type === type)
 );
 

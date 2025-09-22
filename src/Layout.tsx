@@ -5,11 +5,11 @@ import BaseNotification from './components/shared/BaseNotification';
 
 const Layout = () => {
   return (
-    <>
+    <div className="min-h-screen bg-neutral-100">
       <Header />
       <Outlet />
       <BaseNotification />
-    </>
+    </div>
   );
 };
 

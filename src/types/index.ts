@@ -17,7 +17,7 @@ export interface ReportVersion {
     createdOn: string;
     modifiedOn: string;
     modifiedBy: string;
-    status: string; // Published/Not Published
+    isPublished: boolean;
     isDefault: boolean; // Is this the default version for the report
     content?: any; // Report content/configuration
 }
