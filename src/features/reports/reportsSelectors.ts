@@ -60,7 +60,7 @@ export const selectVersionsForSelectedReport = createSelector(
       .filter(h => h.reportId === selectedReportId)
       .map(h => ({ 
         ...h, 
-        published: h.status === 'Published' 
+        published: h.isPublished 
       }));
   }
 );
