@@ -1,4 +1,9 @@
-import * as React from 'react';
+import {
+  useState,
+  useMemo,
+  useCallback,
+  type MouseEvent,
+} from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Input } from '@progress/kendo-react-inputs';
 import { Pager, type PageChangeEvent } from '@progress/kendo-react-data-tools';
@@ -66,9 +71,9 @@ export default function ReportsList() {
   const hasMultipleSelected = useSelector(selectHasMultipleReportsSelected);
 
   // Modal states
-  const [copyModal, setCopyModal] = React.useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
-  const [deleteModal, setDeleteModal] = React.useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
-  const [linkModal, setLinkModal] = React.useState({ isOpen: false, reportId: null as number | null });
+  const [copyModal, setCopyModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
+  const [linkModal, setLinkModal] = useState({ isOpen: false, reportId: null as number | null });
 
   // Helper functions
   const getSelectedReportNames = () => {
@@ -98,21 +103,21 @@ export default function ReportsList() {
   const ReportActionsRenderer = ({ data }: ICellRendererParams<ReportRow>) => {
     const row = data!;
 
-    const handleCopyClick = (e: React.MouseEvent) => {
+    const handleCopyClick = (e: MouseEvent) => {
       e.stopPropagation();
       dispatch(clearSelectedReportIds());
       dispatch(setSelectedReportId(null));
       setCopyModal({ isOpen: true, reportId: Number(row.id), isMultiple: false });
     };
 
-    const handleLinkClick = (e: React.MouseEvent) => {
+    const handleLinkClick = (e: MouseEvent) => {
       e.stopPropagation();
       dispatch(clearSelectedReportIds());
       dispatch(setSelectedReportId(null));
       setLinkModal({ isOpen: true, reportId: Number(row.id) });
     };
 
-    const handleDeleteClick = (e: React.MouseEvent) => {
+    const handleDeleteClick = (e: MouseEvent) => {
       e.stopPropagation();
       dispatch(clearSelectedReportIds());
       dispatch(setSelectedReportId(null));
@@ -129,7 +134,7 @@ export default function ReportsList() {
   };
 
   // Column definitions
-  const columnDefs = React.useMemo<ColDef<ReportRow>[]>(() => [
+  const columnDefs = useMemo<ColDef<ReportRow>[]>(() => [
     {
       headerName: '',
       width: 50,
@@ -232,7 +237,7 @@ export default function ReportsList() {
     }
   };
 
-  const getRowStyle = React.useCallback(
+  const getRowStyle = useCallback(
     (p: RowClassParams) => {
       if (p.data?.id === selectedReportId && selectedReportIds.length === 0) {
         return { backgroundColor: '#c8e6c971' };

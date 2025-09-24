@@ -1,5 +1,8 @@
-// components/reports/VersionHistory.tsx
-import * as React from 'react';
+import {
+    useState,
+    useMemo,
+    type MouseEvent
+} from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Pager, type PageChangeEvent } from '@progress/kendo-react-data-tools';
@@ -64,12 +67,12 @@ export default function VersionHistory() {
     const selectedReportIds = useSelector(selectSelectedReportIds);
 
     // Modal states
-    const [deleteModal, setDeleteModal] = React.useState({
+    const [deleteModal, setDeleteModal] = useState({
         isOpen: false,
         versionId: null as number | null,
         isMultiple: false
     });
-    const [publishModal, setPublishModal] = React.useState({
+    const [publishModal, setPublishModal] = useState({
         isOpen: false,
         versionId: null as number | null
     });
@@ -100,13 +103,13 @@ export default function VersionHistory() {
         return report.reportName;
     };
 
-    const currentReportName = React.useMemo(() => {
+    const currentReportName = useMemo(() => {
         if (!selectedReportId) return 'Unknown Report';
         const report = reports.find(r => r.id === selectedReportId);
         return report?.reportName || 'Unknown Report';
     }, [selectedReportId, reports]);
 
-    const noVersionsMessage = React.useMemo(() => {
+    const noVersionsMessage = useMemo(() => {
         if (selectedReportIds.length > 0) {
             return 'Select a single report to view version history';
         }
@@ -153,17 +156,17 @@ export default function VersionHistory() {
     };
 
     // Version actions renderer
-    const VersionActionsRenderer: React.FC<ICellRendererParams<VersionRowWithPublished>> = ({ data }) => {
+    const VersionActionsRenderer = ({ data }: ICellRendererParams<VersionRowWithPublished>) => {
         const row = data!;
 
-        const handleDownloadClick = (e: React.MouseEvent) => {
+        const handleDownloadClick = (e: MouseEvent) => {
             e.stopPropagation();
             dispatch(clearSelectedVersionIds());
             console.log('download', row.id);
             showNotification('success', `Downloading version <strong>${row.version}</strong>...`);
         };
 
-        const handleNewVersionClick = (e: React.MouseEvent) => {
+        const handleNewVersionClick = (e: MouseEvent) => {
             e.stopPropagation();
             dispatch(clearSelectedVersionIds());
             dispatch(setActionContext({
@@ -174,7 +177,7 @@ export default function VersionHistory() {
             navigate('/report-designer');
         };
 
-        const handleEditClick = (e: React.MouseEvent) => {
+        const handleEditClick = (e: MouseEvent) => {
             e.stopPropagation();
             dispatch(clearSelectedVersionIds());
             dispatch(setActionContext({
@@ -185,7 +188,7 @@ export default function VersionHistory() {
             navigate('/report-designer');
         };
 
-        const handleDeleteClick = (e: React.MouseEvent) => {
+        const handleDeleteClick = (e: MouseEvent) => {
             e.stopPropagation();
             dispatch(clearSelectedVersionIds());
             setDeleteModal({ isOpen: true, versionId: Number(row.id), isMultiple: false });
@@ -220,7 +223,7 @@ export default function VersionHistory() {
     };
 
     // Column definitions
-    const columnDefs = React.useMemo<ColDef<VersionRowWithPublished>[]>(() => [
+    const columnDefs = useMemo<ColDef<VersionRowWithPublished>[]>(() => [
         {
             headerName: undefined,
             width: 50,
@@ -281,7 +284,7 @@ export default function VersionHistory() {
         }
     ], []);
 
-    const tableKey = React.useMemo(() => {
+    const tableKey = useMemo(() => {
         return `${selectedReportId}-${selectedReportIds.length}-${currentReportName}`;
     }, [selectedReportId, selectedReportIds.length, currentReportName]);
 

@@ -1,9 +1,8 @@
-//import * as React from 'react';
 import { useSelector } from 'react-redux';
 
 import StatisticsCards from '../components/dashboard/StatisticsCards';
-import ReportsList from '../components/reports/ReportList';
-import VersionHistory from '../components/reports/VersionHistory';
+import ReportsList from '../components/dashboard/ReportList';
+import VersionHistory from '../components/dashboard/VersionHistory';
 
 import { selectReportStatistics, selectSelectedReportId } from '../features/reports/reportsSelectors';
 
