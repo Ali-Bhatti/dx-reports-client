@@ -39,3 +39,8 @@ export const CheckboxRenderer = ({ value }: ICellRendererParams<any, boolean>) =
         className="cursor-default"
     />
 );
+
+// Function to show YES or NO for boolean values
+export const YesNoRenderer = ({ value }: ICellRendererParams<any, boolean>) => (
+    <span>{value ? 'Yes' : 'No'}</span>
+);

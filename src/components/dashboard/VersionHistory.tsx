@@ -219,22 +219,13 @@ export default function VersionHistory() {
     // Column definitions
     const columnDefs = useMemo<ColDef<VersionRowWithPublished>[]>(() => [
         {
-            headerName: undefined,
-            width: 50,
-            minWidth: 50,
-            maxWidth: 50,
-            checkboxSelection: true,
-            headerCheckboxSelection: true,
-            sortable: false,
-            filter: false,
-            suppressMenu: true,
-            pinned: 'left',
-        },
-        {
             headerName: 'Version',
             field: 'version',
             flex: 1,
-            minWidth: 100
+            minWidth: 100,
+            checkboxSelection: true,
+            headerCheckboxSelection: true,
+            pinned: 'left',
         },
         {
             headerName: 'Creation Date',
@@ -274,6 +265,7 @@ export default function VersionHistory() {
             maxWidth: 250,
             cellRenderer: VersionActionsRenderer,
             sortable: false,
+            filter: false,
             pinned: 'right',
         }
     ], []);

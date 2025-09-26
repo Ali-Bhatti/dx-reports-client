@@ -15,7 +15,8 @@ import CompanySelector from './CompanySelector';
 import CopyModal from '../modals/CopyModal';
 import DeleteModal from '../modals/DeleteModal';
 import LinkModal from '../modals/LinkModal';
-import { ActionButton, CheckboxRenderer } from '../table/renderers/CommonRenderers';
+import { ActionButton, YesNoRenderer } from '../table/renderers/CommonRenderers';
+import YesNoCheckboxFilter from '../table/filters/YesNoCheckboxFilter';
 import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 import { formatDateTime } from '../../utils/dateFormatters';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -179,22 +180,13 @@ export default function ReportsList() {
   // Column definitions
   const columnDefs = useMemo<ColDef<ReportRow>[]>(() => [
     {
-      headerName: '',
-      width: 50,
-      minWidth: 50,
-      maxWidth: 50,
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      sortable: false,
-      filter: false,
-      suppressMenu: true,
-      pinned: 'left',
-    },
-    {
       headerName: 'Report Name',
       field: 'reportName',
       flex: 2,
-      minWidth: 140
+      minWidth: 140,
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
+      pinned: 'left',
     },
     {
       headerName: 'Creation Date',
@@ -223,8 +215,9 @@ export default function ReportsList() {
       width: 80,
       minWidth: 80,
       maxWidth: 80,
-      cellRenderer: CheckboxRenderer,
-      sortable: false
+      cellRenderer: YesNoRenderer,
+      sortable: false,
+      filter: YesNoCheckboxFilter,
     },
     {
       headerName: 'Actions',
@@ -235,6 +228,7 @@ export default function ReportsList() {
       maxWidth: 220,
       cellRenderer: ReportActionsRenderer,
       sortable: false,
+      filter: false,
       pinned: 'right',
     }
   ], []);

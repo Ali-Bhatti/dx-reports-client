@@ -29,16 +29,6 @@ const BaseTable = <TData extends any = any>({
     showCheckboxColumn = true,
     ...props
 }: BaseTableProps<TData>) => {
-    // Default checkbox column configuration
-    const defaultCheckboxColumn: ColDef<TData> = useMemo(() => ({
-        headerName: '',
-        width: 20,
-        minWidth: 20,
-        maxWidth: 35,
-        flex: 0,
-        sortable: false,
-        resizable: false,
-    }), []);
 
     // Default column definition
     const mergedDefaultColDef = useMemo<ColDef<TData>>(() => ({
@@ -46,13 +36,12 @@ const BaseTable = <TData extends any = any>({
         resizable: true,
         flex: 1,
         minWidth: 120,
+        filter: true,
         ...defaultColDef,
     }), [defaultColDef]);
 
-    // Merge column definitions with checkbox column if enabled
-    const mergedColumnDefs = useMemo<ColDef<TData>[]>(() => {
-        return [defaultCheckboxColumn, ...columnDefs];
-    }, [columnDefs, defaultCheckboxColumn, showCheckboxColumn]);
+    // Use columnDefs directly, let AG Grid handle checkboxSelection
+    const mergedColumnDefs = useMemo<ColDef<TData>[]>(() => columnDefs, [columnDefs]);
 
     // Default grid options
     const mergedGridOptions = useMemo<GridOptions<TData>>(() => ({
