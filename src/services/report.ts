@@ -1,136 +1,197 @@
-import type { Report, ReportVersion, Company, User, ReportStatistics, ApiResponse, PaginatedResponse } from '../types';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import type { Report, ReportVersion, Company, User, ReportStatistics, ApiResponse, PaginatedResponse } from '../types'
+import config from '../config/config';
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fleetgo.com';
+const API_BASE_URL = config.apiBaseUrl;
 
-class ApiService {
-    private baseURL: string;
+// Custom base query with your existing request logic
+const customBaseQuery = fetchBaseQuery({
+    baseUrl: `${API_BASE_URL}/api/`,
+    prepareHeaders: (headers) => {
+        headers.set('Content-Type', 'application/json')
+        // Add authentication headers here
+        // headers.set('Authorization', `Bearer ${getToken()}`)
+        return headers
+    },
+    // Transform response to match your ApiResponse structure
+    responseHandler: async (response) => {
+        const data = await response.json()
+        return data
+    },
+})
 
-    constructor(baseURL: string = API_BASE_URL) {
-        this.baseURL = baseURL;
-    }
+export const reportsApi = createApi({
+    reducerPath: 'reportsApi',
+    baseQuery: customBaseQuery,
+    tagTypes: ['Report', 'ReportVersion', 'Company', 'ReportStatistics', 'User'],
+    endpoints: (builder) => ({
 
-    private async request<T>(
-        endpoint: string,
-        options: RequestInit = {}
-    ): Promise<ApiResponse<T>> {
-        const url = `${this.baseURL}${endpoint}`;
+        // Companies API
+        getCompanies: builder.query<Company[], void>({
+            query: () => 'report/companies',
+            transformResponse: (response: ApiResponse<Company[]>) => response.data,
+            providesTags: ['Company'],
+        }),
 
-        const defaultHeaders = {
-            'Content-Type': 'application/json',
-            // Add authentication headers here
-            // 'Authorization': `Bearer ${getToken()}`,
-        };
+        getCompany: builder.query<Company, string>({
+            query: (id) => `companies/${id}`,
+            transformResponse: (response: ApiResponse<Company>) => response.data,
+            providesTags: (result, error, id) => [{ type: 'Company', id }],
+        }),
 
-        const config: RequestInit = {
-            ...options,
-            headers: {
-                ...defaultHeaders,
-                ...options.headers,
+        // Reports API
+        getReports: builder.query<PaginatedResponse<Report>, { companyId?: string; search?: string }>({
+            query: ({ companyId, search }) => {
+                const params = new URLSearchParams()
+                if (search) params.append('search', search)
+                return `report/companies/${companyId}/reports?${params}`
             },
-        };
+            transformResponse: (response: ApiResponse<PaginatedResponse<Report>>) => {
+                console.log('API Response-------:', response);
+                console.log('Response Data-------:', response.data);
+                return response.data;
+            },
+            providesTags: (result) => {
+                // Add null checking for result.data and ensure it's an array
+                if (result?.data && Array.isArray(result.data)) {
+                    return [
+                        ...result.data.map(({ id }) => ({ type: 'Report' as const, id })),
+                        { type: 'Report', id: 'LIST' },
+                    ];
+                }
+                return [{ type: 'Report', id: 'LIST' }];
+            },
+        }),
 
-        try {
-            const response = await fetch(url, config);
+        getReport: builder.query<Report, string>({
+            query: (id) => `reports/${id}`,
+            transformResponse: (response: ApiResponse<Report>) => response.data,
+            providesTags: (_result, _error, id) => [{ type: 'Report', id }],
+        }),
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+        createReport: builder.mutation<Report, Partial<Report>>({
+            query: (report) => ({
+                url: 'reports',
+                method: 'POST',
+                body: report,
+            }),
+            transformResponse: (response: ApiResponse<Report>) => response.data,
+            invalidatesTags: [{ type: 'Report', id: 'LIST' }],
+        }),
 
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('API request failed:', error);
-            throw error;
-        }
-    }
+        updateReport: builder.mutation<Report, { id: string; report: Partial<Report> }>({
+            query: ({ id, report }) => ({
+                url: `reports/${id}`,
+                method: 'PUT',
+                body: report,
+            }),
+            transformResponse: (response: ApiResponse<Report>) => response.data,
+            invalidatesTags: (_result, _error, { id }) => [{ type: 'Report', id }],
+        }),
 
-    // Reports API
-    async getReports(companyId?: string, search?: string): Promise<PaginatedResponse<Report>> {
-        const params = new URLSearchParams();
-        if (companyId) params.append('companyId', companyId);
-        if (search) params.append('search', search);
+        deleteReport: builder.mutation<void, string>({
+            query: (id) => ({
+                url: `reports/${id}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: [{ type: 'Report', id: 'LIST' }],
+        }),
 
-        return this.request<PaginatedResponse<Report>>(`/api/reports?${params}`);
-    }
+        copyReport: builder.mutation<Report, string>({
+            query: (id) => ({
+                url: `reports/${id}/copy`,
+                method: 'POST',
+            }),
+            transformResponse: (response: ApiResponse<Report>) => response.data,
+            invalidatesTags: [{ type: 'Report', id: 'LIST' }],
+        }),
 
-    async getReport(id: string): Promise<Report> {
-        return this.request<Report>(`/api/reports/${id}`);
-    }
+        // Report Versions API
+        getReportVersions: builder.query<ReportVersion[], string>({
+            query: (reportId) => `reports/${reportId}/versions`,
+            transformResponse: (response: ApiResponse<ReportVersion[]>) => response.data,
+            providesTags: (result, _, reportId) =>
+                result
+                    ? [
+                        ...result.map(({ id }) => ({ type: 'ReportVersion' as const, id })),
+                        { type: 'ReportVersion', id: `LIST-${reportId}` },
+                    ]
+                    : [{ type: 'ReportVersion', id: `LIST-${reportId}` }],
+        }),
 
-    async createReport(report: Partial<Report>): Promise<Report> {
-        return this.request<Report>('/api/reports', {
-            method: 'POST',
-            body: JSON.stringify(report),
-        });
-    }
+        createReportVersion: builder.mutation<ReportVersion, { reportId: string; version: Partial<ReportVersion> }>({
+            query: ({ reportId, version }) => ({
+                url: `reports/${reportId}/versions`,
+                method: 'POST',
+                body: version,
+            }),
+            transformResponse: (response: ApiResponse<ReportVersion>) => response.data,
+            invalidatesTags: (_result, _error, { reportId }) => [
+                { type: 'ReportVersion', id: `LIST-${reportId}` }
+            ],
+        }),
 
-    async updateReport(id: string, report: Partial<Report>): Promise<Report> {
-        return this.request<Report>(`/api/reports/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(report),
-        });
-    }
+        publishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: string }>({
+            query: ({ reportId, versionId }) => ({
+                url: `reports/${reportId}/versions/${versionId}/publish`,
+                method: 'POST',
+            }),
+            transformResponse: (response: ApiResponse<ReportVersion>) => response.data,
+            invalidatesTags: (_result, _error, { reportId, versionId }) => [
+                { type: 'ReportVersion', id: versionId },
+                { type: 'ReportVersion', id: `LIST-${reportId}` }
+            ],
+        }),
 
-    async deleteReport(id: string): Promise<void> {
-        return this.request<void>(`/api/reports/${id}`, {
-            method: 'DELETE',
-        });
-    }
+        // Statistics API
+        getReportStatistics: builder.query<ReportStatistics[], string>({
+            query: (companyId) => `report/companies/${companyId}/report-kpis`,
+            transformResponse: (response: ApiResponse<ReportStatistics[]>) => response.data,
+            providesTags: (_result, _error, companyId) => [{ type: 'ReportStatistics', id: companyId }],
+        }),
 
-    async copyReport(id: string): Promise<Report> {
-        return this.request<Report>(`/api/reports/${id}/copy`, {
-            method: 'POST',
-        });
-    }
+        // Users API
+        getCurrentUser: builder.query<User, void>({
+            query: () => 'users/me',
+            transformResponse: (response: ApiResponse<User>) => response.data,
+            providesTags: ['User'],
+        }),
 
-    // Report Versions API
-    async getReportVersions(reportId: string): Promise<ReportVersion[]> {
-        return this.request<ReportVersion[]>(`/api/reports/${reportId}/versions`);
-    }
+        getUsers: builder.query<User[], void>({
+            query: () => 'users',
+            transformResponse: (response: ApiResponse<User[]>) => response.data,
+            providesTags: ['User'],
+        }),
+    }),
+})
 
-    async createReportVersion(reportId: string, version: Partial<ReportVersion>): Promise<ReportVersion> {
-        return this.request<ReportVersion>(`/api/reports/${reportId}/versions`, {
-            method: 'POST',
-            body: JSON.stringify(version),
-        });
-    }
+// Export hooks for each endpoint
+export const {
+    // Companies
+    useGetCompaniesQuery,
+    useGetCompanyQuery,
 
-    async publishVersion(reportId: string, versionId: string): Promise<ReportVersion> {
-        return this.request<ReportVersion>(`/api/reports/${reportId}/versions/${versionId}/publish`, {
-            method: 'POST',
-        });
-    }
+    // Reports
+    useGetReportsQuery,
+    useGetReportQuery,
+    useCreateReportMutation,
+    useUpdateReportMutation,
+    useDeleteReportMutation,
+    useCopyReportMutation,
 
-    async downloadVersion(reportId: string, versionId: string): Promise<Blob> {
-        const response = await fetch(`${this.baseURL}/api/reports/${reportId}/versions/${versionId}/download`);
-        return response.blob();
-    }
+    // Report Versions
+    useGetReportVersionsQuery,
+    useCreateReportVersionMutation,
+    usePublishVersionMutation,
 
-    // Companies API
-    async getCompanies(): Promise<Company[]> {
-        return this.request<Company[]>('/api/companies');
-    }
+    // Statistics
+    useGetReportStatisticsQuery,
 
-    async getCompany(id: string): Promise<Company> {
-        return this.request<Company>(`/api/companies/${id}`);
-    }
+    // Users
+    useGetCurrentUserQuery,
+    useGetUsersQuery,
+} = reportsApi
 
-    // Statistics API
-    async getReportStatistics(companyId?: string): Promise<ReportStatistics> {
-        const params = companyId ? `?companyId=${companyId}` : '';
-        return this.request<ReportStatistics>(`/api/reports/statistics${params}`);
-    }
-
-    // Users API
-    async getCurrentUser(): Promise<User> {
-        return this.request<User>('/api/users/me');
-    }
-
-    async getUsers(): Promise<User[]> {
-        return this.request<User[]>('/api/users');
-    }
-}
-
-export const apiService = new ApiService();
-export default apiService;
+// Export the API reducer and middleware
+export default reportsApi

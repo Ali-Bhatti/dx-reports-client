@@ -56,6 +56,47 @@ body,
     color: var(--e-global-color-global_color_6);
 }
 
+.custom-autocomplete {
+    position: relative;
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+    background-color: #f9fafb !important;
+}
+
+.custom-autocomplete:hover {
+    border-color: var(--fg-gray) !important;
+    background-color: #f3f4f6 !important;
+}
+
+
+.custom-autocomplete::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid #6b7280;
+    pointer-events: none;
+    z-index: 1;
+}
+
+
+.custom-autocomplete .k-input-inner {
+    padding-right: 32px !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+.custom-autocomplete .k-input {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
 .k-pager {
     display: inline-flex;
     flex-direction: row-reverse;

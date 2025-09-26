@@ -39,7 +39,7 @@ export const selectReportStatistics = createSelector(
   [selectFilteredReports],
   (reports): ReportStatistics[] => {
     const totalReports = reports.length;
-    const activeReports = reports.filter(r => r.active).length;
+    const activeReports = reports.filter(r => r.merged).length;
     const inactiveReports = totalReports - activeReports;
     
     return [

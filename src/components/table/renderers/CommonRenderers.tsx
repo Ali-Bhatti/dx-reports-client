@@ -1,4 +1,4 @@
-import React from 'react';
+import { type MouseEvent } from 'react';
 import BaseButton from '../../shared/BaseButton';
 import type { ICellRendererParams } from 'ag-grid-community';
 
@@ -6,7 +6,7 @@ import type { ICellRendererParams } from 'ag-grid-community';
 interface ActionButtonProps {
     icon: any;
     title: string;
-    onClick: (e: React.MouseEvent) => void;
+    onClick: (e: MouseEvent) => void;
     disabled?: boolean;
 }
 

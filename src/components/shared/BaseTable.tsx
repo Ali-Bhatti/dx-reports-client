@@ -1,11 +1,10 @@
 // BaseTable.tsx
-import * as React from 'react';
+import { useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import type {
     ColDef,
     GridOptions,
-    RowSelectionOptions
 } from 'ag-grid-community';
 import type { AgGridReactProps } from 'ag-grid-react';
 
@@ -31,7 +30,7 @@ const BaseTable = <TData extends any = any>({
     ...props
 }: BaseTableProps<TData>) => {
     // Default checkbox column configuration
-    const defaultCheckboxColumn: ColDef<TData> = React.useMemo(() => ({
+    const defaultCheckboxColumn: ColDef<TData> = useMemo(() => ({
         headerName: '',
         width: 20,
         minWidth: 20,
@@ -42,7 +41,7 @@ const BaseTable = <TData extends any = any>({
     }), []);
 
     // Default column definition
-    const mergedDefaultColDef = React.useMemo<ColDef<TData>>(() => ({
+    const mergedDefaultColDef = useMemo<ColDef<TData>>(() => ({
         sortable: true,
         resizable: true,
         flex: 1,
@@ -51,12 +50,12 @@ const BaseTable = <TData extends any = any>({
     }), [defaultColDef]);
 
     // Merge column definitions with checkbox column if enabled
-    const mergedColumnDefs = React.useMemo<ColDef<TData>[]>(() => {
+    const mergedColumnDefs = useMemo<ColDef<TData>[]>(() => {
         return [defaultCheckboxColumn, ...columnDefs];
     }, [columnDefs, defaultCheckboxColumn, showCheckboxColumn]);
 
     // Default grid options
-    const mergedGridOptions = React.useMemo<GridOptions<TData>>(() => ({
+    const mergedGridOptions = useMemo<GridOptions<TData>>(() => ({
         rowHeight: 40,
         headerHeight: 40,
         theme: "legacy",

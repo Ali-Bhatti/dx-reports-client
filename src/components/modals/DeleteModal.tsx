@@ -1,5 +1,3 @@
-// components/modals/DeleteModal.tsx
-import * as React from 'react';
 import BaseModal from '../shared/BaseModal';
 import BaseButton from '../shared/BaseButton';
 

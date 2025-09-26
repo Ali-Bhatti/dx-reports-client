@@ -19,6 +19,8 @@ import { ActionButton, CheckboxRenderer } from '../table/renderers/CommonRendere
 import { formatDateTime } from '../../utils/dateFormatters';
 import { useNotifications } from '../../hooks/useNotifications';
 
+import { useGetReportsQuery } from '../../services/report';
+
 import type { Company } from '../../types';
 import type { Report as ReportRow } from '../../types';
 
@@ -36,10 +38,7 @@ import {
   selectQuery,
   selectSelectedReportId,
   selectSelectedReportIds,
-  selectFilteredReports,
-  selectPaginatedReports,
   selectReportsPagination,
-  selectHasMultipleReportsSelected,
 } from '../../features/reports/reportsSelectors';
 
 import {
@@ -65,10 +64,47 @@ export default function ReportsList() {
   const query = useSelector(selectQuery);
   const selectedReportId = useSelector(selectSelectedReportId);
   const selectedReportIds = useSelector(selectSelectedReportIds);
-  const filteredReports = useSelector(selectFilteredReports);
-  const paginatedReports = useSelector(selectPaginatedReports);
   const pagination = useSelector(selectReportsPagination);
-  const hasMultipleSelected = useSelector(selectHasMultipleReportsSelected);
+
+  // RTK Query - Fetch reports data
+  const {
+    data: reportsResponse,
+    isLoading: reportsLoading,
+    isError: reportsError,
+    error: _reportsErrorDetails,
+  } = useGetReportsQuery(
+    {
+      companyId: currentCompany?.toString(),
+      search: query || undefined
+    },
+    {
+      skip: !currentCompany,
+      refetchOnMountOrArgChange: true
+    }
+  );
+
+  // Extract the actual reports array from the response
+  // Adjust the property name based on your actual PaginatedResponse structure
+  const allReports = useMemo(() => {
+    if (!reportsResponse || !currentCompany) return [];
+
+    // If reportsResponse is already an array (fallback)
+    if (Array.isArray(reportsResponse)) {
+      return reportsResponse;
+    }
+
+    return reportsResponse.data || [];
+  }, [reportsResponse, currentCompany]);
+
+  console.log('All Reports:-------', allReports);
+
+  // Apply local pagination (since API might return all results)
+  const paginatedReports = useMemo(() => {
+    return allReports.slice(pagination.skip, pagination.skip + pagination.take);
+  }, [allReports, pagination.skip, pagination.take]);
+
+  // Check if multiple reports are selected
+  const hasMultipleSelected = selectedReportIds.length > 0;
 
   // Modal states
   const [copyModal, setCopyModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
@@ -77,23 +113,29 @@ export default function ReportsList() {
 
   // Helper functions
   const getSelectedReportNames = () => {
-    return filteredReports
+    return allReports
       .filter(r => selectedReportIds.includes(Number(r.id)))
       .map(r => r.reportName);
   };
 
   const getReportById = (id: number) => {
-    return filteredReports.find(r => r.id === id);
+    return allReports.find(r => Number(r.id) === id);
   };
 
   const getNoRowsMessage = () => {
     if (currentCompany == null) {
       return 'Please select a company to view reports';
     }
-    if (query && filteredReports.length === 0) {
+    if (reportsLoading) {
+      return 'Loading reports...';
+    }
+    if (reportsError) {
+      return 'Error loading reports. Please try again.';
+    }
+    if (query && allReports.length === 0) {
       return `No reports found matching "${query}"`;
     }
-    if (filteredReports.length === 0) {
+    if (allReports.length === 0) {
       return 'No reports available for this company';
     }
     return 'No rows to show';
@@ -174,8 +216,8 @@ export default function ReportsList() {
       minWidth: 140
     },
     {
-      headerName: 'Status',
-      field: 'active',
+      headerName: 'Migrated',
+      field: 'merged',
       flex: 0,
       width: 80,
       minWidth: 80,
@@ -199,14 +241,18 @@ export default function ReportsList() {
   // Event handlers
   const handleCompanyChange = (company: Company | null) => {
     dispatch(setCurrentCompany(company ? Number(company.id) : null));
+    // Clear selected reports when company changes
+    dispatch(setSelectedReportId(null));
+    dispatch(clearSelectedReportIds());
   };
 
   const handleQueryChange = (e: any) => {
     const newQuery = e.value;
     dispatch(setQuery(newQuery));
 
-    if (newQuery && newQuery.length > 2) {
-      const resultCount = filteredReports.length;
+    // Show notification after data is loaded
+    if (newQuery && newQuery.length > 2 && !reportsLoading) {
+      const resultCount = allReports.length;
       if (resultCount === 0) {
         showNotification('warning', `No reports found matching "<strong>${newQuery}</strong>"`);
       }
@@ -239,7 +285,7 @@ export default function ReportsList() {
 
   const getRowStyle = useCallback(
     (p: RowClassParams) => {
-      if (p.data?.id === selectedReportId && selectedReportIds.length === 0) {
+      if (+p.data?.id === selectedReportId && selectedReportIds.length === 0) {
         return { backgroundColor: '#c8e6c971' };
       }
       return undefined;
@@ -329,6 +375,10 @@ export default function ReportsList() {
     }
   };
 
+  const tableKey = useMemo(() => {
+    return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}`;
+  }, [currentCompany]);
+
   return (
     <>
       <BaseCard dividers={false}>
@@ -370,6 +420,7 @@ export default function ReportsList() {
           </div>
 
           <BaseTable<ReportRow>
+            //key={tableKey}
             rowData={paginatedReports}
             columnDefs={columnDefs}
             getRowId={(p) => String(p.data.id)}
@@ -379,6 +430,7 @@ export default function ReportsList() {
             height={420}
             rowSelection={"multiple"}
             suppressRowClickSelection={true}
+            loading={reportsLoading}
             noRowsOverlayComponent={() => (
               <div className="flex flex-col items-center justify-center h-full text-gray-500">
                 <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -395,15 +447,15 @@ export default function ReportsList() {
 
         <BaseCard.Footer>
           <span className="text-sm text-gray-500">
-            {filteredReports.length
-              ? `Showing ${pagination.skip + 1}-${Math.min(pagination.skip + pagination.take, filteredReports.length)} of ${filteredReports.length}`
+            {allReports.length
+              ? `Showing ${pagination.skip + 1}-${Math.min(pagination.skip + pagination.take, allReports.length)} of ${allReports.length}`
               : `Showing 0–0 of 0`}
           </span>
           <Pager
             className="fg-pager"
             skip={pagination.skip}
             take={pagination.take}
-            total={filteredReports.length}
+            total={allReports.length}
             buttonCount={5}
             info={false}
             type="numeric"

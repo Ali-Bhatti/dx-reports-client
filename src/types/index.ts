@@ -6,7 +6,7 @@ export interface Report {
     createdOn?: string;
     modifiedOn?: string;
     modifiedBy?: string;
-    active: boolean; // active/inactive
+    merged: boolean; // active/inactive
     companyId: string | number;
 }
 
@@ -37,8 +37,8 @@ export interface User {
 }
 
 export interface ReportStatistics {
-    label: string,
-    total: number
+    label: string;
+    total: number;
 }
 
 // API Response types
@@ -51,8 +51,8 @@ export interface ApiResponse<T> {
 
 export interface PaginatedResponse<T> {
     data: T[];
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
+    total?: number;
+    page?: number;
+    pageSize?: number;
+    totalPages?: number;
 }
