@@ -16,6 +16,7 @@ import CopyModal from '../modals/CopyModal';
 import DeleteModal from '../modals/DeleteModal';
 import LinkModal from '../modals/LinkModal';
 import { ActionButton, CheckboxRenderer } from '../table/renderers/CommonRenderers';
+import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 import { formatDateTime } from '../../utils/dateFormatters';
 import { useNotifications } from '../../hooks/useNotifications';
 
@@ -122,7 +123,7 @@ export default function ReportsList() {
     return allReports.find(r => Number(r.id) === id);
   };
 
-  const getNoRowsMessage = () => {
+  const getNoRowsMessage = (): string => {
     if (currentCompany == null) {
       return 'Please select a company to view reports';
     }
@@ -420,7 +421,6 @@ export default function ReportsList() {
           </div>
 
           <BaseTable<ReportRow>
-            //key={tableKey}
             rowData={paginatedReports}
             columnDefs={columnDefs}
             getRowId={(p) => String(p.data.id)}
@@ -432,15 +432,10 @@ export default function ReportsList() {
             suppressRowClickSelection={true}
             loading={reportsLoading}
             noRowsOverlayComponent={() => (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span className="text-lg font-medium">{getNoRowsMessage()}</span>
-                {currentCompany == null && (
-                  <span className="text-sm mt-2">Use the dropdown above to get started</span>
-                )}
-              </div>
+              <EmptyStateRenderer
+                message={getNoRowsMessage()}
+                subMessage={currentCompany == null ? 'Use the dropdown above to get started' : undefined}
+              />
             )}
           />
         </BaseCard.Body>

@@ -11,6 +11,7 @@ import BaseCard from '../shared/BaseCard';
 import BaseButton from '../shared/BaseButton';
 import BaseSwitch from '../shared/BaseSwitch';
 import BaseTable from '../shared/BaseTable';
+import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 import DeleteModal from '../modals/DeleteModal';
 import PublishModal from '../modals/PublishModal';
 import { ActionButton } from '../table/renderers/CommonRenderers';
@@ -77,11 +78,6 @@ export default function VersionHistory() {
         versionId: null as number | null
     });
 
-    // Don't render if conditions not met
-    if (!shouldShow) {
-        return null;
-    }
-
     // Helper functions
     const getVersionById = (id: number) => {
         return versions.find(v => v.id === id);
@@ -110,14 +106,12 @@ export default function VersionHistory() {
     }, [selectedReportId, reports]);
 
     const noVersionsMessage = useMemo(() => {
+        if (!selectedReportId) {
+            return 'Select a report to see its Versions';
+        }
         if (selectedReportIds.length > 0) {
             return 'Select a single report to view version history';
         }
-
-        if (!selectedReportId) {
-            return 'No report selected';
-        }
-
         if (currentReportName === 'Unknown Report') {
             return 'No report selected';
         }
@@ -380,23 +374,10 @@ export default function VersionHistory() {
                         rowSelection="multiple"
                         suppressRowClickSelection={true}
                         noRowsOverlayComponent={() => (
-                            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                                <svg
-                                    className="w-16 h-16 mb-4 text-gray-300"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={1.5}
-                                        d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-                                    />
-                                </svg>
-                                <span className="text-lg font-medium">{noVersionsMessage}</span>
-                                <span className="text-sm mt-2">Version history will appear here once created</span>
-                            </div>
+                            <EmptyStateRenderer
+                                message={noVersionsMessage}
+                                subMessage={"Version history will appear here once created"}
+                            />
                         )}
                     />
                 </BaseCard.Body>
