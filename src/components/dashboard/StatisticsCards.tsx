@@ -16,6 +16,7 @@ const StatisticsCards = ({ onClick }: StatisticsCardsProps) => {
         isLoading: loading,
     } = useGetReportStatisticsQuery(
         currentCompany?.toString() || '',
+        { skip: !currentCompany }
     );
 
     // Handle loading state
