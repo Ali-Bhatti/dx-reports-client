@@ -17,7 +17,6 @@ export const useCompanies = (): UseCompaniesReturn => {
         refetch,
     } = useGetCompaniesQuery();
 
-    console.log('useCompanies - companies:', companies);
     return {
         companies,
         loading: isLoading,

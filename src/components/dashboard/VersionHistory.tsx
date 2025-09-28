@@ -169,7 +169,6 @@ export default function VersionHistory() {
 
     // Action handlers for the version actions renderer
     const handleVersionDownload = (versionId: number) => {
-        console.log('download', versionId);
         showNotification('success', `Downloading version <strong>${getVersionById(versionId)?.version}</strong>...`);
     };
 
@@ -270,7 +269,6 @@ export default function VersionHistory() {
     // Modal handlers - only local state updates, no API calls
     const handleDeleteConfirm = () => {
         if (deleteModal.isMultiple) {
-            console.log("Delete Version History", selectedVersionIds);
             dispatch(clearSelectedVersionIds());
 
             const versionCount = selectedVersionIds.length;
@@ -278,8 +276,6 @@ export default function VersionHistory() {
             showNotification('success', `Successfully deleted <strong>${versionCount} ${versionText}</strong>`);
         } else if (deleteModal.versionId) {
             const version = getVersionById(deleteModal.versionId);
-            console.log("Delete version", deleteModal.versionId);
-
             showNotification('success', `Version <strong>${version?.version || ''}</strong> deleted successfully`);
         }
 
@@ -294,8 +290,6 @@ export default function VersionHistory() {
                 ...prev,
                 [publishModal.versionId!]: true
             }));
-            console.log("Published version", publishModal.versionId);
-
             showNotification('success', `Version <strong>${version?.version || ''}</strong> published successfully`);
         }
 

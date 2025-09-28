@@ -63,7 +63,6 @@ export default function ReportsList() {
 
   const onGridReady = (params: any) => {
     gridRef.current = params.api;
-    console.log('Grid Ready', params.api);
   };
 
   // Redux selectors
@@ -335,7 +334,6 @@ export default function ReportsList() {
     try {
       const reportNames = copyModal.isMultiple ? getSelectedReportNames() : [getReportById(copyModal.reportId!)?.reportName || ''];
 
-      console.log('Copy reports to company:', destinationCompany, 'Reports:', reportNames);
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const reportCount = reportNames.length;
@@ -357,7 +355,6 @@ export default function ReportsList() {
     try {
       const reportNames = deleteModal.isMultiple ? getSelectedReportNames() : [getReportById(deleteModal.reportId!)?.reportName || ''];
 
-      console.log('Delete reports:', reportNames);
       await new Promise(resolve => setTimeout(resolve, 800));
 
       const reportCount = reportNames.length;
@@ -379,7 +376,6 @@ export default function ReportsList() {
     try {
       const report = getReportById(linkModal.reportId!);
 
-      console.log('Link report to pages:', report?.reportName, selectedPages);
       await new Promise(resolve => setTimeout(resolve, 600));
 
       const pageCount = selectedPages.length;

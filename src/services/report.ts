@@ -48,8 +48,6 @@ export const reportsApi = createApi({
                 return `report/companies/${companyId}/reports?${params}`
             },
             transformResponse: (response: ApiResponse<PaginatedResponse<Report>>) => {
-                console.log('API Response-------:', response);
-                console.log('Response Data-------:', response.data);
                 return response.data;
             },
             providesTags: (result) => {
