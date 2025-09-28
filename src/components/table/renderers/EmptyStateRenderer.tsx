@@ -1,9 +1,9 @@
-import React from 'react';
+import {type ReactNode} from 'react';
 
 interface EmptyStateRendererProps {
     message: string;
     subMessage?: string;
-    icon?: React.ReactNode;
+    icon?: ReactNode;
 }
 
 const DefaultIcon = () => (
@@ -22,7 +22,7 @@ const DefaultIcon = () => (
     </svg>
 );
 
-const EmptyStateRenderer: React.FC<EmptyStateRendererProps> = ({ message, subMessage, icon }) => (
+const EmptyStateRenderer = ({ message, subMessage, icon }: EmptyStateRendererProps) => (
     <div className="flex flex-col items-center justify-center h-full text-gray-500">
         {icon || <DefaultIcon />}
         <span className="text-lg font-medium">{message}</span>

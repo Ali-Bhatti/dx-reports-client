@@ -11,7 +11,7 @@ export class YesNoCheckboxFilter {
         this.gui.className = 'ag-filter-body';
         this.gui.style.padding = '8px';
         this.gui.innerHTML = `
-      <div style="font-weight: 500; margin-bottom: 6px; font-size: 13px;">Filter by Migrated:</div>
+      <div style="font-weight: 500; margin-bottom: 6px; font-size: 13px;">Filter by ${this.params.colDef.headerName}:</div>
       <div style="display: flex; flex-direction: column; gap: 6px;">
         <label class="ag-checkbox-label"><input type="checkbox" value="true" style="margin-right: 6px;" /> Yes</label>
         <label class="ag-checkbox-label"><input type="checkbox" value="false" style="margin-right: 6px;" /> No</label>

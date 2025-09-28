@@ -2,7 +2,8 @@ import {
   useState,
   useMemo,
   useCallback,
-  type MouseEvent,
+  useEffect,
+  useRef,
 } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Input } from '@progress/kendo-react-inputs';
@@ -15,10 +16,9 @@ import CompanySelector from './CompanySelector';
 import CopyModal from '../modals/CopyModal';
 import DeleteModal from '../modals/DeleteModal';
 import LinkModal from '../modals/LinkModal';
-import { ActionButton, YesNoRenderer } from '../table/renderers/CommonRenderers';
-import YesNoCheckboxFilter from '../table/filters/YesNoCheckboxFilter';
+import { ReportActionsRenderer } from '../table/renderers';
 import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
-import { formatDateTime } from '../../utils/dateFormatters';
+import { getReportListColumnDefs } from '../table/columnDefs';
 import { useNotifications } from '../../hooks/useNotifications';
 
 import { useGetReportsQuery } from '../../services/report';
@@ -46,20 +46,25 @@ import {
 import {
   copyIcon,
   trashIcon,
-  linkIcon,
 } from '@progress/kendo-svg-icons';
 
 import type {
-  ColDef,
   ICellRendererParams,
   RowClassParams,
   RowClickedEvent,
   SelectionChangedEvent,
+  FilterChangedEvent,
 } from 'ag-grid-community';
 
 export default function ReportsList() {
   const dispatch = useDispatch();
   const { showNotification } = useNotifications();
+  const gridRef = useRef<any>(null);
+
+  const onGridReady = (params: any) => {
+    gridRef.current = params.api;
+    console.log('Grid Ready', params.api);
+  };
 
   // Redux selectors
   const currentCompany = useSelector(selectCurrentCompany);
@@ -67,6 +72,18 @@ export default function ReportsList() {
   const selectedReportId = useSelector(selectSelectedReportId);
   const selectedReportIds = useSelector(selectSelectedReportIds);
   const pagination = useSelector(selectReportsPagination);
+
+  // State for AG Grid filtering
+  const [filteredData, setFilteredData] = useState<ReportRow[]>([]);
+  const [isGridFiltered, setIsGridFiltered] = useState(false);
+
+  // Restore selected company from localStorage on mount
+  useEffect(() => {
+    const savedCompanyId = localStorage.getItem('selectedCompanyId');
+    if (savedCompanyId && !currentCompany) {
+      dispatch(setCurrentCompany(Number(savedCompanyId)));
+    }
+  }, [dispatch, currentCompany]);
 
   // RTK Query - Fetch reports data
   const {
@@ -86,7 +103,6 @@ export default function ReportsList() {
   );
 
   // Extract the actual reports array from the response
-  // Adjust the property name based on your actual PaginatedResponse structure
   const allReports = useMemo(() => {
     if (!reportsResponse || !currentCompany) return [];
 
@@ -98,12 +114,38 @@ export default function ReportsList() {
     return reportsResponse.data || [];
   }, [reportsResponse, currentCompany]);
 
-  console.log('All Reports:-------', allReports);
+  // Apply search filter only (AG Grid will handle other filters)
+  const searchFilteredReports = useMemo(() => {
+    let reports = allReports;
+    // Apply search filter
+    if (query && query.trim().length > 0) {
+      const lowerQuery = query.trim().toLowerCase();
+      reports = reports.filter(r => r.reportName?.toLowerCase().includes(lowerQuery));
+    }
+    return reports;
+  }, [allReports, query]);
 
-  // Apply local pagination (since API might return all results)
+  // Determine which data to use for pagination
+  const dataForPagination = isGridFiltered ? filteredData : searchFilteredReports;
+
+  // Apply local pagination to the appropriate dataset
   const paginatedReports = useMemo(() => {
-    return allReports.slice(pagination.skip, pagination.skip + pagination.take);
-  }, [allReports, pagination.skip, pagination.take]);
+    return dataForPagination.slice(pagination.skip, pagination.skip + pagination.take);
+  }, [dataForPagination, pagination.skip, pagination.take]);
+
+  // Update filtered data when search changes and reset grid filters
+  useEffect(() => {
+    setFilteredData(searchFilteredReports);
+    setIsGridFiltered(false);
+
+    // Reset grid filters when search changes
+    if (gridRef.current?.api) {
+      gridRef.current.api.setFilterModel(null);
+    }
+
+    // Reset pagination to first page
+    dispatch(setReportsPagination({ skip: 0, take: pagination.take }));
+  }, [searchFilteredReports, dispatch, pagination.take]);
 
   // Check if multiple reports are selected
   const hasMultipleSelected = selectedReportIds.length > 0;
@@ -134,8 +176,11 @@ export default function ReportsList() {
     if (reportsError) {
       return 'Error loading reports. Please try again.';
     }
-    if (query && allReports.length === 0) {
+    if (query && searchFilteredReports.length === 0) {
       return `No reports found matching "${query}"`;
+    }
+    if (isGridFiltered && filteredData.length === 0) {
+      return 'No reports match the current filters';
     }
     if (allReports.length === 0) {
       return 'No reports available for this company';
@@ -143,99 +188,45 @@ export default function ReportsList() {
     return 'No rows to show';
   };
 
-  // Reports action renderer
-  const ReportActionsRenderer = ({ data }: ICellRendererParams<ReportRow>) => {
-    const row = data!;
-
-    const handleCopyClick = (e: MouseEvent) => {
-      e.stopPropagation();
-      dispatch(clearSelectedReportIds());
-      dispatch(setSelectedReportId(null));
-      setCopyModal({ isOpen: true, reportId: Number(row.id), isMultiple: false });
-    };
-
-    const handleLinkClick = (e: MouseEvent) => {
-      e.stopPropagation();
-      dispatch(clearSelectedReportIds());
-      dispatch(setSelectedReportId(null));
-      setLinkModal({ isOpen: true, reportId: Number(row.id) });
-    };
-
-    const handleDeleteClick = (e: MouseEvent) => {
-      e.stopPropagation();
-      dispatch(clearSelectedReportIds());
-      dispatch(setSelectedReportId(null));
-      setDeleteModal({ isOpen: true, reportId: Number(row.id), isMultiple: false });
-    };
-
-    return (
-      <div className="flex items-center gap-1.5">
-        <ActionButton icon={copyIcon} title="Copy" onClick={handleCopyClick} />
-        <ActionButton icon={linkIcon} title="Link" onClick={handleLinkClick} />
-        <ActionButton icon={trashIcon} title="Delete" onClick={handleDeleteClick} />
-      </div>
-    );
+  // Action handlers for the renderer
+  const handleReportCopy = (reportId: number) => {
+    setCopyModal({ isOpen: true, reportId, isMultiple: false });
   };
 
-  // Column definitions
-  const columnDefs = useMemo<ColDef<ReportRow>[]>(() => [
-    {
-      headerName: 'Report Name',
-      field: 'reportName',
-      flex: 2,
-      minWidth: 140,
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      pinned: 'left',
-    },
-    {
-      headerName: 'Creation Date',
-      field: 'createdOn',
-      flex: 1,
-      minWidth: 140,
-      valueFormatter: (params) => formatDateTime(params.value),
-    },
-    {
-      headerName: 'Modified On',
-      field: 'modifiedOn',
-      flex: 1,
-      minWidth: 140,
-      valueFormatter: (params) => formatDateTime(params.value),
-    },
-    {
-      headerName: 'Modified By',
-      field: 'modifiedBy',
-      flex: 1,
-      minWidth: 140
-    },
-    {
-      headerName: 'Migrated',
-      field: 'merged',
-      flex: 0,
-      width: 80,
-      minWidth: 80,
-      maxWidth: 80,
-      cellRenderer: YesNoRenderer,
-      sortable: false,
-      filter: YesNoCheckboxFilter,
-    },
-    {
-      headerName: 'Actions',
-      field: 'id',
-      flex: 0,
-      width: 220,
-      minWidth: 220,
-      maxWidth: 220,
-      cellRenderer: ReportActionsRenderer,
-      sortable: false,
-      filter: false,
-      pinned: 'right',
-    }
-  ], []);
+  const handleReportLink = (reportId: number) => {
+    setLinkModal({ isOpen: true, reportId });
+  };
+
+  const handleReportDelete = (reportId: number) => {
+    setDeleteModal({ isOpen: true, reportId, isMultiple: false });
+  };
+
+  // Create renderer with callbacks
+  const createReportActionsRenderer = (props: ICellRendererParams<ReportRow>) => {
+    return ReportActionsRenderer({
+      ...props,
+      onCopy: handleReportCopy,
+      onLink: handleReportLink,
+      onDelete: handleReportDelete,
+    });
+  };
+
+  // Column definitions using the separate module
+  const columnDefs = useMemo(() => {
+    return getReportListColumnDefs({
+      createReportActionsRenderer
+    });
+  }, []);
 
   // Event handlers
   const handleCompanyChange = (company: Company | null) => {
-    dispatch(setCurrentCompany(company ? Number(company.id) : null));
+    if (company) {
+      localStorage.setItem('selectedCompanyId', String(company.id));
+      dispatch(setCurrentCompany(Number(company.id)));
+    } else {
+      localStorage.removeItem('selectedCompanyId');
+      dispatch(setCurrentCompany(null));
+    }
     // Clear selected reports when company changes
     dispatch(setSelectedReportId(null));
     dispatch(clearSelectedReportIds());
@@ -244,10 +235,9 @@ export default function ReportsList() {
   const handleQueryChange = (e: any) => {
     const newQuery = e.value;
     dispatch(setQuery(newQuery));
-
     // Show notification after data is loaded
     if (newQuery && newQuery.length > 2 && !reportsLoading) {
-      const resultCount = allReports.length;
+      const resultCount = searchFilteredReports.length;
       if (resultCount === 0) {
         showNotification('warning', `No reports found matching "<strong>${newQuery}</strong>"`);
       }
@@ -262,8 +252,15 @@ export default function ReportsList() {
     if (e.event?.target &&
       !(e.event.target as HTMLElement).closest('.ag-checkbox-input') &&
       !(e.event.target as HTMLElement).closest('button')) {
-      dispatch(setSelectedReportId(Number(e.data?.id) ?? null));
+
+      // Clear all multi-selections when clicking on a row
       dispatch(clearSelectedReportIds());
+      if (gridRef?.current) {
+        gridRef.current.deselectAll();
+      }
+
+      // Set the single selected report
+      dispatch(setSelectedReportId(Number(e.data?.id) ?? null));
     }
   };
 
@@ -274,8 +271,37 @@ export default function ReportsList() {
     dispatch(setSelectedReportIds(selectedIds));
 
     if (selectedIds.length > 0) {
+      // Clear single selection when multiple items are selected
       dispatch(setSelectedReportId(null));
     }
+  };
+
+  // Handle AG Grid filter changes
+  const handleFilterChanged = (_e: FilterChangedEvent) => {
+    if (!gridRef.current?.api) return;
+
+    const filterModel = gridRef.current.api.getFilterModel();
+    const hasActiveFilters = Object.keys(filterModel).length > 0;
+
+    if (hasActiveFilters) {
+      // Get filtered data from AG Grid
+      const filteredNodes: ReportRow[] = [];
+      gridRef.current.api.forEachNodeAfterFilter((node: any) => {
+        if (node.data) {
+          filteredNodes.push(node.data);
+        }
+      });
+
+      setFilteredData(filteredNodes);
+      setIsGridFiltered(true);
+    } else {
+      // No active filters, use search filtered data
+      setFilteredData(searchFilteredReports);
+      setIsGridFiltered(false);
+    }
+
+    // Reset pagination to first page when filters change
+    dispatch(setReportsPagination({ skip: 0, take: pagination.take }));
   };
 
   const getRowStyle = useCallback(
@@ -372,14 +398,14 @@ export default function ReportsList() {
 
   const tableKey = useMemo(() => {
     return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}`;
-  }, [currentCompany]);
+  }, [selectedReportId, selectedReportIds.length, currentCompany]);
 
   return (
     <>
       <BaseCard dividers={false}>
         <BaseCard.Header>
           <div className="flex items-center gap-2">
-            <CompanySelector onCompanyChange={handleCompanyChange} />
+            <CompanySelector onCompanyChange={handleCompanyChange} restoreSavedCompany={true} />
           </div>
           <div className="flex items-center gap-2">
             <BaseButton
@@ -415,16 +441,20 @@ export default function ReportsList() {
           </div>
 
           <BaseTable<ReportRow>
-            rowData={paginatedReports}
+            onGridReady={onGridReady}
+            rowData={paginatedReports} // Show only paginated data
             columnDefs={columnDefs}
             getRowId={(p) => String(p.data.id)}
             onRowClicked={handleRowClicked}
             onSelectionChanged={handleSelectionChanged}
+            onFilterChanged={handleFilterChanged}
             getRowStyle={getRowStyle}
             height={420}
             rowSelection={"multiple"}
             suppressRowClickSelection={true}
             loading={reportsLoading}
+            pagination={false}
+            suppressPaginationPanel={true}
             noRowsOverlayComponent={() => (
               <EmptyStateRenderer
                 message={getNoRowsMessage()}
@@ -436,15 +466,15 @@ export default function ReportsList() {
 
         <BaseCard.Footer>
           <span className="text-sm text-gray-500">
-            {allReports.length
-              ? `Showing ${pagination.skip + 1}-${Math.min(pagination.skip + pagination.take, allReports.length)} of ${allReports.length}`
+            {dataForPagination.length
+              ? `Showing ${dataForPagination.length === 0 ? 0 : pagination.skip + 1}-${Math.min(pagination.skip + pagination.take, dataForPagination.length)} of ${dataForPagination.length}${isGridFiltered ? ' (filtered)' : ''}`
               : `Showing 0–0 of 0`}
           </span>
           <Pager
             className="fg-pager"
             skip={pagination.skip}
             take={pagination.take}
-            total={allReports.length}
+            total={dataForPagination.length}
             buttonCount={5}
             info={false}
             type="numeric"

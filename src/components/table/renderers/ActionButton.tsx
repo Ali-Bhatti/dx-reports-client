@@ -1,6 +1,5 @@
 import { type MouseEvent } from 'react';
 import BaseButton from '../../shared/BaseButton';
-import type { ICellRendererParams } from 'ag-grid-community';
 
 // Reusable action button component
 interface ActionButtonProps {
@@ -28,19 +27,4 @@ export const ActionButton = ({
         className="!p-1.5 !text-gray-600 hover:!text-gray-800 hover:!bg-gray-100 disabled:!opacity-50"
         color="none"
     />
-);
-
-// Checkbox renderer for status/boolean fields
-export const CheckboxRenderer = ({ value }: ICellRendererParams<any, boolean>) => (
-    <input
-        type="checkbox"
-        checked={!!value}
-        readOnly
-        className="cursor-default"
-    />
-);
-
-// Function to show YES or NO for boolean values
-export const YesNoRenderer = ({ value }: ICellRendererParams<any, boolean>) => (
-    <span>{value ? 'Yes' : 'No'}</span>
 );

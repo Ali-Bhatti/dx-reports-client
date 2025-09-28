@@ -1,7 +1,7 @@
 import {
     useState,
     useMemo,
-    type MouseEvent
+    useEffect,
 } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -9,43 +9,38 @@ import { Pager, type PageChangeEvent } from '@progress/kendo-react-data-tools';
 
 import BaseCard from '../shared/BaseCard';
 import BaseButton from '../shared/BaseButton';
-import BaseSwitch from '../shared/BaseSwitch';
 import BaseTable from '../shared/BaseTable';
-import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
+import { EmptyStateRenderer, VersionHistoryActionsRenderer, PublishedToggleRenderer } from '../table/renderers';
+import { getVersionHistoryColumnDefs } from '../table/columnDefs';
 import DeleteModal from '../modals/DeleteModal';
 import PublishModal from '../modals/PublishModal';
-import { ActionButton } from '../table/renderers/CommonRenderers';
-import { formatDateTime } from '../../utils/dateFormatters';
 import { useNotifications } from '../../hooks/useNotifications';
 
 import type { ReportVersion as HistoryRow } from "../../types";
 import {
     setVersionsPagination,
-    updateVersionPublishedStatus,
     setSelectedVersionIds,
     clearSelectedVersionIds,
     setActionContext,
 } from '../../features/reports/reportsSlice';
 
 import {
-    selectVersionsForSelectedReport,
-    selectPaginatedVersions,
     selectVersionsPagination,
     selectReports,
     selectSelectedReportId,
     selectSelectedReportIds,
-    selectShouldShowVersionHistory,
+    selectCurrentCompany
 } from '../../features/reports/reportsSelectors';
 
 import {
+    useGetReportVersionsQuery,
+} from '../../services/report';
+
+import {
     trashIcon,
-    pencilIcon,
-    downloadIcon,
-    plusOutlineIcon
 } from '@progress/kendo-svg-icons';
 
 import type {
-    ColDef,
     ICellRendererParams,
     RowClickedEvent,
 } from 'ag-grid-community';
@@ -58,14 +53,57 @@ export default function VersionHistory() {
     const { showNotification } = useNotifications();
 
     // Redux selectors
-    const shouldShow = useSelector(selectShouldShowVersionHistory);
-    const versions = useSelector(selectVersionsForSelectedReport);
-    const paginatedVersions = useSelector(selectPaginatedVersions);
     const pagination = useSelector(selectVersionsPagination);
     const selectedVersionIds = useSelector((state: any) => state.reports.selectedVersionIds);
     const reports = useSelector(selectReports);
     const selectedReportId = useSelector(selectSelectedReportId);
     const selectedReportIds = useSelector(selectSelectedReportIds);
+    const currentCompany = useSelector(selectCurrentCompany);
+
+    // Local state to track published status changes
+    const [publishedStatusOverrides, setPublishedStatusOverrides] = useState<Record<number, boolean>>({});
+
+    // API call for versions - only fetch when we have a selected report
+    const {
+        data: versionsResponse,
+        isLoading: versionsLoading,
+        isError: versionsError,
+        error: _versionsErrorDetails,
+        refetch: _refetchVersions
+    } = useGetReportVersionsQuery(String(selectedReportId), {
+        skip: !selectedReportId, // Skip the query if no report is selected
+    });
+
+    // Transform API response to match expected structure and apply local overrides
+    const versions = useMemo(() => {
+        if (!versionsResponse || !currentCompany || versionsError || !selectedReportId) return [];
+        if (selectedReportIds.length > 1) return [];
+
+        return versionsResponse.map(version => {
+            const versionId = Number(version.id);
+            const hasOverride = publishedStatusOverrides.hasOwnProperty(versionId);
+            const publishedStatus = hasOverride ? publishedStatusOverrides[versionId] : version.isPublished;
+
+            return {
+                ...version,
+                reportId: version.reportID || version?.reportId,
+                modifiedBy: version.modifiedBy || version?.createdBy || '',
+                modifiedOn: version.modifiedOn || version?.createdOn,
+                isPublished: publishedStatus,
+                published: publishedStatus
+            };
+        });
+    }, [versionsResponse, selectedReportId, selectedReportIds.length, currentCompany, versionsError, publishedStatusOverrides]);
+
+    // Clear local overrides when report changes
+    useEffect(() => {
+        setPublishedStatusOverrides({});
+    }, [selectedReportId]);
+
+    // Paginated versions
+    const paginatedVersions = useMemo(() => {
+        return versions.slice(pagination.skip, pagination.skip + pagination.take);
+    }, [versions, pagination]);
 
     // Modal states
     const [deleteModal, setDeleteModal] = useState({
@@ -77,6 +115,11 @@ export default function VersionHistory() {
         isOpen: false,
         versionId: null as number | null
     });
+
+    // Clear selections when report changes
+    useEffect(() => {
+        dispatch(clearSelectedVersionIds());
+    }, [selectedReportId, dispatch]);
 
     // Helper functions
     const getVersionById = (id: number) => {
@@ -112,163 +155,87 @@ export default function VersionHistory() {
         if (selectedReportIds.length > 0) {
             return 'Select a single report to view version history';
         }
+        if (versionsLoading) {
+            return 'Loading versions...';
+        }
+        if (versionsError) {
+            return 'Error loading versions. Please try again.';
+        }
         if (currentReportName === 'Unknown Report') {
             return 'No report selected';
         }
         return `No versions available for "${currentReportName}"`;
-    }, [selectedReportIds.length, selectedReportId, currentReportName]);
+    }, [selectedReportIds.length, selectedReportId, currentReportName, versionsLoading, versionsError]);
 
-    // Published toggle renderer using BaseSwitch
-    const PublishedToggleRenderer = ({ data, value }: ICellRendererParams<VersionRowWithPublished, boolean>) => {
-        const versionData = data!;
-
-        const handleSwitchChange = (event: any) => {
-            if (event.syntheticEvent && event.syntheticEvent.stopPropagation) {
-                event.syntheticEvent.stopPropagation();
-            }
-
-            dispatch(clearSelectedVersionIds());
-
-            const checked = event.target.value;
-
-            if (checked) {
-                setPublishModal({ isOpen: true, versionId: Number(versionData.id) });
-            } else {
-                dispatch(updateVersionPublishedStatus({ id: Number(versionData.id), published: false }));
-                showNotification('success', `Version <strong>${versionData.version}</strong> unpublished successfully`);
-            }
-        };
-
-        return (
-            <div className="flex w-full justify-center p-2">
-                <BaseSwitch
-                    checked={!!value}
-                    onChange={handleSwitchChange}
-                />
-            </div>
-        );
+    // Action handlers for the version actions renderer
+    const handleVersionDownload = (versionId: number) => {
+        console.log('download', versionId);
+        showNotification('success', `Downloading version <strong>${getVersionById(versionId)?.version}</strong>...`);
     };
 
-    // Version actions renderer
-    const VersionActionsRenderer = ({ data }: ICellRendererParams<VersionRowWithPublished>) => {
-        const row = data!;
-
-        const handleDownloadClick = (e: MouseEvent) => {
-            e.stopPropagation();
-            dispatch(clearSelectedVersionIds());
-            console.log('download', row.id);
-            showNotification('success', `Downloading version <strong>${row.version}</strong>...`);
-        };
-
-        const handleNewVersionClick = (e: MouseEvent) => {
-            e.stopPropagation();
-            dispatch(clearSelectedVersionIds());
-            dispatch(setActionContext({
-                type: 'new_version',
-                versionId: Number(row.id),
-                reportId: Number(row.reportId)
-            }));
-            navigate('/report-designer');
-        };
-
-        const handleEditClick = (e: MouseEvent) => {
-            e.stopPropagation();
-            dispatch(clearSelectedVersionIds());
-            dispatch(setActionContext({
-                type: 'edit',
-                versionId: Number(row.id),
-                reportId: Number(row.reportId)
-            }));
-            navigate('/report-designer');
-        };
-
-        const handleDeleteClick = (e: MouseEvent) => {
-            e.stopPropagation();
-            dispatch(clearSelectedVersionIds());
-            setDeleteModal({ isOpen: true, versionId: Number(row.id), isMultiple: false });
-        };
-
-        return (
-            <div className="flex items-center gap-1.5">
-                <ActionButton
-                    icon={downloadIcon}
-                    title="Download"
-                    onClick={handleDownloadClick}
-                />
-                <ActionButton
-                    icon={plusOutlineIcon}
-                    title="New Version"
-                    onClick={handleNewVersionClick}
-                />
-                <ActionButton
-                    icon={pencilIcon}
-                    title="Edit"
-                    onClick={handleEditClick}
-                />
-                {!row.isDefault && (
-                    <ActionButton
-                        icon={trashIcon}
-                        title="Delete"
-                        onClick={handleDeleteClick}
-                    />
-                )}
-            </div>
-        );
+    const handleVersionNewVersion = (versionId: number, reportId: number) => {
+        dispatch(setActionContext({
+            type: 'new_version',
+            versionId: versionId,
+            reportId: reportId
+        }));
+        navigate('/report-designer');
     };
 
-    // Column definitions
-    const columnDefs = useMemo<ColDef<VersionRowWithPublished>[]>(() => [
-        {
-            headerName: 'Version',
-            field: 'version',
-            flex: 1,
-            minWidth: 100,
-            checkboxSelection: true,
-            headerCheckboxSelection: true,
-            pinned: 'left',
-        },
-        {
-            headerName: 'Creation Date',
-            field: 'createdOn',
-            flex: 1,
-            minWidth: 140,
-            valueFormatter: (p) => formatDateTime(p.value)
-        },
-        {
-            headerName: 'Modified On',
-            field: 'modifiedOn',
-            flex: 1,
-            minWidth: 140,
-            valueFormatter: (p) => formatDateTime(p.value)
-        },
-        {
-            headerName: 'Modified By',
-            field: 'modifiedBy',
-            flex: 1,
-            minWidth: 140
-        },
-        {
-            headerName: 'Published',
-            field: 'isPublished',
-            flex: 0,
-            width: 100,
-            minWidth: 100,
-            maxWidth: 100,
-            cellRenderer: PublishedToggleRenderer,
-            sortable: false
-        },
-        {
-            headerName: 'Actions',
-            flex: 0,
-            width: 200,
-            minWidth: 180,
-            maxWidth: 250,
-            cellRenderer: VersionActionsRenderer,
-            sortable: false,
-            filter: false,
-            pinned: 'right',
-        }
-    ], []);
+    const handleVersionEdit = (versionId: number, reportId: number) => {
+        dispatch(setActionContext({
+            type: 'edit',
+            versionId: versionId,
+            reportId: reportId
+        }));
+        navigate('/report-designer');
+    };
+
+    const handleVersionDelete = (versionId: number) => {
+        setDeleteModal({ isOpen: true, versionId, isMultiple: false });
+    };
+
+    // Create renderer with callbacks
+    const createVersionActionsRenderer = (props: ICellRendererParams<VersionRowWithPublished>) => {
+        return VersionHistoryActionsRenderer({
+            ...props,
+            onDownload: handleVersionDownload,
+            onNewVersion: handleVersionNewVersion,
+            onEdit: handleVersionEdit,
+            onDelete: handleVersionDelete,
+        });
+    };
+
+    // Published toggle handlers with local state updates
+    const handleVersionPublish = (versionId: number) => {
+        setPublishModal({ isOpen: true, versionId });
+    };
+
+    const handleVersionUnpublish = (versionId: number) => {
+        const version = getVersionById(versionId);
+        // Update local state to immediately reflect the change
+        setPublishedStatusOverrides(prev => ({
+            ...prev,
+            [versionId]: false
+        }));
+        showNotification('success', `Version <strong>${version?.version}</strong> unpublished successfully`);
+    };
+
+    const createPublishedToggleRenderer = (props: ICellRendererParams<VersionRowWithPublished>) => {
+        return PublishedToggleRenderer({
+            ...props,
+            onPublish: handleVersionPublish,
+            onUnpublish: handleVersionUnpublish,
+        });
+    };
+
+    // Column definitions using the separate module
+    const columnDefs = useMemo(() => {
+        return getVersionHistoryColumnDefs({
+            createVersionActionsRenderer,
+            createPublishedToggleRenderer
+        });
+    }, []);
 
     const tableKey = useMemo(() => {
         return `${selectedReportId}-${selectedReportIds.length}-${currentReportName}`;
@@ -300,7 +267,7 @@ export default function VersionHistory() {
         setDeleteModal({ isOpen: true, versionId: null, isMultiple: true });
     };
 
-    // Modal handlers with notifications
+    // Modal handlers - only local state updates, no API calls
     const handleDeleteConfirm = () => {
         if (deleteModal.isMultiple) {
             console.log("Delete Version History", selectedVersionIds);
@@ -315,24 +282,31 @@ export default function VersionHistory() {
 
             showNotification('success', `Version <strong>${version?.version || ''}</strong> deleted successfully`);
         }
+
+        setDeleteModal({ isOpen: false, versionId: null, isMultiple: false });
     };
 
     const handlePublishConfirm = () => {
         if (publishModal.versionId) {
             const version = getVersionById(publishModal.versionId);
-            dispatch(updateVersionPublishedStatus({ id: publishModal.versionId, published: true }));
+            // Update local state to immediately reflect the change
+            setPublishedStatusOverrides(prev => ({
+                ...prev,
+                [publishModal.versionId!]: true
+            }));
             console.log("Published version", publishModal.versionId);
 
             showNotification('success', `Version <strong>${version?.version || ''}</strong> published successfully`);
         }
+
+        setPublishModal({ isOpen: false, versionId: null });
     };
 
     const handlePublishConfirmCancel = () => {
-        if (publishModal.versionId) {
-            console.log("Publish cancelled for version", publishModal.versionId);
-        }
         setPublishModal({ isOpen: false, versionId: null });
     };
+
+    const isAnyOperationLoading = versionsLoading;
 
     return (
         <>
@@ -340,6 +314,9 @@ export default function VersionHistory() {
                 <BaseCard.Header>
                     <div className="flex items-center gap-2">
                         <h3 className="font-bold">Version History</h3>
+                        {isAnyOperationLoading && (
+                            <span className="text-sm text-gray-500">Loading...</span>
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <BaseButton
@@ -347,9 +324,9 @@ export default function VersionHistory() {
                             svgIcon={trashIcon}
                             title="Delete"
                             onClick={handleDeleteVersion}
-                            disabled={selectedVersionIds.length === 0}
+                            disabled={selectedVersionIds.length === 0 || isAnyOperationLoading}
                         >
-                            Delete
+                            Delete {selectedVersionIds.length > 0 && `(${selectedVersionIds.length})`}
                         </BaseButton>
                     </div>
                 </BaseCard.Header>
@@ -365,10 +342,15 @@ export default function VersionHistory() {
                         height={400}
                         rowSelection="multiple"
                         suppressRowClickSelection={true}
+                        loading={versionsLoading}
                         noRowsOverlayComponent={() => (
                             <EmptyStateRenderer
                                 message={noVersionsMessage}
-                                subMessage={"Version history will appear here once created"}
+                                subMessage={
+                                    versionsError
+                                        ? "Please refresh the page or try again later"
+                                        : "Version history will appear here once created"
+                                }
                             />
                         )}
                     />
@@ -383,13 +365,14 @@ export default function VersionHistory() {
                     <Pager
                         className="fg-pager"
                         skip={pagination.skip}
-                        take={pagination.take}
+                        take={pagination.skip}
                         total={versions.length}
                         buttonCount={5}
                         info={false}
                         type="numeric"
                         previousNext
                         onPageChange={handlePageChange}
+                        disabled={isAnyOperationLoading}
                     />
                 </BaseCard.Footer>
             </BaseCard>
@@ -400,16 +383,16 @@ export default function VersionHistory() {
                 onClose={() => setDeleteModal({ isOpen: false, versionId: null, isMultiple: false })}
                 onConfirm={handleDeleteConfirm}
                 itemNames={deleteModal.isMultiple
-                    ? getSelectedVersionNames()
+                    ? getSelectedVersionNames().map(String)
                     : deleteModal.versionId
-                        ? [getVersionById(deleteModal.versionId)?.version || '']
+                        ? [String(getVersionById(deleteModal.versionId)?.version || '')]
                         : []
                 }
                 itemType="version"
                 versionInfo={
                     !deleteModal.isMultiple && deleteModal.versionId
                         ? {
-                            version: getVersionById(deleteModal.versionId)?.version || '',
+                            version: String(getVersionById(deleteModal.versionId)?.version ?? ''),
                             reportName: getReportNameForVersion(deleteModal.versionId)
                         }
                         : undefined
@@ -420,7 +403,7 @@ export default function VersionHistory() {
                 isOpen={publishModal.isOpen}
                 onClose={handlePublishConfirmCancel}
                 onConfirm={handlePublishConfirm}
-                version={publishModal.versionId ? getVersionById(publishModal.versionId)?.version || '' : ''}
+                version={publishModal.versionId ? `v${String(getVersionById(publishModal.versionId)?.version)}` : ''}
                 reportName={publishModal.versionId ? getReportNameForVersion(publishModal.versionId) : ''}
             />
         </>

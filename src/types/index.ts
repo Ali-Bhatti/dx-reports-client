@@ -13,13 +13,15 @@ export interface Report {
 export interface ReportVersion {
     id: string | number;
     reportId: string | number;
-    version: string;
+    reportID?: string | number;
+    version: string | number;
     createdOn: string;
-    modifiedOn: string;
-    modifiedBy: string;
+    createdBy?: string;
+    modifiedOn?: string | null;
+    modifiedBy?: string;
     isPublished: boolean;
-    isDefault: boolean; // Is this the default version for the report
-    content?: any; // Report content/configuration
+    isDefault: boolean;
+    content?: any;
 }
 
 export interface Company {

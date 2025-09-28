@@ -7,12 +7,14 @@ type Props = {
   onCompanyChange?: (company: Company | null) => void;
   disabled?: boolean;
   className?: string;
+  restoreSavedCompany?: boolean;
 };
 
 export const CompanySelector = ({
   onCompanyChange,
   disabled = false,
-  className = ''
+  className = '',
+  restoreSavedCompany = false
 }: Props) => {
   const { companies, loading, error } = useCompanies();
   const [selected, setSelected] = useState<Company | null>(null);
@@ -38,13 +40,23 @@ export const CompanySelector = ({
   // );
 
   useEffect(() => {
-    if (!loading && !error && companies.length > 0) {
-      // If we have a selected company, make sure the value matches
-      if (selected) {
+    if (restoreSavedCompany && !loading && !error && companies.length > 0) {
+      // Restore selected company from localStorage if not already selected
+      if (!selected) {
+        const savedCompanyId = localStorage.getItem('selectedCompanyId');
+        if (savedCompanyId) {
+          const foundCompany = companies.find(c => String(c.id) === savedCompanyId);
+          if (foundCompany) {
+            setSelected(foundCompany);
+            setValue(foundCompany.name);
+            onCompanyChange?.(foundCompany);
+          }
+        }
+      } else {
         setValue(selected.name);
       }
     }
-  }, [companies, loading, error, selected]);
+  }, [companies, loading, error, selected, onCompanyChange]);
 
   return (
     <div className={className}>
