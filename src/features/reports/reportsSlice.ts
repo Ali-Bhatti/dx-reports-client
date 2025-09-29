@@ -1,17 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from '@reduxjs/toolkit'
 
-import type { Report as ReportRow, ReportVersion as HistoryRow } from "../../types";
+import type { Report as ReportRow, ReportVersion as HistoryRow, ActionContext, ReportStatistics } from "../../types";
 
-export type ReportStatistics = {
-  label: string;
-  total: number;
-};
 
 interface ReportsState {
   reports: ReportRow[];
   history: HistoryRow[];
   selectedReportId: number | null;
+  selectedReport: ReportRow | null;
+  selectedReportVersion: HistoryRow | null;
   selectedReportIds: number[];
   currentCompany: number | null;
   query: string;
@@ -26,17 +24,15 @@ interface ReportsState {
   loading: boolean;
   error: string | null;
   selectedVersionIds: number[];
-  actionContext: {
-    type: 'edit' | 'new_version' | null;
-    reportId?: number;
-    versionId?: number;
-  };
+  actionContext: ActionContext;
   companyKPIs?: ReportStatistics[];
 }
 
 const initialState: ReportsState = {
   reports: [],
   history: [],
+  selectedReport: null,
+  selectedReportVersion: null,
   selectedReportId: null,
   selectedReportIds: [],
   currentCompany: null,
@@ -68,6 +64,12 @@ const reportsSlice = createSlice({
     setSelectedReportId: (state, action: PayloadAction<number | null>) => {
       state.selectedReportId = action.payload;
       state.versionsPagination.skip = 0;
+    },
+    setSelectedReport: (state, action: PayloadAction<ReportRow | null>) => {
+      state.selectedReport = action.payload;
+    },
+    setSelectedReportVersion: (state, action: PayloadAction<HistoryRow | null>) => {
+      state.selectedReportVersion = action.payload;
     },
     setSelectedReportIds: (state, action: PayloadAction<number[]>) => {
       state.selectedReportIds = action.payload;
@@ -109,7 +111,7 @@ const reportsSlice = createSlice({
     clearSelectedVersionIds: (state) => {
       state.selectedVersionIds = [];
     },
-    setActionContext: (state, action: PayloadAction<{ type: 'edit' | 'new_version' | null; reportId?: number; versionId?: number }>) => {
+    setActionContext: (state, action: PayloadAction<ActionContext>) => {
       state.actionContext = action.payload;
     },
     clearActionContext: (state) => {
@@ -126,6 +128,8 @@ export const {
   setQuery,
   setSelectedReportId,
   setSelectedReportIds,
+  setSelectedReport,
+  setSelectedReportVersion,
   addSelectedReportId,
   removeSelectedReportId,
   clearSelectedReportIds,

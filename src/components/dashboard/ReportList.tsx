@@ -7,7 +7,6 @@ import {
 } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Input } from '@progress/kendo-react-inputs';
-import { Pager, type PageChangeEvent } from '@progress/kendo-react-data-tools';
 
 import BaseCard from '../shared/BaseCard';
 import BaseButton from '../shared/BaseButton';
@@ -33,6 +32,7 @@ import {
   setSelectedReportIds,
   clearSelectedReportIds,
   setReportsPagination,
+  setSelectedReport,
 } from '../../features/reports/reportsSlice';
 
 import {
@@ -103,7 +103,7 @@ export default function ReportsList() {
 
   // Extract the actual reports array from the response
   const allReports = useMemo(() => {
-    if (!reportsResponse || !currentCompany) return [];
+    if (!reportsResponse || !currentCompany || reportsError) return [];
 
     // If reportsResponse is already an array (fallback)
     if (Array.isArray(reportsResponse)) {
@@ -111,7 +111,7 @@ export default function ReportsList() {
     }
 
     return reportsResponse.data || [];
-  }, [reportsResponse, currentCompany]);
+  }, [reportsResponse, currentCompany, reportsError]);
 
   // Apply search filter only (AG Grid will handle other filters)
   const searchFilteredReports = useMemo(() => {
@@ -124,13 +124,8 @@ export default function ReportsList() {
     return reports;
   }, [allReports, query]);
 
-  // Determine which data to use for pagination
-  const dataForPagination = isGridFiltered ? filteredData : searchFilteredReports;
-
-  // Apply local pagination to the appropriate dataset
-  const paginatedReports = useMemo(() => {
-    return dataForPagination.slice(pagination.skip, pagination.skip + pagination.take);
-  }, [dataForPagination, pagination.skip, pagination.take]);
+  // Determine which data to use for the grid and calculations
+  const dataForGrid = isGridFiltered ? filteredData : searchFilteredReports;
 
   // Update filtered data when search changes and reset grid filters
   useEffect(() => {
@@ -165,25 +160,39 @@ export default function ReportsList() {
     return allReports.find(r => Number(r.id) === id);
   };
 
+  // Fixed getNoRowsMessage function
   const getNoRowsMessage = (): string => {
-    if (currentCompany == null) {
-      return 'Please select a company to view reports';
-    }
+    // Handle loading state first
     if (reportsLoading) {
       return 'Loading reports...';
     }
+
+    // Handle no company selected
+    if (currentCompany == null) {
+      return 'Please select a company to view reports';
+    }
+
+    // Handle API error
     if (reportsError) {
       return 'Error loading reports. Please try again.';
     }
-    if (query && searchFilteredReports.length === 0) {
+
+    // Handle search with no results
+    if (query && query.trim().length > 0 && searchFilteredReports.length === 0) {
       return `No reports found matching "${query}"`;
     }
+
+    // Handle grid filters with no results
     if (isGridFiltered && filteredData.length === 0) {
       return 'No reports match the current filters';
     }
-    if (allReports.length === 0) {
+
+    // Handle no reports for the company (this was missing proper condition)
+    if (allReports.length === 0 && currentCompany) {
       return 'No reports available for this company';
     }
+
+    // Default fallback
     return 'No rows to show';
   };
 
@@ -228,6 +237,7 @@ export default function ReportsList() {
     }
     // Clear selected reports when company changes
     dispatch(setSelectedReportId(null));
+    dispatch(setSelectedReport(null));
     dispatch(clearSelectedReportIds());
   };
 
@@ -243,10 +253,6 @@ export default function ReportsList() {
     }
   };
 
-  const handlePageChange = (e: PageChangeEvent) => {
-    dispatch(setReportsPagination({ skip: e.skip, take: e.take }));
-  };
-
   const handleRowClicked = (e: RowClickedEvent<ReportRow>) => {
     if (e.event?.target &&
       !(e.event.target as HTMLElement).closest('.ag-checkbox-input') &&
@@ -260,6 +266,7 @@ export default function ReportsList() {
 
       // Set the single selected report
       dispatch(setSelectedReportId(Number(e.data?.id) ?? null));
+      dispatch(setSelectedReport(e.data ?? null));
     }
   };
 
@@ -272,6 +279,7 @@ export default function ReportsList() {
     if (selectedIds.length > 0) {
       // Clear single selection when multiple items are selected
       dispatch(setSelectedReportId(null));
+      dispatch(setSelectedReport(null));
     }
   };
 
@@ -437,8 +445,9 @@ export default function ReportsList() {
           </div>
 
           <BaseTable<ReportRow>
+            //key={tableKey}
             onGridReady={onGridReady}
-            rowData={paginatedReports} // Show only paginated data
+            rowData={dataForGrid} // Use the correct data based on filter state
             columnDefs={columnDefs}
             getRowId={(p) => String(p.data.id)}
             onRowClicked={handleRowClicked}
@@ -449,8 +458,6 @@ export default function ReportsList() {
             rowSelection={"multiple"}
             suppressRowClickSelection={true}
             loading={reportsLoading}
-            pagination={false}
-            suppressPaginationPanel={true}
             noRowsOverlayComponent={() => (
               <EmptyStateRenderer
                 message={getNoRowsMessage()}
@@ -460,25 +467,6 @@ export default function ReportsList() {
           />
         </BaseCard.Body>
 
-        <BaseCard.Footer>
-          <span className="text-sm text-gray-500">
-            {dataForPagination.length
-              ? `Showing ${dataForPagination.length === 0 ? 0 : pagination.skip + 1}-${Math.min(pagination.skip + pagination.take, dataForPagination.length)} of ${dataForPagination.length}${isGridFiltered ? ' (filtered)' : ''}`
-              : `Showing 0–0 of 0`}
-          </span>
-          <Pager
-            className="fg-pager"
-            skip={pagination.skip}
-            take={pagination.take}
-            total={dataForPagination.length}
-            buttonCount={5}
-            info={false}
-            type="numeric"
-            previousNext
-            onPageChange={handlePageChange}
-            navigatable={false}
-          />
-        </BaseCard.Footer>
       </BaseCard>
 
       {/* Modals */}

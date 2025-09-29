@@ -7,6 +7,8 @@ import DownloadConfirmationModal from '../modals/DownloadConfirmationModal ';
 import SaveConfirmationModal from '../modals/SaveConfirmationModal';
 import BaseChip from '../shared/BaseChip';
 import { useNotifications } from '../../hooks/useNotifications';
+import { VersionDisplay } from '../dashboard/VersionDisplay';
+import { formatDateTime } from '../../utils/dateFormatters';
 
 import {
     saveIcon,
@@ -21,18 +23,14 @@ function ActionBar() {
     const { showNotification } = useNotifications();
 
     // Get data from Redux store
-    const { reports, history, selectedReportId, actionContext } = useSelector((state: RootState) => ({
-        reports: state.reports.reports,
+    const { actionContext, selectedReport } = useSelector((state: RootState) => ({
         history: state.reports.history,
         selectedReportId: state.reports.selectedReportId,
-        actionContext: state.reports.actionContext
+        actionContext: state.reports.actionContext,
+        selectedReport: state.reports.selectedReport
     }));
 
-    // Find selected report and version
-    const selectedReport = reports.find(report => report.id === actionContext.reportId);
-    const selectedVersion = selectedReportId
-        ? history.find(version => version.id === actionContext.versionId)
-        : null;
+    const selectedVersion = actionContext.selectedVersion;
 
     // Determine action button text and icon
     const isNewVersion = actionContext.type === 'new_version';
@@ -89,7 +87,7 @@ function ActionBar() {
                             </span>
                             <div className="flex items-center mt-1">
                                 <span className="text-lg font-semibold text-gray-900">
-                                    {selectedVersion?.version || 'N/A'}
+                                    <VersionDisplay version={selectedVersion?.version || 'N/A'} />
                                 </span>
                                 <BaseChip
                                     type={publishStatusColor}
@@ -130,20 +128,14 @@ function ActionBar() {
                         <div className="flex items-center justify-between text-sm text-gray-500">
                             <div className="flex items-center space-x-4">
                                 <span>
-                                    <span className="font-medium">Created:</span> {selectedReport.createdOn}
+                                    <span className="font-medium">Created:</span> {formatDateTime(selectedReport.createdOn)}
                                 </span>
                                 <span>
-                                    <span className="font-medium">Modified:</span> {selectedReport.modifiedOn}
+                                    <span className="font-medium">Modified:</span> {formatDateTime(selectedReport.modifiedOn)}
                                 </span>
                                 <span>
                                     <span className="font-medium">By:</span> {selectedReport.modifiedBy}
                                 </span>
-                            </div>
-                            <div className="flex items-center">
-                                <BaseChip
-                                    type={selectedReport.active ? "green" : "red"}
-                                    text={selectedReport.active ? "Active" : "Inactive"}
-                                />
                             </div>
                         </div>
                     </div>

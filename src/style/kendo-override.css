@@ -37,6 +37,7 @@ body,
 .ag-theme-quartz .ag-overlay {
     font-family: var(--kendo-font-family) !important;
     --ag-font-family: var(--kendo-font-family);
+    --ag-active-color: var(--fg-primary);
 }
 
 .k-button.k-icon-button,

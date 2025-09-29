@@ -18,6 +18,8 @@ export interface BaseTableProps<TData = any> extends Omit<AgGridReactProps<TData
     height?: number | string;
     className?: string;
     showCheckboxColumn?: boolean;
+    pagination?: boolean;
+    paginationPageSize?: number;
 }
 
 const BaseTable = <TData extends any = any>({
@@ -27,6 +29,8 @@ const BaseTable = <TData extends any = any>({
     height = 420,
     className = '',
     showCheckboxColumn = true,
+    pagination = true,
+    paginationPageSize = 20,
     ...props
 }: BaseTableProps<TData>) => {
 
@@ -71,6 +75,8 @@ const BaseTable = <TData extends any = any>({
                     animateRows={true}
                     gridOptions={mergedGridOptions}
                     suppressCellFocus={true}
+                    pagination={pagination}
+                    paginationPageSize={paginationPageSize}
                     {...props}
                 />
             </div>

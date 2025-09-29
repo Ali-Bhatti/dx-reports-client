@@ -5,7 +5,6 @@ import {
 } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Pager, type PageChangeEvent } from '@progress/kendo-react-data-tools';
 
 import BaseCard from '../shared/BaseCard';
 import BaseButton from '../shared/BaseButton';
@@ -18,14 +17,12 @@ import { useNotifications } from '../../hooks/useNotifications';
 
 import type { ReportVersion as HistoryRow } from "../../types";
 import {
-    setVersionsPagination,
     setSelectedVersionIds,
     clearSelectedVersionIds,
     setActionContext,
 } from '../../features/reports/reportsSlice';
 
 import {
-    selectVersionsPagination,
     selectReports,
     selectSelectedReportId,
     selectSelectedReportIds,
@@ -53,7 +50,6 @@ export default function VersionHistory() {
     const { showNotification } = useNotifications();
 
     // Redux selectors
-    const pagination = useSelector(selectVersionsPagination);
     const selectedVersionIds = useSelector((state: any) => state.reports.selectedVersionIds);
     const reports = useSelector(selectReports);
     const selectedReportId = useSelector(selectSelectedReportId);
@@ -100,10 +96,6 @@ export default function VersionHistory() {
         setPublishedStatusOverrides({});
     }, [selectedReportId]);
 
-    // Paginated versions
-    const paginatedVersions = useMemo(() => {
-        return versions.slice(pagination.skip, pagination.skip + pagination.take);
-    }, [versions, pagination]);
 
     // Modal states
     const [deleteModal, setDeleteModal] = useState({
@@ -176,7 +168,8 @@ export default function VersionHistory() {
         dispatch(setActionContext({
             type: 'new_version',
             versionId: versionId,
-            reportId: reportId
+            reportId: reportId,
+            selectedVersion: getVersionById(versionId)
         }));
         navigate('/report-designer');
     };
@@ -185,7 +178,8 @@ export default function VersionHistory() {
         dispatch(setActionContext({
             type: 'edit',
             versionId: versionId,
-            reportId: reportId
+            reportId: reportId,
+            selectedVersion: getVersionById(versionId)
         }));
         navigate('/report-designer');
     };
@@ -240,10 +234,6 @@ export default function VersionHistory() {
         return `${selectedReportId}-${selectedReportIds.length}-${currentReportName}`;
     }, [selectedReportId, selectedReportIds.length, currentReportName]);
 
-    // Event handlers
-    const handlePageChange = (e: PageChangeEvent) => {
-        dispatch(setVersionsPagination({ skip: e.skip, take: e.take }));
-    };
 
     const handleRowClicked = (e: RowClickedEvent<VersionRowWithPublished>) => {
         // Only navigate if not clicking on checkbox, action buttons, or toggle
@@ -328,7 +318,7 @@ export default function VersionHistory() {
                 <BaseCard.Body>
                     <BaseTable<VersionRowWithPublished>
                         key={tableKey}
-                        rowData={paginatedVersions}
+                        rowData={versions}
                         columnDefs={columnDefs}
                         getRowId={(p) => String(p.data.id)}
                         onRowClicked={handleRowClicked}
@@ -349,26 +339,6 @@ export default function VersionHistory() {
                         )}
                     />
                 </BaseCard.Body>
-
-                <BaseCard.Footer>
-                    <span className="text-sm text-gray-500">
-                        {versions.length
-                            ? `Showing ${pagination.skip + 1}-${Math.min(pagination.skip + pagination.take, versions.length)} of ${versions.length}`
-                            : 'Showing 0–0 of 0'}
-                    </span>
-                    <Pager
-                        className="fg-pager"
-                        skip={pagination.skip}
-                        take={pagination.skip}
-                        total={versions.length}
-                        buttonCount={5}
-                        info={false}
-                        type="numeric"
-                        previousNext
-                        onPageChange={handlePageChange}
-                        disabled={isAnyOperationLoading}
-                    />
-                </BaseCard.Footer>
             </BaseCard>
 
             {/* Modals */}

@@ -58,3 +58,11 @@ export interface PaginatedResponse<T> {
     pageSize?: number;
     totalPages?: number;
 }
+
+
+export interface ActionContext {
+    type: 'edit' | 'new_version' | null;
+    reportId?: number;
+    versionId?: number;
+    selectedVersion?: ReportVersion | null;
+}
