@@ -1,4 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import {
+    useState,
+    useRef,
+    useEffect
+} from 'react';
 import ReportDesigner, {
     RequestOptions,
     DesignerModelSettings,
@@ -11,14 +15,43 @@ import { ActionId } from 'devexpress-reporting/dx-reportdesigner';
 import { Loader } from '@progress/kendo-react-indicators';
 import BaseCard from '../shared/BaseCard';
 
+import {
+    ExportSettings,
+    ProgressBarSettings,
+    SearchSettings
+} from 'devexpress-reporting-react/dx-report-viewer';
+
+
+
 function DesignerTool() {
     const [isLoading, setIsLoading] = useState(true);
     const designerRef = useRef<any>(null);
 
-    // Example: tweak menu actions
     const onCustomizeMenuActions = ({ args }: { args: any }) => {
-        const newReport = args.GetById(ActionId.NewReport);
-        if (newReport) newReport.visible = false; // demo: hide "New Report"
+        // Array of menu items to hide
+        const hideMenuItems = [
+            ActionId.NewReport,
+            ActionId.OpenReport,
+            ActionId.NewReportViaWizard,
+            ActionId.ReportWizard,
+            //ActionId.Save,
+            ActionId.SaveAs,
+            //ActionId.Preview,
+            ActionId.Scripts,
+            ActionId.AddDataSource,
+            ActionId.ValidateBindings,
+            ActionId.FullScreen
+        ];
+
+        // Loop through and hide each menu item
+        hideMenuItems.forEach(actionId => {
+            const action = args.GetById(actionId);
+            if (action) {
+                action.visible = false;
+            }
+        });
+
+        // Localization and Exit remain visible by default
     };
 
     // Handle designer initialization callbacks
@@ -33,7 +66,7 @@ function DesignerTool() {
     useEffect(() => {
         const fallbackTimer = setTimeout(() => {
             setIsLoading(false);
-        }, 10000); // 10 second fallback
+        }, 3000); // 10 second fallback
 
         return () => clearTimeout(fallbackTimer);
     }, []);
@@ -66,7 +99,7 @@ function DesignerTool() {
             >
                 <ReportDesigner
                     ref={designerRef}
-                    reportUrl="TestReport"
+                    reportUrl="XtraReport1"
                 >
                     <RequestOptions
                         host={import.meta.env.VITE_DX_HOST}
@@ -77,14 +110,18 @@ function DesignerTool() {
                         BeforeRender={onBeforeRender}
                         ReportOpened={onReportOpened}
                     />
-                    <DesignerModelSettings allowMDI>
+                    <DesignerModelSettings allowMDI={true}>
                         <DataSourceSettings
                             allowAddDataSource={false}
-                            allowRemoveDataSource={false}
+                            allowRemoveDataSource={true}
                         />
                         <PreviewSettings>
                             <WizardSettings useFullscreenWizard={false} />
+                            <ExportSettings useSameTab={false} />
+                            <ProgressBarSettings position='TopRight' />
+                            <SearchSettings searchEnabled={false} />
                         </PreviewSettings>
+                        <WizardSettings useFullscreenWizard={false} />
                     </DesignerModelSettings>
                 </ReportDesigner>
             </div>

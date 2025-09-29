@@ -1,9 +1,17 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+
+
 import 'devextreme/dist/css/dx.light.css';
 import '@devexpress/analytics-core/dist/css/dx-analytics.common.css';
 import '@devexpress/analytics-core/dist/css/dx-analytics.light.css';
+import 'devexpress-reporting/dist/css/dx-webdocumentviewer.css';
+import 'ace-builds/css/ace.css';
+import 'ace-builds/css/theme/dreamweaver.css';
+import 'ace-builds/css/theme/ambiance.css';
+import '@devexpress/analytics-core/dist/css/dx-querybuilder.css';
 import 'devexpress-reporting/dist/css/dx-reportdesigner.css';
+
 import 'ace-builds/css/ace.css';
 import 'ace-builds/css/theme/dreamweaver.css';
 import '@progress/kendo-theme-default/dist/all.css';
