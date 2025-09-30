@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import ActionBar from "../components/reportDesigner/ActionBar";
 import ReportDesignerTool from "../components/reportDesigner/DesignerTool";
 
 
@@ -11,7 +10,6 @@ function ReportDesignerPage() {
 
     return (
         <div className="p-5 px-25">
-            <ActionBar />
             <ReportDesignerTool />
         </div>
     );

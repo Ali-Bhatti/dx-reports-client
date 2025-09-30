@@ -11,6 +11,7 @@ import 'ace-builds/css/theme/dreamweaver.css';
 import 'ace-builds/css/theme/ambiance.css';
 import '@devexpress/analytics-core/dist/css/dx-querybuilder.css';
 import 'devexpress-reporting/dist/css/dx-reportdesigner.css';
+import 'devexpress-richedit/dist/dx.richedit.css';
 
 import 'ace-builds/css/ace.css';
 import 'ace-builds/css/theme/dreamweaver.css';

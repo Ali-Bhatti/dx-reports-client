@@ -2,6 +2,7 @@ import {
     useState,
     useMemo,
     useEffect,
+    useCallback,
 } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -189,7 +190,7 @@ export default function VersionHistory() {
     };
 
     // Create renderer with callbacks
-    const createVersionActionsRenderer = (props: ICellRendererParams<VersionRowWithPublished>) => {
+    const createVersionActionsRenderer = useCallback((props: ICellRendererParams<VersionRowWithPublished>) => {
         return VersionHistoryActionsRenderer({
             ...props,
             onDownload: handleVersionDownload,
@@ -197,7 +198,8 @@ export default function VersionHistory() {
             onEdit: handleVersionEdit,
             onDelete: handleVersionDelete,
         });
-    };
+    }, [handleVersionDownload, handleVersionNewVersion, handleVersionEdit, handleVersionDelete]);
+
 
     // Published toggle handlers with local state updates
     const handleVersionPublish = (versionId: number) => {
@@ -214,13 +216,13 @@ export default function VersionHistory() {
         showNotification('success', `Version <strong>${version?.version}</strong> unpublished successfully`);
     };
 
-    const createPublishedToggleRenderer = (props: ICellRendererParams<VersionRowWithPublished>) => {
+    const createPublishedToggleRenderer = useCallback((props: ICellRendererParams<VersionRowWithPublished>) => {
         return PublishedToggleRenderer({
             ...props,
             onPublish: handleVersionPublish,
             onUnpublish: handleVersionUnpublish,
         });
-    };
+    }, [handleVersionPublish, handleVersionUnpublish]);
 
     // Column definitions using the separate module
     const columnDefs = useMemo(() => {
@@ -228,7 +230,7 @@ export default function VersionHistory() {
             createVersionActionsRenderer,
             createPublishedToggleRenderer
         });
-    }, []);
+    }, [createVersionActionsRenderer, createPublishedToggleRenderer]);
 
     const tableKey = useMemo(() => {
         return `${selectedReportId}-${selectedReportIds.length}-${currentReportName}`;

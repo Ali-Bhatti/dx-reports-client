@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 import BaseButton from '../shared/BaseButton';
 import BaseCard from '../shared/BaseCard';
-import DownloadConfirmationModal from '../modals/DownloadConfirmationModal ';
+import DownloadConfirmationModal from '../modals/DownloadConfirmationModal';
 import SaveConfirmationModal from '../modals/SaveConfirmationModal';
 import BaseChip from '../shared/BaseChip';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -16,7 +16,13 @@ import {
     downloadIcon,
 } from '@progress/kendo-svg-icons';
 
-function ActionBar() {
+interface ActionBarProps {
+    isLoading?: boolean;
+    onSave?: () => void;
+    onDownload?: () => void;
+}
+
+function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
 
@@ -37,7 +43,7 @@ function ActionBar() {
     const actionButtonText = isNewVersion ? 'Add Version' : 'Save';
     const ActionIcon = isNewVersion ? plusIcon : saveIcon;
     const publishStatusColor = selectedVersion?.isPublished ? 'green' : 'yellow';
-    const publishText = `${!selectedVersion?.isPublished ? 'Not' : ``} Published`
+    const publishText = `${!selectedVersion?.isPublished ? 'Not' : ''} Published`;
 
     const handleSaveAction = () => {
         setShowSaveModal(true);
@@ -48,21 +54,31 @@ function ActionBar() {
     };
 
     const confirmSaveAction = () => {
+        // Call the onSave function passed from parent
+        if (onSave) {
+            onSave();
+        }
+
         showNotification('success',
             isNewVersion
                 ? `New version created successfully for <strong>${selectedReport?.reportName}</strong>`
                 : `Report <strong>${selectedReport?.reportName}</strong> saved successfully`
         );
         setShowSaveModal(false);
-        // You can dispatch appropriate actions here
     };
 
     const confirmDownload = () => {
-        // Handle download logic here
+        // Call the onDownload function passed from parent
+        if (onDownload) {
+            onDownload();
+        }
+
         showNotification('success', `Report <strong>${selectedReport?.reportName}</strong> is being downloaded...`);
         setShowDownloadModal(false);
     };
 
+    // Determine if buttons should be disabled
+    const isButtonsDisabled = isLoading || !selectedReport;
 
     return (
         <>
@@ -103,7 +119,7 @@ function ActionBar() {
                         <BaseButton
                             color="gray"
                             onClick={handleDownload}
-                            disabled={!selectedReport}
+                            disabled={isButtonsDisabled}
                             className="flex items-center space-x-2 px-4 py-2"
                             svgIcon={downloadIcon}
                         >
@@ -113,7 +129,7 @@ function ActionBar() {
                         <BaseButton
                             color="blue"
                             onClick={handleSaveAction}
-                            disabled={!selectedReport}
+                            disabled={isButtonsDisabled}
                             className="flex items-center space-x-2 px-4 py-2"
                             svgIcon={ActionIcon}
                         >
