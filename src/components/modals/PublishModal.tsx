@@ -1,4 +1,3 @@
-// components/modals/PublishModal.tsx
 import BaseModal from '../shared/BaseModal';
 import BaseButton from '../shared/BaseButton';
 

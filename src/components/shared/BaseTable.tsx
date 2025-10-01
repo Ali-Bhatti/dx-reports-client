@@ -1,5 +1,5 @@
 // BaseTable.tsx
-import * as React from 'react';
+import { useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import type {
@@ -18,6 +18,8 @@ export interface BaseTableProps<TData = any> extends Omit<AgGridReactProps<TData
     height?: number | string;
     className?: string;
     showCheckboxColumn?: boolean;
+    pagination?: boolean;
+    paginationPageSize?: number;
 }
 
 const BaseTable = <TData extends any = any>({
@@ -27,35 +29,26 @@ const BaseTable = <TData extends any = any>({
     height = 420,
     className = '',
     showCheckboxColumn = true,
+    pagination = true,
+    paginationPageSize = 20,
     ...props
 }: BaseTableProps<TData>) => {
-    // Default checkbox column configuration
-    const defaultCheckboxColumn: ColDef<TData> = React.useMemo(() => ({
-        headerName: '',
-        width: 20,
-        minWidth: 20,
-        maxWidth: 35,
-        flex: 0,
-        sortable: false,
-        resizable: false,
-    }), []);
 
     // Default column definition
-    const mergedDefaultColDef = React.useMemo<ColDef<TData>>(() => ({
+    const mergedDefaultColDef = useMemo<ColDef<TData>>(() => ({
         sortable: true,
         resizable: true,
         flex: 1,
         minWidth: 120,
+        filter: true,
         ...defaultColDef,
     }), [defaultColDef]);
 
-    // Merge column definitions with checkbox column if enabled
-    const mergedColumnDefs = React.useMemo<ColDef<TData>[]>(() => {
-        return [defaultCheckboxColumn, ...columnDefs];
-    }, [columnDefs, defaultCheckboxColumn, showCheckboxColumn]);
+    // Use columnDefs directly, let AG Grid handle checkboxSelection
+    const mergedColumnDefs = useMemo<ColDef<TData>[]>(() => columnDefs, [columnDefs]);
 
     // Default grid options
-    const mergedGridOptions = React.useMemo<GridOptions<TData>>(() => ({
+    const mergedGridOptions = useMemo<GridOptions<TData>>(() => ({
         rowHeight: 40,
         headerHeight: 40,
         theme: "legacy",
@@ -82,6 +75,8 @@ const BaseTable = <TData extends any = any>({
                     animateRows={true}
                     gridOptions={mergedGridOptions}
                     suppressCellFocus={true}
+                    pagination={pagination}
+                    paginationPageSize={paginationPageSize}
                     {...props}
                 />
             </div>

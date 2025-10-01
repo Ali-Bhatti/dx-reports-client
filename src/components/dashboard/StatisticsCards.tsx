@@ -1,17 +1,25 @@
-import type { ReportStatistics } from '../../types';
+import { useSelector } from 'react-redux';
+import { useGetReportStatisticsQuery } from '../../services/report';
 import BaseCard from '../shared/BaseCard';
+import { selectCurrentCompany } from '../../features/reports/reportsSelectors';
 
 interface StatisticsCardsProps {
-    statistics: ReportStatistics[] | [];
-    loading?: boolean;
     onClick?: () => void;
 }
 
-const StatisticsCards = ({
-    statistics = [],
-    loading = false,
-    onClick
-}: StatisticsCardsProps) => {
+const StatisticsCards = ({ onClick }: StatisticsCardsProps) => {
+    // Get current company from Redux store
+    const currentCompany = useSelector(selectCurrentCompany);
+
+    const {
+        data: statistics = [],
+        isLoading: loading,
+    } = useGetReportStatisticsQuery(
+        currentCompany?.toString() || '',
+        { skip: !currentCompany }
+    );
+
+    // Handle loading state
     if (loading) {
         return (
             <div className="grid grid-cols-3 gap-6 mb-6">
@@ -25,8 +33,13 @@ const StatisticsCards = ({
         );
     }
 
-    if (!statistics?.length) {
-        return null;
+    // Handle empty state
+    if (!currentCompany) {
+        return (
+            <BaseCard className='p-6 mb-5'>
+                <p className="text-gray-500 text-center">No statistics available</p>
+            </BaseCard>
+        );
     }
 
     const baseClasses = "bg-white rounded-2xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200";
@@ -45,7 +58,7 @@ const StatisticsCards = ({
                                 {s.label}
                             </p>
                             <p className="text-2xl font-semibold text-gray-900">
-                                {s.total}
+                                {s.count}
                             </p>
                         </div>
                     </BaseCard>

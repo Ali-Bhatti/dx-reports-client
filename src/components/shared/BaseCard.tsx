@@ -1,24 +1,29 @@
-import * as React from 'react';
+import {
+  createContext,
+  useContext,
+  type ReactElement,
+  type PropsWithChildren,
+} from 'react';
 
-type SlotProps = React.PropsWithChildren<{
+type SlotProps = PropsWithChildren<{
   className?: string;
   /** Override the root setting for this section only */
   divider?: boolean;
 }>;
 
-type BaseCardProps = React.PropsWithChildren<{
+type BaseCardProps = PropsWithChildren<{
   className?: string;
   /** Show header/footer divider lines (default: true) */
   dividers?: boolean;
 }>;
 
 // Context to pass the root "dividers" default to sections 
-const DividerCtx = React.createContext<boolean>(true);
+const DividerCtx = createContext<boolean>(true);
 
-type BaseCardCompound = ((props: BaseCardProps) => React.ReactElement) & {
-  Header: (props: SlotProps) => React.ReactElement;
-  Body: (props: SlotProps) => React.ReactElement;
-  Footer: (props: SlotProps) => React.ReactElement;
+type BaseCardCompound = ((props: BaseCardProps) => ReactElement) & {
+  Header: (props: SlotProps) => ReactElement;
+  Body: (props: SlotProps) => ReactElement;
+  Footer: (props: SlotProps) => ReactElement;
 };
 
 const BaseCardRoot = ({
@@ -38,7 +43,7 @@ const BaseCardRoot = ({
 );
 
 const Header = ({ className = '', divider, children }: SlotProps) => {
-  const rootDividers = React.useContext(DividerCtx);
+  const rootDividers = useContext(DividerCtx);
   const show = divider ?? rootDividers;
   return (
     <header
@@ -59,7 +64,7 @@ const Body = ({ className = '', children }: SlotProps) => (
 );
 
 const Footer = ({ className = '', divider, children }: SlotProps) => {
-  const rootDividers = React.useContext(DividerCtx);
+  const rootDividers = useContext(DividerCtx);
   const show = divider ?? rootDividers;
   return (
     <footer

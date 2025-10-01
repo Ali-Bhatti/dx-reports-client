@@ -1,0 +1,73 @@
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import { VersionNameRenderer } from '../renderers';
+import YesNoCheckboxFilter from '../filters/YesNoCheckboxFilter';
+import { formatDateTime } from '../../../utils/dateFormatters';
+import type { ReportVersion as HistoryRow } from '../../../types';
+import { type JSX } from 'react';
+
+type VersionRowWithPublished = HistoryRow & { published: boolean };
+
+interface VersionHistoryColDefsConfig {
+    createVersionActionsRenderer: (props: ICellRendererParams<VersionRowWithPublished>) => JSX.Element;
+    createPublishedToggleRenderer: (props: ICellRendererParams<VersionRowWithPublished>) => JSX.Element;
+}
+
+export const getVersionHistoryColumnDefs = ({
+    createVersionActionsRenderer,
+    createPublishedToggleRenderer
+}: VersionHistoryColDefsConfig): ColDef<VersionRowWithPublished>[] => [
+        {
+            headerName: 'Version',
+            field: 'version',
+            width: 120,
+            minWidth: 100,
+            maxWidth: 140,
+            checkboxSelection: true,
+            headerCheckboxSelection: true,
+            pinned: 'left',
+            cellRenderer: VersionNameRenderer,
+        },
+        {
+            headerName: 'Creation Date',
+            field: 'createdOn',
+            flex: 1,
+            minWidth: 140,
+            valueFormatter: (p) => formatDateTime(p.value)
+        },
+        {
+            headerName: 'Modified On',
+            field: 'modifiedOn',
+            flex: 1,
+            minWidth: 140,
+            valueFormatter: (p) => formatDateTime(p.value)
+        },
+        {
+            headerName: 'Modified By',
+            field: 'modifiedBy',
+            type: 'text',
+            flex: 1,
+            minWidth: 120
+        },
+        {
+            headerName: 'Published',
+            field: 'isPublished',
+            flex: 1,
+            width: 120,
+            minWidth: 100,
+            maxWidth: 140,
+            cellRenderer: createPublishedToggleRenderer,
+            sortable: false,
+            filter: YesNoCheckboxFilter,
+        },
+        {
+            headerName: 'Actions',
+            flex: 0,
+            width: 200,
+            minWidth: 180,
+            maxWidth: 250,
+            cellRenderer: createVersionActionsRenderer,
+            sortable: false,
+            filter: false,
+            pinned: 'right',
+        }
+    ];

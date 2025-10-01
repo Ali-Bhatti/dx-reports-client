@@ -1,8 +1,7 @@
-// components/modals/CopyModal.tsx
-import * as React from 'react';
+import { useState } from 'react';
 import BaseModal from '../shared/BaseModal';
 import BaseButton from '../shared/BaseButton';
-import CompanySelector from '../reports/CompanySelector';
+import CompanySelector from '../dashboard/CompanySelector';
 import type { Company } from '../../types';
 
 interface CopyModalProps {
@@ -20,7 +19,7 @@ export default function CopyModal({
     reportNames = [],
     isMultiple = false
 }: CopyModalProps) {
-    const [selectedCompany, setSelectedCompany] = React.useState<Company | null>(null);
+    const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
     const handleCompanyChange = (company: Company | null) => {
         setSelectedCompany(company);

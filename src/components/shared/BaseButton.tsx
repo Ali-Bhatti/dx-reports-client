@@ -1,4 +1,3 @@
-//import * as React from 'react';
 import { Button, type ButtonProps } from '@progress/kendo-react-buttons';
 
 type FGColor =

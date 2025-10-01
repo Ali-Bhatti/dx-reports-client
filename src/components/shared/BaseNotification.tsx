@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Notification, NotificationGroup } from '@progress/kendo-react-notification';
 import { Fade } from '@progress/kendo-react-animation';
@@ -11,7 +11,7 @@ const BaseNotification = () => {
     const notifications = useSelector(selectAllNotifications);
 
     // Auto-close notifications after specified delay
-    React.useEffect(() => {
+    useEffect(() => {
         const timers: ReturnType<typeof setTimeout>[] = [];
 
         notifications.forEach((notification) => {

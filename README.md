@@ -1,69 +1,42 @@
-# React + TypeScript + Vite
+# DX Reports Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript app built with Vite. Provides a reporting dashboard and designer using DevExpress Reporting and Kendo UI components, with state managed by Redux Toolkit and routing via React Router.
 
-Currently, two official plugins are available:
+## Tech Stack
+- React 19, TypeScript, Vite 7
+- Redux Toolkit, React Router
+- DevExpress Reporting (`devexpress-reporting`, `devexpress-reporting-react`)
+- Kendo UI for React (Grid, Inputs, Buttons, Layout, Notifications)
+- Tailwind CSS
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Quick Start
+1. Install Node.js ≥ 18
+2. Install deps: `npm install`
+3. Start dev server: `npm run dev`
+4. Build for production: `npm run build`
+5. Preview build: `npm run preview`
+6. Lint: `npm run lint`
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Project Structure
+```
+src/
+  app/           # store setup and typed hooks
+  components/    # UI components (dashboard, reports, modals, shared, table)
+  features/      # Redux slices (reports, notifications)
+  hooks/         # feature hooks
+  pages/         # route pages (Dashboard, ReportDesigner)
+  routes/        # router setup
+  services/      # API clients (e.g., report.ts)
+  style/         # tokens and Kendo overrides
+  types/         # shared TypeScript types
+  utils/         # helpers (e.g., dateFormatters)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Scripts
+- dev: start Vite dev server
+- build: type-check and bundle
+- preview: preview production build
+- lint: run eslint
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Notes
+- Kendo UI and DevExpress packages may require valid licenses.

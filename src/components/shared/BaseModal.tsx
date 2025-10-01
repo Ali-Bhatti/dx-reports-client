@@ -1,4 +1,7 @@
-import * as React from 'react';
+import {
+    type ReactNode,
+    type CSSProperties,
+} from 'react';
 import { Dialog, DialogActionsBar, type DialogProps, type ActionsLayout } from '@progress/kendo-react-dialogs';
 
 function cx(...parts: Array<string | undefined | null | false>) {
@@ -6,11 +9,11 @@ function cx(...parts: Array<string | undefined | null | false>) {
 }
 
 export type BaseModalProps = Omit<DialogProps, 'title' | 'className'> & {
-    title?: React.ReactNode;
+    title?: ReactNode;
     titleClassName?: string;
-    actions?: React.ReactNode;
-    body?: React.ReactNode;
-    children?: React.ReactNode;
+    actions?: ReactNode;
+    body?: ReactNode;
+    children?: ReactNode;
     actionButtonsLayout?: ActionsLayout,
     type?: 'default' | 'success' | 'warning' | 'danger' | 'confirmation',
     size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -71,8 +74,8 @@ export default function BaseModal(props: BaseModalProps) {
             height: dialogDimensions.h
         };
 
-    const dialogStyle: React.CSSProperties = surfaceColor
-        ? { '--kendo-color-surface': surfaceColor } as React.CSSProperties
+    const dialogStyle: CSSProperties = surfaceColor
+        ? { '--kendo-color-surface': surfaceColor } as CSSProperties
         : {};
 
     const kendoTitle =

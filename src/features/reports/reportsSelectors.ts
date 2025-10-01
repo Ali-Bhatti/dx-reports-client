@@ -39,13 +39,13 @@ export const selectReportStatistics = createSelector(
   [selectFilteredReports],
   (reports): ReportStatistics[] => {
     const totalReports = reports.length;
-    const activeReports = reports.filter(r => r.active).length;
+    const activeReports = reports.filter(r => r.merged).length;
     const inactiveReports = totalReports - activeReports;
     
     return [
-      { label: 'Total Reports', total: totalReports },
-      { label: 'Active Reports', total: activeReports },
-      { label: 'In-Active Reports', total: inactiveReports }
+      { label: 'Total Reports', count: totalReports },
+      { label: 'Active Reports', count: activeReports },
+      { label: 'In-Active Reports', count: inactiveReports }
     ];
   }
 );
@@ -60,7 +60,7 @@ export const selectVersionsForSelectedReport = createSelector(
       .filter(h => h.reportId === selectedReportId)
       .map(h => ({ 
         ...h, 
-        published: h.status === 'Published' 
+        published: h.isPublished 
       }));
   }
 );
