@@ -400,9 +400,9 @@ export default function ReportsList() {
     }
   };
 
-  const tableKey = useMemo(() => {
-    return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}`;
-  }, [selectedReportId, selectedReportIds.length, currentCompany]);
+  // const tableKey = useMemo(() => {
+  //   return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}`;
+  // }, [selectedReportId, selectedReportIds.length, currentCompany]);
 
   return (
     <>

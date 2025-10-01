@@ -37,7 +37,7 @@ export const reportsApi = createApi({
         getCompany: builder.query<Company, string>({
             query: (id) => `companies/${id}`,
             transformResponse: (response: ApiResponse<Company>) => response.data,
-            providesTags: (result, error, id) => [{ type: 'Company', id }],
+            providesTags: (_result, _error, id) => [{ type: 'Company', id }],
         }),
 
         // Reports API
