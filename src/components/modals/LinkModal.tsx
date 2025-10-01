@@ -1,5 +1,5 @@
 // components/modals/LinkModal.tsx
-import * as React from 'react';
+import { useState } from 'react';
 import BaseModal from '../shared/BaseModal';
 import BaseButton from '../shared/BaseButton';
 
@@ -25,8 +25,8 @@ export default function LinkModal({
     onConfirm,
     reportName
 }: LinkModalProps) {
-    const [selectedPages, setSelectedPages] = React.useState<string[]>([]);
-    const [selectAll, setSelectAll] = React.useState(false);
+    const [selectedPages, setSelectedPages] = useState<string[]>([]);
+    const [selectAll, setSelectAll] = useState(false);
 
     const handlePageToggle = (page: string) => {
         setSelectedPages(prev => {

@@ -3,10 +3,12 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 import BaseButton from '../shared/BaseButton';
 import BaseCard from '../shared/BaseCard';
-import DownloadConfirmationModal from '../modals/DownloadConfirmationModal ';
+import DownloadConfirmationModal from '../modals/DownloadConfirmationModal';
 import SaveConfirmationModal from '../modals/SaveConfirmationModal';
 import BaseChip from '../shared/BaseChip';
 import { useNotifications } from '../../hooks/useNotifications';
+import { VersionDisplay } from '../dashboard/VersionDisplay';
+import { formatDateTime } from '../../utils/dateFormatters';
 
 import {
     saveIcon,
@@ -14,32 +16,34 @@ import {
     downloadIcon,
 } from '@progress/kendo-svg-icons';
 
-function ActionBar() {
+interface ActionBarProps {
+    isLoading?: boolean;
+    onSave?: () => void;
+    onDownload?: () => void;
+}
+
+function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
 
     const { showNotification } = useNotifications();
 
     // Get data from Redux store
-    const { reports, history, selectedReportId, actionContext } = useSelector((state: RootState) => ({
-        reports: state.reports.reports,
+    const { actionContext, selectedReport } = useSelector((state: RootState) => ({
         history: state.reports.history,
         selectedReportId: state.reports.selectedReportId,
-        actionContext: state.reports.actionContext
+        actionContext: state.reports.actionContext,
+        selectedReport: state.reports.selectedReport
     }));
 
-    // Find selected report and version
-    const selectedReport = reports.find(report => report.id === actionContext.reportId);
-    const selectedVersion = selectedReportId
-        ? history.find(version => version.id === actionContext.versionId)
-        : null;
+    const selectedVersion = actionContext.selectedVersion;
 
     // Determine action button text and icon
     const isNewVersion = actionContext.type === 'new_version';
     const actionButtonText = isNewVersion ? 'Add Version' : 'Save';
     const ActionIcon = isNewVersion ? plusIcon : saveIcon;
     const publishStatusColor = selectedVersion?.isPublished ? 'green' : 'yellow';
-    const publishText = `${!selectedVersion?.isPublished ? 'Not' : ``} Published`
+    const publishText = `${!selectedVersion?.isPublished ? 'Not' : ''} Published`;
 
     const handleSaveAction = () => {
         setShowSaveModal(true);
@@ -50,21 +54,31 @@ function ActionBar() {
     };
 
     const confirmSaveAction = () => {
+        // Call the onSave function passed from parent
+        if (onSave) {
+            onSave();
+        }
+
         showNotification('success',
             isNewVersion
                 ? `New version created successfully for <strong>${selectedReport?.reportName}</strong>`
                 : `Report <strong>${selectedReport?.reportName}</strong> saved successfully`
         );
         setShowSaveModal(false);
-        // You can dispatch appropriate actions here
     };
 
     const confirmDownload = () => {
-        // Handle download logic here
+        // Call the onDownload function passed from parent
+        if (onDownload) {
+            onDownload();
+        }
+
         showNotification('success', `Report <strong>${selectedReport?.reportName}</strong> is being downloaded...`);
         setShowDownloadModal(false);
     };
 
+    // Determine if buttons should be disabled
+    const isButtonsDisabled = isLoading || !selectedReport;
 
     return (
         <>
@@ -89,7 +103,7 @@ function ActionBar() {
                             </span>
                             <div className="flex items-center mt-1">
                                 <span className="text-lg font-semibold text-gray-900">
-                                    {selectedVersion?.version || 'N/A'}
+                                    <VersionDisplay version={selectedVersion?.version || 'N/A'} />
                                 </span>
                                 <BaseChip
                                     type={publishStatusColor}
@@ -105,7 +119,7 @@ function ActionBar() {
                         <BaseButton
                             color="gray"
                             onClick={handleDownload}
-                            disabled={!selectedReport}
+                            disabled={isButtonsDisabled}
                             className="flex items-center space-x-2 px-4 py-2"
                             svgIcon={downloadIcon}
                         >
@@ -115,7 +129,7 @@ function ActionBar() {
                         <BaseButton
                             color="blue"
                             onClick={handleSaveAction}
-                            disabled={!selectedReport}
+                            disabled={isButtonsDisabled}
                             className="flex items-center space-x-2 px-4 py-2"
                             svgIcon={ActionIcon}
                         >
@@ -130,20 +144,14 @@ function ActionBar() {
                         <div className="flex items-center justify-between text-sm text-gray-500">
                             <div className="flex items-center space-x-4">
                                 <span>
-                                    <span className="font-medium">Created:</span> {selectedReport.createdOn}
+                                    <span className="font-medium">Created:</span> {formatDateTime(selectedReport.createdOn)}
                                 </span>
                                 <span>
-                                    <span className="font-medium">Modified:</span> {selectedReport.modifiedOn}
+                                    <span className="font-medium">Modified:</span> {formatDateTime(selectedReport.modifiedOn)}
                                 </span>
                                 <span>
                                     <span className="font-medium">By:</span> {selectedReport.modifiedBy}
                                 </span>
-                            </div>
-                            <div className="flex items-center">
-                                <BaseChip
-                                    type={selectedReport.active ? "green" : "red"}
-                                    text={selectedReport.active ? "Active" : "Inactive"}
-                                />
                             </div>
                         </div>
                     </div>

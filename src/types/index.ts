@@ -6,20 +6,22 @@ export interface Report {
     createdOn?: string;
     modifiedOn?: string;
     modifiedBy?: string;
-    active: boolean; // active/inactive
+    merged: boolean; // active/inactive
     companyId: string | number;
 }
 
 export interface ReportVersion {
     id: string | number;
     reportId: string | number;
-    version: string;
+    reportID?: string | number;
+    version: string | number;
     createdOn: string;
-    modifiedOn: string;
-    modifiedBy: string;
+    createdBy?: string;
+    modifiedOn?: string | null;
+    modifiedBy?: string;
     isPublished: boolean;
-    isDefault: boolean; // Is this the default version for the report
-    content?: any; // Report content/configuration
+    isDefault: boolean;
+    content?: any;
 }
 
 export interface Company {
@@ -37,8 +39,8 @@ export interface User {
 }
 
 export interface ReportStatistics {
-    label: string,
-    total: number
+    label: string;
+    count: number;
 }
 
 // API Response types
@@ -51,8 +53,16 @@ export interface ApiResponse<T> {
 
 export interface PaginatedResponse<T> {
     data: T[];
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
+    total?: number;
+    page?: number;
+    pageSize?: number;
+    totalPages?: number;
+}
+
+
+export interface ActionContext {
+    type: 'edit' | 'new_version' | null;
+    reportId?: number;
+    versionId?: number;
+    selectedVersion?: ReportVersion | null;
 }
