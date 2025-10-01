@@ -154,6 +154,9 @@ export default function VersionHistory() {
         if (versionsError) {
             return 'Error loading versions. Please try again.';
         }
+        if(versions.length === 0) {
+            return `No versions available`;
+        }
         if (currentReportName === 'Unknown Report') {
             return 'No report selected';
         }

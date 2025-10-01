@@ -40,7 +40,7 @@ export interface User {
 
 export interface ReportStatistics {
     label: string;
-    total: number;
+    count: number;
 }
 
 // API Response types

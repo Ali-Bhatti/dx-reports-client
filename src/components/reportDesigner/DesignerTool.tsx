@@ -3,6 +3,8 @@ import {
     useRef,
     useEffect
 } from 'react';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../app/store';
 import ReportDesigner, {
     RequestOptions,
     DesignerModelSettings,
@@ -12,7 +14,7 @@ import ReportDesigner, {
     Callbacks,
     type DxReportDesignerRef
 } from 'devexpress-reporting-react/dx-report-designer';
-import { ActionId } from 'devexpress-reporting/dx-reportdesigner';
+import { ActionId, type WizardRunType } from 'devexpress-reporting/dx-reportdesigner';
 import { Loader } from '@progress/kendo-react-indicators';
 import BaseCard from '../shared/BaseCard';
 import ActionBar from './ActionBar';
@@ -23,13 +25,39 @@ import {
     SearchSettings
 } from 'devexpress-reporting-react/dx-report-viewer';
 
+// Extend Window interface for TypeScript
+declare global {
+    interface Window {
+        DevExpress: any;
+    }
+}
+
 function DesignerTool() {
     const [isLoading, setIsLoading] = useState(true);
     const designerRef = useRef<DxReportDesignerRef>(null);
 
+    // Get data from Redux store
+    const { actionContext } = useSelector((state: RootState) => ({
+        actionContext: state.reports.actionContext,
+        selectedReport: state.reports.selectedReport
+    }));
+
+    const isNewVersion = actionContext.type === 'new_version';
     const doSaveReport = () => {
-        console.log('Saving report...');
-        designerRef.current?.instance().SaveReport();
+        console.log('doSaveReport called. isNewVersion:', isNewVersion);
+        if (isNewVersion) {
+            console.log('Adding new version...');
+            designerRef.current?.instance().SaveNewReport("NewReportName");
+        } else {
+            console.log('Saving current report...');
+            //designerRef.current?.instance().SaveReport();
+            doCreateNewReport();
+        }
+    };
+
+    const doCreateNewReport = () => {
+        console.log('Creating new blank report...');
+        designerRef.current?.instance().RunWizard('NewReport' as WizardRunType);
     };
 
     const doDownloadReport = () => {
@@ -41,17 +69,13 @@ function DesignerTool() {
 
     const onCustomizeMenuActions = ({ args }: { args: any }) => {
         const hideMenuItems = [
-            ActionId.NewReport,
+            //ActionId.NewReport,
             ActionId.OpenReport,
             ActionId.NewReportViaWizard,
             ActionId.ReportWizard,
-            //ActionId.Save,
             ActionId.SaveAs,
-            //ActionId.Preview,
             ActionId.Scripts,
             ActionId.AddDataSource,
-            //ActionId.ValidateBindings,
-            //ActionId.FullScreen
         ];
 
         hideMenuItems.forEach(actionId => {
@@ -137,6 +161,16 @@ function DesignerTool() {
     function onBeforeRender(event: any): void {
         console.log("Before Render");
 
+        // Hide REPORT TASKS section using DevExpress Settings API
+        if (window.DevExpress &&
+            window.DevExpress.Reporting &&
+            window.DevExpress.Reporting.Designer &&
+            window.DevExpress.Reporting.Designer.Settings) {
+
+            // Hide the entire REPORT TASKS section
+            window.DevExpress.Reporting.Designer.Settings.PropertyGrid.TaskGroupVisible(false);
+        }
+
         console.log("EVENT--------", event);
         console.log("SENDER----------", event.sender);
 
@@ -145,6 +179,7 @@ function DesignerTool() {
 
         if (info.defaultVal == "Black") info.disabled = false;
 
+        // Hide various properties
         info = event.sender.GetPropertyInfo("DevExpress.XtraReports.UI.XtraReport", ["Watermarks"]);
         info.visible = false;
 

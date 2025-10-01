@@ -58,7 +58,7 @@ const StatisticsCards = ({ onClick }: StatisticsCardsProps) => {
                                 {s.label}
                             </p>
                             <p className="text-2xl font-semibold text-gray-900">
-                                {s.total}
+                                {s.count}
                             </p>
                         </div>
                     </BaseCard>

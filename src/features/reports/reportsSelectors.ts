@@ -43,9 +43,9 @@ export const selectReportStatistics = createSelector(
     const inactiveReports = totalReports - activeReports;
     
     return [
-      { label: 'Total Reports', total: totalReports },
-      { label: 'Active Reports', total: activeReports },
-      { label: 'In-Active Reports', total: inactiveReports }
+      { label: 'Total Reports', count: totalReports },
+      { label: 'Active Reports', count: activeReports },
+      { label: 'In-Active Reports', count: inactiveReports }
     ];
   }
 );

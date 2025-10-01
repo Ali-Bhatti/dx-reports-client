@@ -25,20 +25,30 @@ export const getReportListColumnDefs = ({
     field: 'createdOn',
     flex: 1,
     minWidth: 140,
-    valueFormatter: (params) => formatDateTime(params.value),
+    valueFormatter: (params) => { 
+      if(!params.value) return '--';
+      return formatDateTime(params.value);
+    },
   },
   {
     headerName: 'Modified On',
     field: 'modifiedOn',
     flex: 1,
     minWidth: 140,
-    valueFormatter: (params) => formatDateTime(params.value),
+    valueFormatter: (params) => { 
+      if(!params.value) return '--';
+      return formatDateTime(params.value);
+    },
   },
   {
     headerName: 'Modified By',
     field: 'modifiedBy',
     flex: 1,
-    minWidth: 140
+    minWidth: 140,
+    valueFormatter: (params) => { 
+      if(!params.value) return '--';
+      return params.value;
+    },
   },
   {
     headerName: 'Migrated',
