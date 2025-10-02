@@ -13,6 +13,9 @@ export const useAuth = () => {
   };
 
   const logout = () => {
+    // Clear selected company from localStorage
+    localStorage.removeItem('selectedCompanyId');
+
     instance.logoutRedirect({
       postLogoutRedirectUri: config.azureAuthFallBackUrl,
     });
