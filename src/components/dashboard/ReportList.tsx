@@ -88,6 +88,7 @@ export default function ReportsList() {
   const {
     data: reportsResponse,
     isLoading: reportsLoading,
+    isFetching: reportsFetching,
     isError: reportsError,
     error: _reportsErrorDetails,
   } = useGetReportsQuery(
@@ -100,6 +101,9 @@ export default function ReportsList() {
       refetchOnMountOrArgChange: true
     }
   );
+
+  // Show loading when fetching new data (includes company changes)
+  const isLoadingReports = reportsLoading || reportsFetching;
 
   // Extract the actual reports array from the response
   const allReports = useMemo(() => {
@@ -163,7 +167,7 @@ export default function ReportsList() {
   // Fixed getNoRowsMessage function
   const getNoRowsMessage = (): string => {
     // Handle loading state first
-    if (reportsLoading) {
+    if (isLoadingReports) {
       return 'Loading reports...';
     }
 
@@ -245,7 +249,7 @@ export default function ReportsList() {
     const newQuery = e.value;
     dispatch(setQuery(newQuery));
     // Show notification after data is loaded
-    if (newQuery && newQuery.length > 2 && !reportsLoading) {
+    if (newQuery && newQuery.length > 2 && !isLoadingReports) {
       const resultCount = searchFilteredReports.length;
       if (resultCount === 0) {
         showNotification('warning', `No reports found matching "<strong>${newQuery}</strong>"`);
@@ -400,9 +404,9 @@ export default function ReportsList() {
     }
   };
 
-  const tableKey = useMemo(() => {
-    return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}`;
-  }, [selectedReportId, selectedReportIds.length, currentCompany]);
+  // const tableKey = useMemo(() => {
+  //   return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}`;
+  // }, [selectedReportId, selectedReportIds.length, currentCompany]);
 
   return (
     <>
@@ -457,7 +461,7 @@ export default function ReportsList() {
             height={420}
             rowSelection={"multiple"}
             suppressRowClickSelection={true}
-            loading={reportsLoading}
+            loading={isLoadingReports}
             noRowsOverlayComponent={() => (
               <EmptyStateRenderer
                 message={getNoRowsMessage()}

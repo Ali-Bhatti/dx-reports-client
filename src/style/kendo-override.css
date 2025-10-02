@@ -189,3 +189,7 @@ body,
 .ag-theme-quartz .ag-row[style*="background-color: rgb(200, 230, 201)"]:hover {
     background-color: #c8e6c9B3 !important;
 }
+
+.ag-overlay-loading-wrapper {
+    background-color: white !important;
+}

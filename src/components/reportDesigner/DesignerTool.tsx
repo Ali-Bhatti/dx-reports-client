@@ -14,10 +14,10 @@ import ReportDesigner, {
     Callbacks,
     type DxReportDesignerRef
 } from 'devexpress-reporting-react/dx-report-designer';
-import { ActionId, type WizardRunType } from 'devexpress-reporting/dx-reportdesigner';
-import { Loader } from '@progress/kendo-react-indicators';
+import { ActionId } from 'devexpress-reporting/dx-reportdesigner';
 import BaseCard from '../shared/BaseCard';
 import ActionBar from './ActionBar';
+import BaseLoader from '../shared/BaseLoader';
 
 import {
     ExportSettings,
@@ -50,14 +50,8 @@ function DesignerTool() {
             designerRef.current?.instance().SaveNewReport("NewReportName");
         } else {
             console.log('Saving current report...');
-            //designerRef.current?.instance().SaveReport();
-            doCreateNewReport();
+            designerRef.current?.instance().SaveReport();
         }
-    };
-
-    const doCreateNewReport = () => {
-        console.log('Creating new blank report...');
-        designerRef.current?.instance().RunWizard('NewReport' as WizardRunType);
     };
 
     const doDownloadReport = () => {
@@ -224,15 +218,11 @@ function DesignerTool() {
             {isLoading && (
                 <BaseCard>
                     <div className="flex flex-col items-center space-y-4 p-8">
-                        <Loader
+                        <BaseLoader
                             type="pulsing"
                             themeColor="primary"
+                            loadingText="Loading Report Designer"
                         />
-                        <div className="text-center">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                                Loading Report Designer
-                            </h3>
-                        </div>
                     </div>
                 </BaseCard>
             )}

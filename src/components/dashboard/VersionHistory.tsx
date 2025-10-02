@@ -64,12 +64,16 @@ export default function VersionHistory() {
     const {
         data: versionsResponse,
         isLoading: versionsLoading,
+        isFetching: versionsFetching,
         isError: versionsError,
         error: _versionsErrorDetails,
         refetch: _refetchVersions
     } = useGetReportVersionsQuery(String(selectedReportId), {
         skip: !selectedReportId, // Skip the query if no report is selected
     });
+
+    // Show loading when fetching new data (includes report changes)
+    const isLoadingVersions = versionsLoading || versionsFetching;
 
     // Transform API response to match expected structure and apply local overrides
     const versions = useMemo(() => {
@@ -148,7 +152,7 @@ export default function VersionHistory() {
         if (selectedReportIds.length > 0) {
             return 'Select a single report to view version history';
         }
-        if (versionsLoading) {
+        if (isLoadingVersions) {
             return 'Loading versions...';
         }
         if (versionsError) {
@@ -161,7 +165,7 @@ export default function VersionHistory() {
             return 'No report selected';
         }
         return `No versions available for "${currentReportName}"`;
-    }, [selectedReportIds.length, selectedReportId, currentReportName, versionsLoading, versionsError]);
+    }, [selectedReportIds.length, selectedReportId, currentReportName, isLoadingVersions, versionsError]);
 
     // Action handlers for the version actions renderer
     const handleVersionDownload = (versionId: number) => {
@@ -295,7 +299,7 @@ export default function VersionHistory() {
         setPublishModal({ isOpen: false, versionId: null });
     };
 
-    const isAnyOperationLoading = versionsLoading;
+    const isAnyOperationLoading = isLoadingVersions;
 
     return (
         <>
@@ -331,7 +335,7 @@ export default function VersionHistory() {
                         height={400}
                         rowSelection="multiple"
                         suppressRowClickSelection={true}
-                        loading={versionsLoading}
+                        loading={isLoadingVersions}
                         noRowsOverlayComponent={() => (
                             <EmptyStateRenderer
                                 message={noVersionsMessage}
