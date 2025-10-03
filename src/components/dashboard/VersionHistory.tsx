@@ -43,7 +43,6 @@ import type {
     RowClickedEvent,
 } from 'ag-grid-community';
 
-type VersionRowWithPublished = HistoryRow & { published: boolean };
 
 export default function VersionHistory() {
     const dispatch = useDispatch();
@@ -87,11 +86,10 @@ export default function VersionHistory() {
 
             return {
                 ...version,
-                reportId: version.reportID || version?.reportId,
+                reportLayoutID: version.reportLayoutID || version?.reportId,
                 modifiedBy: version.modifiedBy || version?.createdBy || '',
                 modifiedOn: version.modifiedOn || version?.createdOn,
                 isPublished: publishedStatus,
-                published: publishedStatus
             };
         });
     }, [versionsResponse, selectedReportId, selectedReportIds.length, currentCompany, versionsError, publishedStatusOverrides]);
@@ -172,21 +170,19 @@ export default function VersionHistory() {
         showNotification('success', `Downloading version <strong>${getVersionById(versionId)?.version}</strong>...`);
     };
 
-    const handleVersionNewVersion = (versionId: number, reportId: number) => {
+    const handleVersionNewVersion = (versionId: number, _reportId: number) => {
         dispatch(setActionContext({
             type: 'new_version',
             versionId: versionId,
-            reportId: reportId,
             selectedVersion: getVersionById(versionId)
         }));
         navigate('/report-designer');
     };
 
-    const handleVersionEdit = (versionId: number, reportId: number) => {
+    const handleVersionEdit = (versionId: number, _reportId: number) => {
         dispatch(setActionContext({
             type: 'edit',
             versionId: versionId,
-            reportId: reportId,
             selectedVersion: getVersionById(versionId)
         }));
         navigate('/report-designer');
@@ -197,7 +193,7 @@ export default function VersionHistory() {
     };
 
     // Create renderer with callbacks
-    const createVersionActionsRenderer = useCallback((props: ICellRendererParams<VersionRowWithPublished>) => {
+    const createVersionActionsRenderer = useCallback((props: ICellRendererParams<HistoryRow>) => {
         return VersionHistoryActionsRenderer({
             ...props,
             onDownload: handleVersionDownload,
@@ -223,7 +219,7 @@ export default function VersionHistory() {
         showNotification('success', `Version <strong>${version?.version}</strong> unpublished successfully`);
     };
 
-    const createPublishedToggleRenderer = useCallback((props: ICellRendererParams<VersionRowWithPublished>) => {
+    const createPublishedToggleRenderer = useCallback((props: ICellRendererParams<HistoryRow>) => {
         return PublishedToggleRenderer({
             ...props,
             onPublish: handleVersionPublish,
@@ -244,7 +240,7 @@ export default function VersionHistory() {
     }, [selectedReportId, selectedReportIds.length, currentReportName]);
 
 
-    const handleRowClicked = (e: RowClickedEvent<VersionRowWithPublished>) => {
+    const handleRowClicked = (e: RowClickedEvent<HistoryRow>) => {
         // Only navigate if not clicking on checkbox, action buttons, or toggle
         if (e.event?.target &&
             !(e.event.target as HTMLElement).closest('.ag-checkbox-input') &&
@@ -325,7 +321,7 @@ export default function VersionHistory() {
                 </BaseCard.Header>
 
                 <BaseCard.Body>
-                    <BaseTable<VersionRowWithPublished>
+                    <BaseTable<HistoryRow>
                         key={tableKey}
                         rowData={versions}
                         columnDefs={columnDefs}

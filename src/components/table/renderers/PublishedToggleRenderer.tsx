@@ -4,9 +4,7 @@ import BaseSwitch from '../../shared/BaseSwitch';
 import { clearSelectedVersionIds } from '../../../features/reports/reportsSlice';
 import type { ReportVersion as HistoryRow } from '../../../types';
 
-type VersionRowWithPublished = HistoryRow & { published: boolean };
-
-interface PublishedToggleRendererProps extends ICellRendererParams<VersionRowWithPublished, boolean> {
+interface PublishedToggleRendererProps extends ICellRendererParams<HistoryRow, boolean> {
     onPublish?: (versionId: number) => void;
     onUnpublish?: (versionId: number) => void;
 }

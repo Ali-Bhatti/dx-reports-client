@@ -1,6 +1,8 @@
 import { type ReactNode } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import BaseButton from '../shared/BaseButton';
+import { useMsal } from '@azure/msal-react';
+import BaseLoader from '../shared/BaseLoader';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -9,45 +11,54 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, fallback }: ProtectedRouteProps) => {
   const { isAuthenticated, login } = useAuth();
+  const { inProgress } = useMsal();
+
+  // Show loader while MSAL is processing authentication
+  if (inProgress !== 'none') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center">
+          <BaseLoader loadingText="Processing..." />
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         {fallback || (
-          <div className="max-w-md w-full mx-4">
-            <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-              {/* Icon */}
-              <div className="mb-6 flex justify-center">
-                <div className="w-20 h-20 bg-fg-primary/10 rounded-full flex items-center justify-center">
-                  <svg className="w-10 h-10 text-fg-primary" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
+          <div className="max-w-lg w-full mx-4">
+            <div className="bg-white rounded-2xl shadow-xl p-16 text-center">
+              {/* FleetGo Logo */}
+              <div className="mb-10 flex justify-center">
+                <img
+                  src="/fleetGo.png"
+                  alt="FleetGo Logo"
+                  className="h-28 w-auto"
+                />
               </div>
 
               {/* Title */}
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">
-                Authentication Required
+              <h2 className="text-3xl font-bold text-gray-900 mb-5">
+                Welcome to FleetGo Reports
               </h2>
 
               {/* Description */}
-              <p className="text-gray-600 mb-8">
-                You need to sign in with your Microsoft account to access this application.
+              <p className="text-gray-600 mb-12 text-lg">
+                Sign in to access your reporting dashboard and manage your fleet reports.
               </p>
 
               {/* Sign In Button */}
               <BaseButton
                 onClick={login}
                 color="blue"
-                className="w-full !py-3 !text-base"
+                className="w-full !py-4 !text-lg"
               >
-                Sign In with Microsoft
+                Sign In
               </BaseButton>
 
-              {/* Additional Info */}
-              <p className="mt-6 text-sm text-gray-400">
-                Secure authentication powered by Azure Entra ID
-              </p>
+
             </div>
           </div>
         )}

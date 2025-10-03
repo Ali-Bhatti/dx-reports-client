@@ -42,8 +42,8 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
     const isNewVersion = actionContext.type === 'new_version';
     const actionButtonText = isNewVersion ? 'Add Version' : 'Save';
     const ActionIcon = isNewVersion ? plusIcon : saveIcon;
-    const publishStatusColor = selectedVersion?.isPublished ? 'green' : 'yellow';
-    const publishText = `${!selectedVersion?.isPublished ? 'Not' : ''} Published`;
+    const publishStatusColor = selectedVersion?.isPublished && !isNewVersion ? 'green' : 'yellow';
+    const publishText = isNewVersion ? `Draft` : `${!selectedVersion?.isPublished ? 'Not' : ''} Published`;
 
     const handleSaveAction = () => {
         setShowSaveModal(true);
@@ -99,12 +99,12 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
 
                         <div className="flex flex-col">
                             <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                                Version
+                                {isNewVersion ? 'New ' : ''}Version
                             </span>
                             <div className="flex items-center mt-1">
-                                <span className="text-lg font-semibold text-gray-900">
+                                {!isNewVersion && (<span className="text-lg font-semibold text-gray-900">
                                     <VersionDisplay version={selectedVersion?.version || 'N/A'} />
-                                </span>
+                                </span>)}
                                 <BaseChip
                                     type={publishStatusColor}
                                     text={publishText}
@@ -116,7 +116,7 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
 
                     {/* Right side - Action buttons */}
                     <div className="flex items-center space-x-3">
-                        <BaseButton
+                        {false && (<BaseButton
                             color="gray"
                             onClick={handleDownload}
                             disabled={isButtonsDisabled}
@@ -124,7 +124,7 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
                             svgIcon={downloadIcon}
                         >
                             Download
-                        </BaseButton>
+                        </BaseButton>)}
 
                         <BaseButton
                             color="blue"
@@ -144,14 +144,18 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
                         <div className="flex items-center justify-between text-sm text-gray-500">
                             <div className="flex items-center space-x-4">
                                 <span>
-                                    <span className="font-medium">Created:</span> {formatDateTime(selectedReport.createdOn)}
+                                    <span className="font-medium">CreatedOn:</span> {formatDateTime(selectedReport.createdOn)}
                                 </span>
-                                <span>
-                                    <span className="font-medium">Modified:</span> {formatDateTime(selectedReport.modifiedOn)}
-                                </span>
-                                <span>
-                                    <span className="font-medium">By:</span> {selectedReport.modifiedBy}
-                                </span>
+                                {selectedReport.modifiedOn && (
+                                    <span>
+                                        <span className="font-medium">ModifiedOn:</span> {formatDateTime(selectedReport.modifiedOn)}
+                                    </span>
+                                )}
+                                {selectedReport.modifiedBy && (
+                                    <span>
+                                        <span className="font-medium">ModifiedBy:</span> {selectedReport.modifiedBy}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>

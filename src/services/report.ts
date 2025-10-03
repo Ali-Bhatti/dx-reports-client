@@ -7,7 +7,7 @@ const API_BASE_URL = config.apiBaseUrl;
 
 // Custom base query with your existing request logic
 const customBaseQuery = fetchBaseQuery({
-    baseUrl: `${API_BASE_URL}/api/`,
+    baseUrl: `${API_BASE_URL}api/`,
     prepareHeaders: (headers) => {
         headers.set('Content-Type', 'application/json')
         // Add authentication headers here

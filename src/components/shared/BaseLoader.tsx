@@ -20,7 +20,7 @@ const BaseLoader = ({
                 {...rest}
             />
             {loadingText && (
-                <div className="text-center">
+                <div className="text-center mt-1">
                     <h3 className={`${loadingTextSize} font-semibold text-gray-800 mb-3`}>
                         {loadingText}
                     </h3>

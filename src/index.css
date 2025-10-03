@@ -36,3 +36,9 @@
 .fg-primary:hover {
   background-color: var(--color-fg-primary-hover);
 }
+
+/* Hide DevExpress notification bar */
+.dxrd-notification-bar,
+.dx-notification-bar {
+  display: none !important;
+}

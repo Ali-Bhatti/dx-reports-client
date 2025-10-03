@@ -3,8 +3,9 @@ import {
     useRef,
     useEffect
 } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../app/store';
+import { setActionContext } from '../../features/reports/reportsSlice';
 import ReportDesigner, {
     RequestOptions,
     DesignerModelSettings,
@@ -14,6 +15,7 @@ import ReportDesigner, {
     Callbacks,
     type DxReportDesignerRef
 } from 'devexpress-reporting-react/dx-report-designer';
+import 'devexpress-reporting/dx-richedit';
 import { ActionId } from 'devexpress-reporting/dx-reportdesigner';
 import BaseCard from '../shared/BaseCard';
 import ActionBar from './ActionBar';
@@ -24,32 +26,68 @@ import {
     ProgressBarSettings,
     SearchSettings
 } from 'devexpress-reporting-react/dx-report-viewer';
+import moment from 'moment';
+import config from '../../config/config';
 
-// Extend Window interface for TypeScript
-declare global {
-    interface Window {
-        DevExpress: any;
-    }
-}
 
 function DesignerTool() {
     const [isLoading, setIsLoading] = useState(true);
     const designerRef = useRef<DxReportDesignerRef>(null);
+    const dispatch = useDispatch();
 
     // Get data from Redux store
-    const { actionContext } = useSelector((state: RootState) => ({
-        actionContext: state.reports.actionContext,
-        selectedReport: state.reports.selectedReport
-    }));
+    const actionContext = useSelector((state: RootState) => state.reports.actionContext);
+
+    // Initialize reportUrl from actionContext - using reportLayoutID for loading the designer
+    const [reportUrl, setReportUrl] = useState(
+        actionContext.selectedVersion?.id
+            ? `${actionContext.selectedVersion.id}`
+            : ""
+    );
 
     const isNewVersion = actionContext.type === 'new_version';
-    const doSaveReport = () => {
+    const doSaveReport = async () => {
         console.log('doSaveReport called. isNewVersion:', isNewVersion);
         if (isNewVersion) {
             console.log('Adding new version...');
-            designerRef.current?.instance().SaveNewReport("NewReportName");
+            // For new version, use reportLayoutID as the base
+            const reportLayoutID = actionContext.selectedVersion?.reportLayoutID;
+            const newReportUrl = `${actionContext.selectedVersion?.reportLayoutID}`;
+            setReportUrl(newReportUrl);
+
+            // SaveNewReport returns a promise with the new ID
+            try {
+                let result = await designerRef.current?.instance().SaveNewReport(newReportUrl);
+                console.log('New version saved, result:', result);
+                result = result && JSON.parse(result);
+                console.log('Parsed result:', result);
+
+                // Update reportUrl with the returned ID and switch context to save mode
+                if (result) {
+                    setReportUrl(`${result.version_id}`);
+
+                    // Update action context to 'edit' mode with new IDs
+                    dispatch(setActionContext({
+                        type: 'edit',
+                        versionId: result.version_id,
+                        selectedVersion: {
+                            id: result.version_id,
+                            version: result.version,
+                            reportLayoutID,
+                            createdOn: moment().toISOString(),
+                            isPublished: false,
+                            isDefault: false,
+                        }
+                    }));
+                }
+            } catch (error) {
+                console.error('Error saving new report version:', error);
+            }
         } else {
             console.log('Saving current report...');
+            // For regular save, use version id
+            const saveReportUrl = `${actionContext.selectedVersion?.id}`;
+            setReportUrl(saveReportUrl);
             designerRef.current?.instance().SaveReport();
         }
     };
@@ -63,13 +101,14 @@ function DesignerTool() {
 
     const onCustomizeMenuActions = ({ args }: { args: any }) => {
         const hideMenuItems = [
-            //ActionId.NewReport,
+            ActionId.NewReport,
             ActionId.OpenReport,
             ActionId.NewReportViaWizard,
             ActionId.ReportWizard,
             ActionId.SaveAs,
             ActionId.Scripts,
             ActionId.AddDataSource,
+            ActionId.Exit,
         ];
 
         hideMenuItems.forEach(actionId => {
@@ -80,50 +119,6 @@ function DesignerTool() {
         });
     };
 
-    const onCustomizeElements = ({ sender, args }: { sender: any, args: any }) => {
-        // Hide the "Add new data source" button in Field List
-        if (args && args.GetById) {
-            const fieldList = args.GetById('fieldList');
-            if (fieldList && fieldList.dataSourceHelper) {
-                if (fieldList.dataSourceHelper.canAddDataSource) {
-                    fieldList.dataSourceHelper.canAddDataSource = false;
-                }
-            }
-
-            if (fieldList && fieldList.actions) {
-                const addAction = fieldList.actions().find((action: any) =>
-                    action.id === 'addDataSource' || action.id === 'add-datasource'
-                );
-                if (addAction) {
-                    addAction.visible = false;
-                }
-            }
-        }
-
-        if (sender && sender._propertyGrid) {
-            const propertyGrid = sender._propertyGrid;
-
-            propertyGrid.editorsInfo.subscribe((editors: any) => {
-                editors.forEach((editor: any) => {
-                    if (editor.propertyName === 'DataSource') {
-                        editor.disabled = true;
-                    }
-                });
-            });
-        }
-
-        if (args && args.GetById) {
-            const propertyGrid = args.GetById('propertyGrid');
-            if (propertyGrid) {
-                const dataSourceProperty = propertyGrid.findProperty &&
-                    propertyGrid.findProperty('DataSource');
-
-                if (dataSourceProperty) {
-                    dataSourceProperty.disabled = true;
-                }
-            }
-        }
-    };
 
     const onComponentAdded = ({ args }: { args: any }) => {
         if (args && args.model) {
@@ -152,43 +147,8 @@ function DesignerTool() {
         }
     };
 
-    function onBeforeRender(event: any): void {
+    function onBeforeRender(_event: any): void {
         console.log("Before Render");
-
-        // Hide REPORT TASKS section using DevExpress Settings API
-        if (window.DevExpress &&
-            window.DevExpress.Reporting &&
-            window.DevExpress.Reporting.Designer &&
-            window.DevExpress.Reporting.Designer.Settings) {
-
-            // Hide the entire REPORT TASKS section
-            window.DevExpress.Reporting.Designer.Settings.PropertyGrid.TaskGroupVisible(false);
-        }
-
-        console.log("EVENT--------", event);
-        console.log("SENDER----------", event.sender);
-
-        var info = event.sender.GetPropertyInfo("DevExpress.XtraReports.UI.XtraReport", "Border Color");
-        console.log("INFO---------", info);
-
-        if (info.defaultVal == "Black") info.disabled = false;
-
-        // Hide various properties
-        info = event.sender.GetPropertyInfo("DevExpress.XtraReports.UI.XtraReport", ["Watermarks"]);
-        info.visible = false;
-
-        info = event.sender.GetPropertyInfo("DevExpress.XtraReports.UI.XtraReport", "DrawWatermark");
-        info.visible = false;
-
-        info = event.sender.GetPropertyInfo("DevExpress.XtraReports.UI.XtraReport", "ExportOptions.Csv.Separator");
-        info.visible = false;
-
-        info = event.sender.GetPropertyInfo("XRLabel", "Can Grow");
-        info.disabled = true;
-
-        info = event.sender.GetPropertyInfo("XRLabel", "EditOptions");
-        console.log("INFO LABEL---------", info);
-        info.visible = false;
     }
 
     const onReportOpened = () => {
@@ -196,12 +156,36 @@ function DesignerTool() {
     };
 
     useEffect(() => {
+        // Update reportUrl when actionContext changes
+        if (actionContext.selectedVersion?.id) {
+            const newReportUrl = `${actionContext.selectedVersion.id}`;
+            if (reportUrl !== newReportUrl) {
+                setReportUrl(newReportUrl);
+            }
+        }
+    }, [actionContext.selectedVersion?.id, reportUrl]);
+
+    useEffect(() => {
+        // Hide DevExpress notification bar
+        const hideNotificationBar = () => {
+            const notificationBar = document.querySelector('.dxrd-notification-bar');
+            if (notificationBar && notificationBar instanceof HTMLElement) {
+                notificationBar.style.display = 'none';
+            }
+        };
+
+        // Try to hide immediately and after a delay
+        hideNotificationBar();
+        const notificationTimer = setInterval(hideNotificationBar, 500);
+
         const fallbackTimer = setTimeout(() => {
             setIsLoading(false);
+            clearInterval(notificationTimer);
         }, 3000);
 
         return () => {
             clearTimeout(fallbackTimer);
+            clearInterval(notificationTimer);
         };
     }, []);
 
@@ -229,40 +213,45 @@ function DesignerTool() {
 
             <div
                 className={
-                    `bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-opacity duration-300 
+                    `bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-opacity duration-300
                     ${isLoading ? 'opacity-0' : 'opacity-100'}`
                 }
             >
-                <ReportDesigner
-                    ref={designerRef}
-                    reportUrl="XtraReport1"
-                >
-                    <RequestOptions
-                        host={import.meta.env.VITE_DX_HOST}
-                        getDesignerModelAction="DXXRD/GetDesignerModel"
-                    />
-                    <Callbacks
-                        CustomizeMenuActions={onCustomizeMenuActions}
-                        CustomizeElements={onCustomizeElements}
-                        ComponentAdded={onComponentAdded}
-                        BeforeRender={onBeforeRender}
-                        ReportOpened={onReportOpened}
-                    />
-                    <DesignerModelSettings allowMDI={false}>
-                        <DataSourceSettings
-                            allowAddDataSource={false}
-                            allowRemoveDataSource={false}
-                            allowEditDataSource={false}
+                {reportUrl ? (
+                    <ReportDesigner
+                        ref={designerRef}
+                        reportUrl={String(reportUrl)}
+                    >
+                        <RequestOptions
+                            host={config.dxHost}
+                            getDesignerModelAction="DXXRD/GetDesignerModel"
                         />
-                        <PreviewSettings>
+                        <Callbacks
+                            CustomizeMenuActions={onCustomizeMenuActions}
+                            ComponentAdded={onComponentAdded}
+                            BeforeRender={onBeforeRender}
+                            ReportOpened={onReportOpened}
+                        />
+                        <DesignerModelSettings allowMDI={true}>
+                            <DataSourceSettings
+                                allowAddDataSource={true}
+                                allowRemoveDataSource={false}
+                                allowEditDataSource={false}
+                            />
+                            <PreviewSettings>
+                                <WizardSettings useFullscreenWizard={false} />
+                                <ExportSettings useSameTab={false} />
+                                <ProgressBarSettings position='TopRight' />
+                                <SearchSettings searchEnabled={false} />
+                            </PreviewSettings>
                             <WizardSettings useFullscreenWizard={false} />
-                            <ExportSettings useSameTab={false} />
-                            <ProgressBarSettings position='TopRight' />
-                            <SearchSettings searchEnabled={false} />
-                        </PreviewSettings>
-                        <WizardSettings useFullscreenWizard={false} />
-                    </DesignerModelSettings>
-                </ReportDesigner>
+                        </DesignerModelSettings>
+                    </ReportDesigner>
+                ) : (
+                    <div className="flex items-center justify-center p-8">
+                        <p className="text-gray-500">No report layout selected</p>
+                    </div>
+                )}
             </div>
         </div>
     );
