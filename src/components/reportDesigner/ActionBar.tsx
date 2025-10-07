@@ -18,13 +18,15 @@ import {
 
 interface ActionBarProps {
     isLoading?: boolean;
+    isDesignerModified?: boolean;
     onSave?: () => void;
     onDownload?: () => void;
 }
 
-function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
+function ActionBar({ isLoading = false, isDesignerModified = false, onSave, onDownload }: ActionBarProps) {
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const { showNotification } = useNotifications();
 
@@ -53,18 +55,25 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
         setShowDownloadModal(true);
     };
 
-    const confirmSaveAction = () => {
-        // Call the onSave function passed from parent
-        if (onSave) {
-            onSave();
-        }
+    const confirmSaveAction = async () => {
+        setIsSaving(true);
+        try {
+            // Call the onSave function passed from parent
+            if (onSave) {
+                await onSave();
+            }
 
-        showNotification('success',
-            isNewVersion
-                ? `New version created successfully for <strong>${selectedReport?.reportName}</strong>`
-                : `Report <strong>${selectedReport?.reportName}</strong> saved successfully`
-        );
-        setShowSaveModal(false);
+            showNotification('success',
+                isNewVersion
+                    ? `New version created successfully for <strong>${selectedReport?.reportName}</strong>`
+                    : `Report <strong>${selectedReport?.reportName}</strong> saved successfully`
+            );
+            setShowSaveModal(false);
+        } catch (error) {
+            showNotification('error', 'Failed to save report. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const confirmDownload = () => {
@@ -78,7 +87,7 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
     };
 
     // Determine if buttons should be disabled
-    const isButtonsDisabled = isLoading || !selectedReport;
+    const isButtonsDisabled = (!isNewVersion || isLoading) && (isLoading || !selectedReport || !isDesignerModified);
 
     return (
         <>
@@ -169,6 +178,7 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
                 onConfirm={confirmSaveAction}
                 reportName={selectedReport?.reportName}
                 isNewVersion={isNewVersion}
+                isLoading={isSaving}
             />
 
             {/* Download Confirmation Modal */}

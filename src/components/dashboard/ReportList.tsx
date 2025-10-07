@@ -93,8 +93,7 @@ export default function ReportsList() {
     error: _reportsErrorDetails,
   } = useGetReportsQuery(
     {
-      companyId: currentCompany?.toString(),
-      search: query || undefined
+      companyId: currentCompany?.toString()
     },
     {
       skip: !currentCompany,

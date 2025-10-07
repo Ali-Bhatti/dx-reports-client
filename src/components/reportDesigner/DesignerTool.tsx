@@ -29,9 +29,18 @@ import {
 import moment from 'moment';
 import config from '../../config/config';
 
+// import { ShowMessage, NotifyType } from '@devexpress/analytics-core/core/utils/_infoMessageHelpers';
+// import { getLocalization } from '@devexpress/analytics-core/property-grid/localization/localization_utils';
+import { NavigateTab } from 'devexpress-reporting/dx-reportdesigner'
 
-function DesignerTool() {
+
+interface DesignerToolProps {
+    onDesignerLoaded?: () => void;
+}
+
+function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
     const [isLoading, setIsLoading] = useState(true);
+    const [isModified, setIsModified] = useState(false);
     const designerRef = useRef<DxReportDesignerRef>(null);
     const dispatch = useDispatch();
 
@@ -48,14 +57,19 @@ function DesignerTool() {
     const isNewVersion = actionContext.type === 'new_version';
     const doSaveReport = async () => {
         console.log('doSaveReport called. isNewVersion:', isNewVersion);
+        console.log('Current Designer Modified State:--------', designerRef.current?.instance().IsModified());
+
         if (isNewVersion) {
             console.log('Adding new version...');
             // For new version, use reportLayoutID as the base
             const reportLayoutID = actionContext.selectedVersion?.reportLayoutID;
             const newReportUrl = `${actionContext.selectedVersion?.reportLayoutID}`;
-            setReportUrl(newReportUrl);
+            const openTabVersionId = actionContext.selectedVersion?.id;
 
-            // SaveNewReport returns a promise with the new ID
+            console.log('openTabVersionId:', openTabVersionId);
+
+
+            // SaveNewReport returns a promise with the new ID from backend
             try {
                 let result = await designerRef.current?.instance().SaveNewReport(newReportUrl);
                 console.log('New version saved, result:', result);
@@ -64,7 +78,15 @@ function DesignerTool() {
 
                 // Update reportUrl with the returned ID and switch context to save mode
                 if (result) {
-                    setReportUrl(`${result.version_id}`);
+                    // Close the old tab (template/base version) before the new one opens
+                    const tabs = designerRef.current?.instance().GetTabs() as NavigateTab[];
+                    console.log('Current tabs:', tabs.map(tab => tab.url()));
+                    const currentTab = tabs?.find(tab => tab.url() === String(openTabVersionId));
+                    console.log("Condition for OPEN TAB---------------", currentTab?.url());
+                    if (currentTab) {
+                        console.log("Closing tab:", currentTab?.url());
+                        designerRef.current?.instance().CloseTab(currentTab, true);
+                    }
 
                     // Update action context to 'edit' mode with new IDs
                     dispatch(setActionContext({
@@ -79,18 +101,35 @@ function DesignerTool() {
                             isDefault: false,
                         }
                     }));
+
+                    // After successful save, reset modified state
+                    //designerRef.current?.instance().ResetIsModified();
+                    //setIsModified(false);
                 }
             } catch (error) {
                 console.error('Error saving new report version:', error);
             }
         } else {
             console.log('Saving current report...');
-            // For regular save, use version id
-            const saveReportUrl = `${actionContext.selectedVersion?.id}`;
-            setReportUrl(saveReportUrl);
-            designerRef.current?.instance().SaveReport();
+            //clickMenuItem(ActionId.Save);
+            await designerRef.current?.instance().SaveReport();
+            designerRef.current?.instance().ResetIsModified();
         }
     };
+
+    // generic function to click the option from menu which are passed as parameter
+    // const clickMenuItem = (menuItemId: string) => {
+    //     const designer = designerRef.current?.instance();
+    //     if (designer) {
+    //         const designerModel = designer.GetDesignerModel();
+    //         if (designerModel) {
+    //             const menuItem = designerModel.actionLists.menuItems.find((item: any) => item.id === menuItemId);
+    //             if (menuItem && menuItem?.clickAction) {
+    //                 menuItem.clickAction();
+    //             }
+    //         }
+    //     }
+    // };
 
     const doDownloadReport = () => {
         console.log('Downloading report...');
@@ -121,6 +160,9 @@ function DesignerTool() {
 
 
     const onComponentAdded = ({ args }: { args: any }) => {
+        // Mark designer as modified when a component is added
+        setIsModified(true);
+
         if (args && args.model) {
             const component = args.model;
 
@@ -153,17 +195,38 @@ function DesignerTool() {
 
     const onReportOpened = () => {
         console.log("ReportOpened");
+        // Reset modified state when a report is opened
+        setIsModified(false);
     };
+
+    // Track when report is modified through various designer interactions
+    useEffect(() => {
+        const checkModifiedStatus = () => {
+            if (designerRef.current?.instance()) {
+                const isCurrentlyModified = designerRef.current.instance().IsModified();
+                // if (isCurrentlyModified !== isModified) {
+                //     setIsModified(isCurrentlyModified);
+                // }
+                setIsModified(isCurrentlyModified);
+            }
+        };
+
+        // Check every 100ms for changes
+        const interval = setInterval(checkModifiedStatus, 100);
+
+        return () => clearInterval(interval);
+    }, [isModified]);
 
     useEffect(() => {
         // Update reportUrl when actionContext changes
+        // Skip if it's a new version - SaveNewReport already handles opening the tab
         if (actionContext.selectedVersion?.id) {
             const newReportUrl = `${actionContext.selectedVersion.id}`;
             if (reportUrl !== newReportUrl) {
                 setReportUrl(newReportUrl);
             }
         }
-    }, [actionContext.selectedVersion?.id, reportUrl]);
+    }, [actionContext.selectedVersion?.id, actionContext.type, reportUrl]);
 
     useEffect(() => {
         // Hide DevExpress notification bar
@@ -181,6 +244,8 @@ function DesignerTool() {
         const fallbackTimer = setTimeout(() => {
             setIsLoading(false);
             clearInterval(notificationTimer);
+            // Notify parent that designer has loaded
+            onDesignerLoaded?.();
         }, 3000);
 
         return () => {
@@ -194,6 +259,7 @@ function DesignerTool() {
             <div className='mb-5'>
                 <ActionBar
                     isLoading={isLoading}
+                    isDesignerModified={isModified}
                     onSave={doSaveReport}
                     onDownload={doDownloadReport}
                 />
@@ -232,7 +298,7 @@ function DesignerTool() {
                             BeforeRender={onBeforeRender}
                             ReportOpened={onReportOpened}
                         />
-                        <DesignerModelSettings allowMDI={true}>
+                        <DesignerModelSettings allowMDI={false}>
                             <DataSourceSettings
                                 allowAddDataSource={true}
                                 allowRemoveDataSource={false}

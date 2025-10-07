@@ -303,9 +303,6 @@ export default function VersionHistory() {
                 <BaseCard.Header>
                     <div className="flex items-center gap-2">
                         <h3 className="font-bold">Version History</h3>
-                        {isAnyOperationLoading && (
-                            <span className="text-sm text-gray-500">Loading...</span>
-                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <BaseButton

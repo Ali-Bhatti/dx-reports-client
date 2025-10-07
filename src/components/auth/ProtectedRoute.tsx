@@ -41,12 +41,12 @@ const ProtectedRoute = ({ children, fallback }: ProtectedRouteProps) => {
 
               {/* Title */}
               <h2 className="text-3xl font-bold text-gray-900 mb-5">
-                Welcome to FleetGo Reports
+                Welcome to Reporting Tool
               </h2>
 
               {/* Description */}
               <p className="text-gray-600 mb-12 text-lg">
-                Sign in to access your reporting dashboard and manage your fleet reports.
+                Sign in to access your reporting dashboard and manage your reports.
               </p>
 
               {/* Sign In Button */}
