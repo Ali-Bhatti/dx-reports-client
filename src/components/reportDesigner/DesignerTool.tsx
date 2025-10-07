@@ -85,6 +85,10 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
                     console.log("Condition for OPEN TAB---------------", currentTab?.url());
                     if (currentTab) {
                         console.log("Closing tab:", currentTab?.url());
+                        // Reset the modified state of the tab before closing to prevent confirmation dialog
+                        if (currentTab.resetIsModified && typeof currentTab.resetIsModified === 'function') {
+                            currentTab.resetIsModified();
+                        }
                         designerRef.current?.instance().CloseTab(currentTab, true);
                     }
 
@@ -197,16 +201,16 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
         console.log("ReportOpened");
         // Reset modified state when a report is opened
         setIsModified(false);
+        // Hide loading indicator when report is actually loaded
+        setIsLoading(false);
+        // Notify parent that designer has loaded
+        onDesignerLoaded?.();
     };
 
-    // Track when report is modified through various designer interactions
     useEffect(() => {
         const checkModifiedStatus = () => {
             if (designerRef.current?.instance()) {
                 const isCurrentlyModified = designerRef.current.instance().IsModified();
-                // if (isCurrentlyModified !== isModified) {
-                //     setIsModified(isCurrentlyModified);
-                // }
                 setIsModified(isCurrentlyModified);
             }
         };
@@ -237,20 +241,20 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
             }
         };
 
-        // Try to hide immediately and after a delay
+        // Try to hide immediately and periodically
         hideNotificationBar();
-        const notificationTimer = setInterval(hideNotificationBar, 500);
+        //const notificationTimer = setInterval(hideNotificationBar, 500);
 
+        // Fallback timeout in case ReportOpened event doesn't fire (e.g., errors)
         const fallbackTimer = setTimeout(() => {
             setIsLoading(false);
-            clearInterval(notificationTimer);
-            // Notify parent that designer has loaded
             onDesignerLoaded?.();
-        }, 3000);
+            console.warn('Designer loading fallback timeout triggered');
+        }, 10000); // 10 seconds fallback
 
         return () => {
             clearTimeout(fallbackTimer);
-            clearInterval(notificationTimer);
+            //clearInterval(notificationTimer);
         };
     }, []);
 

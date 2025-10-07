@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import ReportDesignerTool from "../components/reportDesigner/DesignerTool";
 import BaseButton from "../components/shared/BaseButton";
+import { reportsApi } from "../services/report";
 
 
 function ReportDesignerPage() {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const [isDesignerLoaded, setIsDesignerLoaded] = useState(false);
 
     useEffect(() => {
@@ -14,6 +17,8 @@ function ReportDesignerPage() {
     }, []);
 
     const handleBackToDashboard = () => {
+        // Invalidate the versions cache to force refetch
+        dispatch(reportsApi.util.invalidateTags(['ReportVersion']));
         navigate('/');
     };
 
