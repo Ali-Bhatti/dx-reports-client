@@ -153,11 +153,11 @@ function ActionBar({ isLoading = false, isDesignerModified = false, onSave, onDo
                         <div className="flex items-center justify-between text-sm text-gray-500">
                             <div className="flex items-center space-x-4">
                                 <span>
-                                    <span className="font-medium">CreatedOn:</span> {formatDateTime(selectedReport.createdOn)}
+                                    <span className="font-medium">CreatedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedReport.createdOn)}
                                 </span>
                                 {selectedReport.modifiedOn && (
                                     <span>
-                                        <span className="font-medium">ModifiedOn:</span> {formatDateTime(selectedReport.modifiedOn)}
+                                        <span className="font-medium">ModifiedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedReport.modifiedOn)}
                                     </span>
                                 )}
                                 {selectedReport.modifiedBy && (
