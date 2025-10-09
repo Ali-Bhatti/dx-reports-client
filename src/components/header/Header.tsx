@@ -1,5 +1,6 @@
 
-import { gearIcon } from '@progress/kendo-svg-icons';
+import { gearIcon, homeIcon } from '@progress/kendo-svg-icons';
+import { SvgIcon } from '@progress/kendo-react-common';
 import BaseButton from '../shared/BaseButton';
 import AuthButton from '../auth/AuthButton';
 
@@ -20,14 +21,14 @@ export const Header = ({
   onSettingsClick = () => console.log('Settings clicked'),
 }: HeaderProps) => {
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-3">
-      <div className="flex items-center justify-between max-w-full">
+    <header className="bg-white border-b border-gray-200 px-3 sm:px-6 py-3">
+      <div className="flex items-center justify-between max-w-full gap-2">
         {/* Left - Brand Logo */}
-        <div className="flex items-center">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <img
             src="https://fleetgo.com/wp-content/uploads/2023/06/RGB-FleetGO-Logo.svg"
             alt="FleetGO Logo"
-            className="h-8 w-auto"
+            className="h-6 sm:h-8 w-auto flex-shrink-0"
           />
           <span
             className="text-xl font-bold fg-primary:hover hidden"
@@ -36,17 +37,19 @@ export const Header = ({
             FleetGO
           </span>
 
-          <nav className="pl-10">
+          <nav className="sm:pl-6">
             <a
               href="/"
-              className="px-4 py-2 fg-primary hover:fg-primary:hover font-medium transition-colors rounded-md hover:bg-gray-50"
+              className="px-2 sm:px-4 py-2 fg-primary hover:fg-primary:hover font-medium transition-colors rounded-md hover:bg-gray-50 flex items-center gap-2"
+              title="Home"
             >
-              Home
+              <SvgIcon icon={homeIcon} size="small" className="sm:hidden" />
+              <span className="hidden sm:inline">Home</span>
             </a>
           </nav>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-shrink-0">
           {false && (<BaseButton
             svgIcon={gearIcon}
             title='Settings'
