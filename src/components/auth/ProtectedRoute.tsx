@@ -13,7 +13,6 @@ const ProtectedRoute = ({ children, fallback }: ProtectedRouteProps) => {
   const { isAuthenticated, login } = useAuth();
   const { inProgress } = useMsal();
 
-  // Show loader while MSAL is processing authentication
   if (inProgress !== 'none') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">

@@ -68,7 +68,6 @@ export default function ReportsList() {
   const selectedReportId = useSelector(selectSelectedReportId);
   const selectedReportIds = useSelector(selectSelectedReportIds);
 
-  // State to track if AG Grid has active filters
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
 
   // Restore selected company from localStorage on mount
@@ -293,7 +292,6 @@ export default function ReportsList() {
     }
   };
 
-  // Update filter state when grid is ready or filters change
   const checkFilterState = () => {
     console.log('Checking filter state...', gridRef.current);
     if (!gridRef.current) return;
@@ -420,7 +418,7 @@ export default function ReportsList() {
           <BaseTable<ReportRow>
             //key={tableKey}
             onGridReady={onGridReady}
-            rowData={searchFilteredReports} // Use the correct data based on filter state
+            rowData={searchFilteredReports}
             columnDefs={columnDefs}
             getRowId={(p) => String(p.data.id)}
             onRowClicked={handleRowClicked}
