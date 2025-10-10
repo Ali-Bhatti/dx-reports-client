@@ -6,6 +6,18 @@ export const useAuth = () => {
   const { instance, accounts } = useMsal();
   const isAuthenticated = useIsAuthenticated();
 
+  if (!config.enableAzureAuth) {
+    return {
+      login: () => console.log('Azure authentication is disabled'),
+      logout: () => {
+        localStorage.removeItem('selectedCompanyId');
+        console.log('Azure authentication is disabled');
+      },
+      isAuthenticated: true,
+      account: { name: 'Guest User', username: 'guest' },
+    };
+  }
+
   const login = () => {
     instance.loginRedirect(loginRequest).catch((e) => {
       console.error(e);
