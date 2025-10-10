@@ -146,28 +146,18 @@ export const reportsApi = createApi({
             ],
         }),
 
-        // NEW: Delete single version mutation
-        deleteReportVersion: builder.mutation<void, { reportId: string; versionId: string }>({
-            query: ({ reportId, versionId }) => ({
-                url: `reports/${reportId}/versions/${versionId}`,
-                method: 'DELETE',
-            }),
-            invalidatesTags: (_result, _error, { reportId, versionId }) => [
-                { type: 'ReportVersion', id: versionId },
-                { type: 'ReportVersion', id: `LIST-${reportId}` }
-            ],
-        }),
-
-        // NEW: Delete multiple versions mutation
-        deleteMultipleReportVersions: builder.mutation<void, { reportId: string; versionIds: string[] }>({
-            query: ({ reportId, versionIds }) => ({
-                url: `reports/${reportId}/versions/bulk-delete`,
-                method: 'POST',
-                body: { versionIds },
-            }),
-            invalidatesTags: (_result, _error, { reportId, versionIds }) => [
+        deleteReportVersion: builder.mutation<void, { versionIds: string[] }>({
+            query: ({ versionIds }) => {
+                const params = new URLSearchParams();
+                params.append('ids', versionIds.join(', '));
+                return {
+                    url: `versions?${params}`,
+                    method: 'DELETE',
+                };
+            },
+            invalidatesTags: (_result, _error, { versionIds }) => [
                 ...versionIds.map(id => ({ type: 'ReportVersion' as const, id })),
-                { type: 'ReportVersion', id: `LIST-${reportId}` }
+                { type: 'ReportVersion', id: 'LIST' }
             ],
         }),
 
@@ -221,7 +211,6 @@ export const {
     usePublishVersionMutation,
     useUnpublishVersionMutation,
     useDeleteReportVersionMutation,
-    useDeleteMultipleReportVersionsMutation,
 
     // Statistics
     useGetReportStatisticsQuery,

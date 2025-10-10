@@ -8,6 +8,7 @@ interface DeleteModalProps {
     onConfirm: () => void;
     itemNames: string[];
     itemType: 'report' | 'reports' | 'version';
+    isLoading?: boolean;
     versionInfo?: {
         version: string;
         reportName: string;
@@ -20,13 +21,9 @@ export default function DeleteModal({
     onConfirm,
     itemNames,
     itemType,
+    isLoading = false,
     versionInfo
 }: DeleteModalProps) {
-
-    const handleConfirm = () => {
-        onConfirm();
-        onClose();
-    };
 
     if (!isOpen) return null;
 
@@ -80,10 +77,19 @@ export default function DeleteModal({
             customMaxHeight={400}
             actions={
                 <>
-                    <BaseButton color="gray" onClick={onClose}>
+                    <BaseButton
+                        color="gray"
+                        onClick={onClose}
+                        disabled={isLoading}
+                    >
                         Cancel
                     </BaseButton>
-                    <BaseButton color="red" onClick={handleConfirm}>
+                    <BaseButton
+                        color="red"
+                        onClick={onConfirm}
+                        disabled={isLoading}
+                        typeVariant={isLoading ? 'loader' : 'default'}
+                    >
                         Delete
                     </BaseButton>
                 </>
