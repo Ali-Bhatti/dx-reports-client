@@ -7,7 +7,7 @@ const API_BASE_URL = config.apiBaseUrl;
 
 // Custom base query with your existing request logic
 const customBaseQuery = fetchBaseQuery({
-    baseUrl: `${API_BASE_URL}api/`,
+    baseUrl: `${API_BASE_URL}api/report/`,
     prepareHeaders: (headers) => {
         headers.set('Content-Type', 'application/json')
         // Add authentication headers here
@@ -29,7 +29,7 @@ export const reportsApi = createApi({
 
         // Companies API
         getCompanies: builder.query<Company[], void>({
-            query: () => 'report/companies',
+            query: () => 'companies',
             transformResponse: (response: ApiResponse<Company[]>) => response.data,
             providesTags: ['Company'],
         }),
@@ -45,7 +45,7 @@ export const reportsApi = createApi({
             query: ({ companyId, search }) => {
                 const params = new URLSearchParams()
                 if (search) params.append('search', search)
-                return `report/companies/${companyId}/reports?${params}`
+                return `companies/${companyId}/reports?${params}`
             },
             transformResponse: (response: ApiResponse<PaginatedResponse<Report>>) => {
                 return response.data;
@@ -107,7 +107,7 @@ export const reportsApi = createApi({
 
         // Report Versions API
         getReportVersions: builder.query<ReportVersion[], string>({
-            query: (reportId) => `report/${reportId}/versions`,
+            query: (reportId) => `${reportId}/versions`,
             transformResponse: (response: ApiResponse<ReportVersion[]>) => {
                 return response.data;
             },
@@ -120,27 +120,16 @@ export const reportsApi = createApi({
                     : [{ type: 'ReportVersion', id: `LIST-${reportId}` }],
         }),
 
-        createReportVersion: builder.mutation<ReportVersion, { reportId: string; version: Partial<ReportVersion> }>({
-            query: ({ reportId, version }) => ({
-                url: `reports/${reportId}/versions`,
-                method: 'POST',
-                body: version,
-            }),
-            transformResponse: (response: ApiResponse<ReportVersion>) => response.data,
-            invalidatesTags: (_result, _error, { reportId }) => [
-                { type: 'ReportVersion', id: `LIST-${reportId}` }
-            ],
-        }),
-
-        publishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: string }>({
+        publishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: number }>({
             query: ({ reportId, versionId }) => ({
-                url: `reports/${reportId}/versions/${versionId}/publish`,
+                url: `${reportId}/versions/publish`,
                 method: 'POST',
+                body: { version_id: versionId },
             }),
             transformResponse: (response: ApiResponse<ReportVersion>) => response.data,
             invalidatesTags: (_result, _error, { reportId, versionId }) => [
-                { type: 'ReportVersion', id: versionId },
-                { type: 'ReportVersion', id: `LIST-${reportId}` }
+                { type: 'ReportVersion' as const, id: versionId },
+                { type: 'ReportVersion' as const, id: `LIST-${reportId}` }
             ],
         }),
 
@@ -184,7 +173,7 @@ export const reportsApi = createApi({
 
         // Statistics API
         getReportStatistics: builder.query<ReportStatistics[], string>({
-            query: (companyId) => `report/companies/${companyId}/report-kpis`,
+            query: (companyId) => `companies/${companyId}/report-kpis`,
             transformResponse: (response: ApiResponse<ReportStatistics[]>) => response.data,
             providesTags: (_result, _error, companyId) => [{ type: 'ReportStatistics', id: companyId }],
         }),
@@ -220,9 +209,7 @@ export const {
 
     // Report Versions
     useGetReportVersionsQuery,
-    useCreateReportVersionMutation,
     usePublishVersionMutation,
-    useUnpublishVersionMutation,
     useDeleteReportVersionMutation,
     useDeleteMultipleReportVersionsMutation,
 

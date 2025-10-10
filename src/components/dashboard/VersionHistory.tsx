@@ -24,14 +24,14 @@ import {
 } from '../../features/reports/reportsSlice';
 
 import {
-    selectReports,
-    selectSelectedReportId,
+    selectReportSelected,
     selectSelectedReportIds,
     selectCurrentCompany
 } from '../../features/reports/reportsSelectors';
 
 import {
     useGetReportVersionsQuery,
+    usePublishVersionMutation,
 } from '../../services/report';
 
 import {
@@ -49,55 +49,47 @@ export default function VersionHistory() {
     const navigate = useNavigate();
     const { showNotification } = useNotifications();
 
-    // Redux selectors
     const selectedVersionIds = useSelector((state: any) => state.reports.selectedVersionIds);
-    const reports = useSelector(selectReports);
-    const selectedReportId = useSelector(selectSelectedReportId);
+    const selectedReport = useSelector(selectReportSelected);
     const selectedReportIds = useSelector(selectSelectedReportIds);
     const currentCompany = useSelector(selectCurrentCompany);
+    const selectedReportId = selectedReport?.id || null;
 
-    // Local state to track published status changes
-    const [publishedStatusOverrides, setPublishedStatusOverrides] = useState<Record<number, boolean>>({});
 
-    // API call for versions - only fetch when we have a selected report
     const {
         data: versionsResponse,
         isLoading: versionsLoading,
         isFetching: versionsFetching,
         isError: versionsError,
         error: _versionsErrorDetails,
-        refetch: _refetchVersions
+        refetch: refetchVersions
     } = useGetReportVersionsQuery(String(selectedReportId), {
-        skip: !selectedReportId, // Skip the query if no report is selected
+        skip: !selectedReportId,
     });
 
-    // Show loading when fetching new data (includes report changes)
+    const [publishVersion, { isLoading: isPublishing }] = usePublishVersionMutation();
+
     const isLoadingVersions = versionsLoading || versionsFetching;
 
-    // Transform API response to match expected structure and apply local overrides
+    // Transform API response
     const versions = useMemo(() => {
         if (!versionsResponse || !currentCompany || versionsError || !selectedReportId) return [];
         if (selectedReportIds.length > 1) return [];
 
         return versionsResponse.map(version => {
-            const versionId = Number(version.id);
-            const hasOverride = publishedStatusOverrides.hasOwnProperty(versionId);
-            const publishedStatus = hasOverride ? publishedStatusOverrides[versionId] : version.isPublished;
 
             return {
                 ...version,
                 reportLayoutID: version.reportLayoutID || version?.reportId,
                 modifiedBy: version.modifiedBy || version?.createdBy || '',
                 modifiedOn: version.modifiedOn || version?.createdOn,
-                isPublished: publishedStatus,
             };
         });
-    }, [versionsResponse, selectedReportId, selectedReportIds.length, currentCompany, versionsError, publishedStatusOverrides]);
+    }, [versionsResponse, selectedReportId, selectedReportIds.length, currentCompany, versionsError]);
 
-    // Clear local overrides when report changes
-    useEffect(() => {
-        setPublishedStatusOverrides({});
-    }, [selectedReportId]);
+    const currentPublishedVersion = useMemo(() => {
+        return versions.find(v => v.isPublished);
+    }, [versions]);
 
 
     // Modal states
@@ -116,7 +108,6 @@ export default function VersionHistory() {
         dispatch(clearSelectedVersionIds());
     }, [selectedReportId, dispatch]);
 
-    // Helper functions
     const getVersionById = (id: number) => {
         return versions.find(v => v.id === id);
     };
@@ -127,21 +118,10 @@ export default function VersionHistory() {
             .map(v => `${v.version}`);
     };
 
-    const getReportNameForVersion = (versionId: number) => {
-        const version = getVersionById(versionId);
-        if (!version) return 'Unknown Report';
-
-        const report = reports.find(r => r.id === version.reportId);
-        if (!report) return 'Unknown Report';
-
-        return report.reportName;
-    };
-
     const currentReportName = useMemo(() => {
-        if (!selectedReportId) return 'Unknown Report';
-        const report = reports.find(r => r.id === selectedReportId);
-        return report?.reportName || 'Unknown Report';
-    }, [selectedReportId, reports]);
+        if (!selectedReport?.reportName) return 'Unknown Report';
+        return selectedReport.reportName;
+    }, [selectedReport]);
 
     const noVersionsMessage = useMemo(() => {
         if (!selectedReportId) {
@@ -156,7 +136,7 @@ export default function VersionHistory() {
         if (versionsError) {
             return 'Error loading versions. Please try again.';
         }
-        if(versions.length === 0) {
+        if (versions.length === 0) {
             return `No versions available`;
         }
         if (currentReportName === 'Unknown Report') {
@@ -211,11 +191,6 @@ export default function VersionHistory() {
 
     const handleVersionUnpublish = (versionId: number) => {
         const version = getVersionById(versionId);
-        // Update local state to immediately reflect the change
-        setPublishedStatusOverrides(prev => ({
-            ...prev,
-            [versionId]: false
-        }));
         showNotification('success', `Version <strong>${version?.version}</strong> unpublished successfully`);
     };
 
@@ -277,15 +252,22 @@ export default function VersionHistory() {
         setDeleteModal({ isOpen: false, versionId: null, isMultiple: false });
     };
 
-    const handlePublishConfirm = () => {
-        if (publishModal.versionId) {
+    const handlePublishConfirm = async () => {
+        if (publishModal.versionId && selectedReportId) {
             const version = getVersionById(publishModal.versionId);
-            // Update local state to immediately reflect the change
-            setPublishedStatusOverrides(prev => ({
-                ...prev,
-                [publishModal.versionId!]: true
-            }));
-            showNotification('success', `Version <strong>${version?.version || ''}</strong> published successfully`);
+
+            try {
+                await publishVersion({
+                    reportId: String(selectedReportId),
+                    versionId: Number(publishModal.versionId)
+                }).unwrap();
+
+                refetchVersions();
+
+                showNotification('success', `Version <strong>${version?.version || ''}</strong> published successfully`);
+            } catch (error) {
+                showNotification('error', `Failed to publish version <strong>${version?.version || ''}</strong>`);
+            }
         }
 
         setPublishModal({ isOpen: false, versionId: null });
@@ -359,7 +341,7 @@ export default function VersionHistory() {
                     !deleteModal.isMultiple && deleteModal.versionId
                         ? {
                             version: String(getVersionById(deleteModal.versionId)?.version ?? ''),
-                            reportName: getReportNameForVersion(deleteModal.versionId)
+                            reportName: currentReportName
                         }
                         : undefined
                 }
@@ -369,8 +351,10 @@ export default function VersionHistory() {
                 isOpen={publishModal.isOpen}
                 onClose={handlePublishConfirmCancel}
                 onConfirm={handlePublishConfirm}
-                version={publishModal.versionId ? `v${String(getVersionById(publishModal.versionId)?.version)}` : ''}
-                reportName={publishModal.versionId ? getReportNameForVersion(publishModal.versionId) : ''}
+                version={publishModal.versionId ? String(getVersionById(publishModal.versionId)?.version) : ''}
+                reportName={currentReportName}
+                isLoading={isPublishing}
+                currentPublishedVersion={currentPublishedVersion ? currentPublishedVersion.version : undefined}
             />
         </>
     );

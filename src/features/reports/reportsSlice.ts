@@ -5,8 +5,6 @@ import type { Report as ReportRow, ReportVersion as HistoryRow, ActionContext, R
 
 
 interface ReportsState {
-  reports: ReportRow[];
-  history: HistoryRow[];
   selectedReportId: number | null;
   selectedReport: ReportRow | null;
   selectedReportVersion: HistoryRow | null;
@@ -29,8 +27,6 @@ interface ReportsState {
 }
 
 const initialState: ReportsState = {
-  reports: [],
-  history: [],
   selectedReport: null,
   selectedReportVersion: null,
   selectedReportId: null,
@@ -91,12 +87,6 @@ const reportsSlice = createSlice({
     setVersionsPagination: (state, action: PayloadAction<{ skip: number; take: number }>) => {
       state.versionsPagination = action.payload;
     },
-    updateVersionPublishedStatus: (state, action: PayloadAction<{ id: number; published: boolean }>) => {
-      const version = state.history.find(h => h.id === action.payload.id);
-      if (version) {
-        version.isPublished = action.payload.published;
-      }
-    },
     setSelectedVersionIds: (state, action: PayloadAction<number[]>) => {
       state.selectedVersionIds = action.payload;
     },
@@ -135,7 +125,6 @@ export const {
   clearSelectedReportIds,
   setReportsPagination,
   setVersionsPagination,
-  updateVersionPublishedStatus,
   setSelectedVersionIds,
   addSelectedVersionId,
   removeSelectedVersionId,
