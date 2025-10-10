@@ -1,5 +1,6 @@
 import BaseModal from '../shared/BaseModal';
 import BaseButton from '../shared/BaseButton';
+import { VersionDisplay } from '../dashboard/VersionDisplay';
 
 interface DeleteModalProps {
     isOpen: boolean;
@@ -30,10 +31,11 @@ export default function DeleteModal({
     if (!isOpen) return null;
 
     const renderMessage = () => {
-        if (itemType === 'version' && versionInfo) {
+        const isVersion = itemType === 'version';
+        if (isVersion && versionInfo) {
             return (
                 <p>
-                    Are you sure you want to delete the <strong>{versionInfo.version}</strong> of report <strong>{versionInfo.reportName}</strong>?
+                    Are you sure you want to delete the <VersionDisplay version={versionInfo.version} isBold={true} /> of report <strong>{versionInfo.reportName}</strong>?
                 </p>
             );
         }
@@ -58,7 +60,7 @@ export default function DeleteModal({
                 >
                     <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
                         {itemNames.map((name, index) => (
-                            <li key={`${name}_${index}`}>{name}</li>
+                            <li key={`${name}_${index}`}>{isVersion ? <VersionDisplay version={name} /> : name}</li>
                         ))}
                     </ul>
                 </div>

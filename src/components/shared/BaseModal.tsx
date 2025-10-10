@@ -60,11 +60,21 @@ export default function BaseModal(props: BaseModalProps) {
         xl: { w: 1080, h: 720, minH: 400, maxH: 800 }
     };
 
+    const mobileSizeMap = {
+        sm: { w: 320, h: 'auto' as const, minH: 150, maxH: 300 },
+        md: { w: 340, h: 'auto' as const, minH: 180, maxH: 400 },
+        lg: { w: 360, h: 'auto' as const, minH: 200, maxH: 500 },
+        xl: { w: 380, h: 'auto' as const, minH: 250, maxH: 600 }
+    };
+
     const surfaceColor = getKendoSurfaceColor(type);
-    const dialogDimensions = sizeMap[size as keyof typeof sizeMap];
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+    const dialogDimensions = isMobile
+        ? mobileSizeMap[size as keyof typeof mobileSizeMap]
+        : sizeMap[size as keyof typeof sizeMap];
 
     // Determine height configuration
-    const heightProps = autoHeight
+    const heightProps = autoHeight || isMobile
         ? {
             minHeight: customMinHeight || dialogDimensions.minH,
             maxHeight: customMaxHeight || dialogDimensions.maxH,
