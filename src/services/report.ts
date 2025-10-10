@@ -120,7 +120,7 @@ export const reportsApi = createApi({
                     : [{ type: 'ReportVersion', id: `LIST-${reportId}` }],
         }),
 
-        publishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: number }>({
+        publishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: number | string }>({
             query: ({ reportId, versionId }) => ({
                 url: `${reportId}/versions/publish`,
                 method: 'POST',
@@ -133,16 +133,16 @@ export const reportsApi = createApi({
             ],
         }),
 
-        // NEW: Unpublish version mutation
-        unpublishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: string }>({
+        unpublishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: number | string }>({
             query: ({ reportId, versionId }) => ({
-                url: `reports/${reportId}/versions/${versionId}/unpublish`,
+                url: `${reportId}/versions/publish`,
                 method: 'POST',
+                body: { version_id: versionId, is_reset_published: true },
             }),
             transformResponse: (response: ApiResponse<ReportVersion>) => response.data,
             invalidatesTags: (_result, _error, { reportId, versionId }) => [
-                { type: 'ReportVersion', id: versionId },
-                { type: 'ReportVersion', id: `LIST-${reportId}` }
+                { type: 'ReportVersion' as const, id: versionId },
+                { type: 'ReportVersion' as const, id: `LIST-${reportId}` }
             ],
         }),
 
@@ -169,6 +169,14 @@ export const reportsApi = createApi({
                 ...versionIds.map(id => ({ type: 'ReportVersion' as const, id })),
                 { type: 'ReportVersion', id: `LIST-${reportId}` }
             ],
+        }),
+
+        downloadReportVersion: builder.mutation<Blob, { reportId: string; versionId: string }>({
+            query: ({ reportId, versionId }) => ({
+                url: `${reportId}/versions/${versionId}/download`,
+                method: 'GET',
+                responseHandler: async (response) => response.blob(),
+            }),
         }),
 
         // Statistics API
@@ -209,7 +217,9 @@ export const {
 
     // Report Versions
     useGetReportVersionsQuery,
+    useDownloadReportVersionMutation,
     usePublishVersionMutation,
+    useUnpublishVersionMutation,
     useDeleteReportVersionMutation,
     useDeleteMultipleReportVersionsMutation,
 

@@ -16,7 +16,7 @@ import DeleteModal from '../modals/DeleteModal';
 import PublishModal from '../modals/PublishModal';
 import { useNotifications } from '../../hooks/useNotifications';
 
-import type { ReportVersion as HistoryRow } from "../../types";
+import type { ReportVersion as HistoryRow, PublishModalState } from "../../types";
 import {
     setSelectedVersionIds,
     clearSelectedVersionIds,
@@ -32,6 +32,8 @@ import {
 import {
     useGetReportVersionsQuery,
     usePublishVersionMutation,
+    useUnpublishVersionMutation,
+    useDownloadReportVersionMutation,
 } from '../../services/report';
 
 import {
@@ -68,6 +70,8 @@ export default function VersionHistory() {
     });
 
     const [publishVersion, { isLoading: isPublishing }] = usePublishVersionMutation();
+    const [unpublishVersion, { isLoading: isUnpublishing }] = useUnpublishVersionMutation();
+    const [downloadVersion] = useDownloadReportVersionMutation();
 
     const isLoadingVersions = versionsLoading || versionsFetching;
 
@@ -98,9 +102,9 @@ export default function VersionHistory() {
         versionId: null as number | null,
         isMultiple: false
     });
-    const [publishModal, setPublishModal] = useState({
+    const [publishModal, setPublishModal] = useState<PublishModalState>({
         isOpen: false,
-        versionId: null as number | null
+        versionId: null,
     });
 
     // Clear selections when report changes
@@ -146,8 +150,31 @@ export default function VersionHistory() {
     }, [selectedReportIds.length, selectedReportId, currentReportName, isLoadingVersions, versionsError]);
 
     // Action handlers for the version actions renderer
-    const handleVersionDownload = (versionId: number) => {
-        showNotification('success', `Downloading version <strong>${getVersionById(versionId)?.version}</strong>...`);
+    const handleVersionDownload = async (versionId: number) => {
+        if (!selectedReportId) return;
+
+        const version = getVersionById(versionId);
+        try {
+            showNotification('info', `Downloading version <strong>${version?.version}</strong>...`);
+
+            const blob = await downloadVersion({
+                reportId: String(selectedReportId),
+                versionId: String(versionId)
+            }).unwrap();
+
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${currentReportName}_v${version?.version}.repx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            showNotification('success', `Version <strong>${version?.version}</strong> downloaded successfully`);
+        } catch (error) {
+            showNotification('error', `Failed to download version <strong>${version?.version}</strong>`);
+        }
     };
 
     const handleVersionNewVersion = (versionId: number, _reportId: number) => {
@@ -190,8 +217,7 @@ export default function VersionHistory() {
     };
 
     const handleVersionUnpublish = (versionId: number) => {
-        const version = getVersionById(versionId);
-        showNotification('success', `Version <strong>${version?.version}</strong> unpublished successfully`);
+        setPublishModal({ isOpen: true, versionId, isResetPublished: true });
     };
 
     const createPublishedToggleRenderer = useCallback((props: ICellRendererParams<HistoryRow>) => {
@@ -255,18 +281,26 @@ export default function VersionHistory() {
     const handlePublishConfirm = async () => {
         if (publishModal.versionId && selectedReportId) {
             const version = getVersionById(publishModal.versionId);
+            let publishMsg = publishModal.isResetPublished ? 'unpublished' : 'published';
 
             try {
-                await publishVersion({
-                    reportId: String(selectedReportId),
-                    versionId: Number(publishModal.versionId)
-                }).unwrap();
+                if (publishModal.isResetPublished) {
+                    await unpublishVersion({
+                        reportId: String(selectedReportId),
+                        versionId: Number(publishModal.versionId)
+                    }).unwrap();
+                } else {
+                    await publishVersion({
+                        reportId: String(selectedReportId),
+                        versionId: Number(publishModal.versionId)
+                    }).unwrap();
+                }
 
                 refetchVersions();
 
-                showNotification('success', `Version <strong>${version?.version || ''}</strong> published successfully`);
+                showNotification('success', `Version <strong>${version?.version || ''}</strong> ${publishMsg} successfully`);
             } catch (error) {
-                showNotification('error', `Failed to publish version <strong>${version?.version || ''}</strong>`);
+                showNotification('error', `Failed to ${publishMsg} version <strong>${version?.version || ''}</strong>`);
             }
         }
 
@@ -353,8 +387,9 @@ export default function VersionHistory() {
                 onConfirm={handlePublishConfirm}
                 version={publishModal.versionId ? String(getVersionById(publishModal.versionId)?.version) : ''}
                 reportName={currentReportName}
-                isLoading={isPublishing}
+                isLoading={isPublishing || isUnpublishing}
                 currentPublishedVersion={currentPublishedVersion ? currentPublishedVersion.version : undefined}
+                isResetPublished={publishModal.isResetPublished}
             />
         </>
     );

@@ -10,6 +10,7 @@ interface PublishModalProps {
     reportName: string;
     isLoading?: boolean;
     currentPublishedVersion?: string | number;
+    isResetPublished?: boolean;
 }
 
 export default function PublishModal({
@@ -20,10 +21,24 @@ export default function PublishModal({
     reportName,
     isLoading = false,
     currentPublishedVersion,
+    isResetPublished = false
 }: PublishModalProps) {
 
     if (!isOpen) return null;
 
+    const confirmationMessage = !isResetPublished ? (
+        <p>
+            Are you sure you want to publish the <VersionDisplay version={version} isBold={true} /> of report <strong>{reportName}</strong>?
+            {currentPublishedVersion && currentPublishedVersion !== version && (
+                <> <br /> This will replace the currently published version <VersionDisplay version={currentPublishedVersion} isBold={true} />.</>
+            )}
+        </p>
+    ) : (
+        <p>
+            Are you sure you want to unpublish <VersionDisplay version={version} isBold={true} /> of report <strong>{reportName}</strong>?
+        </p>
+    );
+    ;
     return (
         <BaseModal
             title="Confirm Publish"
@@ -32,12 +47,7 @@ export default function PublishModal({
             type="confirmation"
             autoHeight={true}
             body={
-                <p>
-                    Are you sure you want to publish the <VersionDisplay version={version} isBold={true} /> of report <strong>{reportName}</strong>?
-                    {currentPublishedVersion && currentPublishedVersion !== version && (
-                        <> <br /> This will replace the currently published version <VersionDisplay version={currentPublishedVersion} isBold={true} />.</>
-                    )}
-                </p>
+                confirmationMessage
             }
             actions={
                 <>
@@ -54,7 +64,7 @@ export default function PublishModal({
                         disabled={isLoading}
                         typeVariant={isLoading ? 'loader' : 'default'}
                     >
-                        Publish
+                        {isResetPublished ? 'Unpublish' : 'Publish'}
                     </BaseButton>
                 </>
             }

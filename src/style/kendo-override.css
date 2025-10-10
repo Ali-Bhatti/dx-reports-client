@@ -8,6 +8,7 @@
         Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     --kendo-color-success: var(--fg-primary);
     --kendo-color-on-info: var(--e-global-color-global_color_9);
+    --kendo-color-info: var(--fg-info);
     --kendo-color-error: var(--fg-dark-red);
     --kendo-color-warning: var(--fg-dark-yellow);
     /* --kendo-color-base: #ddf;

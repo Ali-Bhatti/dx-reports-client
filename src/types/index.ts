@@ -66,3 +66,9 @@ export interface ActionContext {
     versionId?: number;
     selectedVersion?: ReportVersion | null;
 }
+
+export interface PublishModalState {
+    isOpen: boolean;
+    versionId: number | null;
+    isResetPublished?: boolean;
+}
