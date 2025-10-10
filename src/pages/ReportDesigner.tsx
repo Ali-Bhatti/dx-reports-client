@@ -27,7 +27,7 @@ function ReportDesignerPage() {
     };
 
     return (
-        <div className="p-5 px-25">
+        <div>
             {/* Back Button */}
             <div className="mb-4">
                 <BaseButton

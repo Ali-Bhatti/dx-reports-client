@@ -370,10 +370,10 @@ export default function ReportsList() {
     <>
       <BaseCard dividers={false}>
         <BaseCard.Header>
-          <div className="flex items-center gap-2">
-            <CompanySelector onCompanyChange={handleCompanyChange} restoreSavedCompany={true} />
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <CompanySelector onCompanyChange={handleCompanyChange} restoreSavedCompany={true} className="flex-1 sm:flex-initial" />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <BaseButton
               color="gray"
               svgIcon={copyIcon}
@@ -381,7 +381,7 @@ export default function ReportsList() {
               onClick={handleCopySelected}
               disabled={!hasMultipleSelected}
             >
-              Copy
+              <span className="hidden sm:inline">Copy</span>
             </BaseButton>
             <BaseButton
               color="red"
@@ -390,13 +390,13 @@ export default function ReportsList() {
               onClick={handleDeleteSelected}
               disabled={!hasMultipleSelected}
             >
-              Delete
+              <span className="hidden sm:inline">Delete</span>
             </BaseButton>
           </div>
         </BaseCard.Header>
 
         <BaseCard.Body className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Input
               placeholder="search 'report name'"
               value={query}
@@ -410,8 +410,9 @@ export default function ReportsList() {
               title="Clear All Filters"
               onClick={handleClearAllFilters}
               disabled={!hasActiveFilters}
+              className="whitespace-nowrap"
             >
-              Clear All Filters
+              <span className="hidden sm:inline">Clear All Filters</span>
             </BaseButton>
           </div>
 

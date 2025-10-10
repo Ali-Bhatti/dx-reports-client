@@ -1,5 +1,6 @@
 import { useAuth } from '../../hooks/useAuth';
 import BaseButton from '../shared/BaseButton';
+import { logoutIcon } from '@progress/kendo-svg-icons';
 
 const AuthButton = () => {
   const { login, logout, isAuthenticated, account } = useAuth();
@@ -12,9 +13,11 @@ const AuthButton = () => {
         </span>
         <BaseButton
           onClick={logout}
+          svgIcon={logoutIcon}
           size="small"
+          title="Sign Out"
         >
-          Sign Out
+          <span className="hidden sm:inline">Sign Out</span>
         </BaseButton>
       </div>
     );

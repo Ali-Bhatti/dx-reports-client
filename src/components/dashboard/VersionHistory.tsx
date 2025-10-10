@@ -312,7 +312,7 @@ export default function VersionHistory() {
                             onClick={handleDeleteVersion}
                             disabled={selectedVersionIds.length === 0 || isAnyOperationLoading}
                         >
-                            Delete {selectedVersionIds.length > 0 && `(${selectedVersionIds.length})`}
+                            <span className="hidden sm:inline">Delete</span>
                         </BaseButton>
                     </div>
                 </BaseCard.Header>

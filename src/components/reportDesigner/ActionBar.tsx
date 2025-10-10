@@ -92,76 +92,79 @@ function ActionBar({ isLoading = false, isDesignerModified = false, onSave, onDo
     return (
         <>
             <BaseCard>
-                <div className="flex items-center justify-between">
-                    {/* Left side - Report info */}
-                    <div className="flex items-center space-x-6">
-                        <div className="flex flex-col">
-                            <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                                Report Name
-                            </span>
-                            <span className="text-lg font-semibold text-gray-900 mt-1">
-                                {selectedReport?.reportName || 'No Report Selected'}
-                            </span>
-                        </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center justify-between gap-3 sm:flex-1">
+                        {/* Left side - Report info */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-6 flex-1 min-w-0">
+                            <div className="flex flex-col">
+                                <span className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide">
+                                    Report Name
+                                </span>
+                                <span className="text-base sm:text-lg font-semibold text-gray-900 mt-1 truncate">
+                                    {selectedReport?.reportName || 'No Report Selected'}
+                                </span>
+                            </div>
 
-                        <div className="h-8 w-px bg-gray-300"></div>
+                            <div className="hidden sm:block h-8 w-px bg-gray-300"></div>
 
-                        <div className="flex flex-col">
-                            <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                                {isNewVersion ? 'New ' : ''}Version
-                            </span>
-                            <div className="flex items-center mt-1">
-                                {!isNewVersion && (<span className="text-lg font-semibold text-gray-900">
-                                    <VersionDisplay version={selectedVersion?.version || 'N/A'} />
-                                </span>)}
-                                <BaseChip
-                                    type={publishStatusColor}
-                                    text={publishText}
-                                    className="ml-2"
-                                />
+                            <div className="flex flex-col">
+                                <span className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide">
+                                    {isNewVersion ? 'New ' : ''}Version
+                                </span>
+                                <div className="flex items-center mt-1">
+                                    {!isNewVersion && (<span className="text-base sm:text-lg font-semibold text-gray-900">
+                                        <VersionDisplay version={selectedVersion?.version || 'N/A'} />
+                                    </span>)}
+                                    <BaseChip
+                                        type={publishStatusColor}
+                                        text={publishText}
+                                        className="ml-2"
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Right side - Action buttons */}
-                    <div className="flex items-center space-x-3">
-                        {false && (<BaseButton
-                            color="gray"
-                            onClick={handleDownload}
-                            disabled={isButtonsDisabled}
-                            className="flex items-center space-x-2 px-4 py-2"
-                            svgIcon={downloadIcon}
-                        >
-                            Download
-                        </BaseButton>)}
+                        {/* Action buttons - visible on both mobile and desktop */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            {false && (<BaseButton
+                                color="gray"
+                                onClick={handleDownload}
+                                disabled={isButtonsDisabled}
+                                className="flex items-center space-x-2 px-4 py-2"
+                                svgIcon={downloadIcon}
+                            >
+                                <span className="hidden sm:inline">Download</span>
+                            </BaseButton>)}
 
-                        <BaseButton
-                            color="blue"
-                            onClick={handleSaveAction}
-                            disabled={isButtonsDisabled}
-                            className="flex items-center space-x-2 px-4 py-2"
-                            svgIcon={ActionIcon}
-                        >
-                            {actionButtonText}
-                        </BaseButton>
+                            <BaseButton
+                                color="blue"
+                                onClick={handleSaveAction}
+                                disabled={isButtonsDisabled}
+                                className="flex items-center space-x-2 px-4 py-2"
+                                svgIcon={ActionIcon}
+                                title={actionButtonText}
+                            >
+                                <span className="hidden sm:inline">{actionButtonText}</span>
+                            </BaseButton>
+                        </div>
                     </div>
                 </div>
 
                 {/* Additional info row */}
                 {selectedReport && (
                     <div className="mt-4 pt-4 border-t border-gray-100">
-                        <div className="flex items-center justify-between text-sm text-gray-500">
-                            <div className="flex items-center space-x-4">
-                                <span>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm text-gray-500 gap-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:space-x-4">
+                                <span className="truncate">
                                     <span className="font-medium">CreatedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedReport.createdOn)}
                                 </span>
                                 {selectedReport.modifiedOn && (
-                                    <span>
+                                    <span className="truncate">
                                         <span className="font-medium">ModifiedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedReport.modifiedOn)}
                                     </span>
                                 )}
                                 {selectedReport.modifiedBy && (
-                                    <span>
+                                    <span className="truncate">
                                         <span className="font-medium">ModifiedBy:</span> {selectedReport.modifiedBy}
                                     </span>
                                 )}
