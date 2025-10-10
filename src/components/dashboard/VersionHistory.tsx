@@ -43,7 +43,6 @@ import type {
     RowClickedEvent,
 } from 'ag-grid-community';
 
-type VersionRowWithPublished = HistoryRow & { published: boolean };
 
 export default function VersionHistory() {
     const dispatch = useDispatch();
@@ -64,12 +63,16 @@ export default function VersionHistory() {
     const {
         data: versionsResponse,
         isLoading: versionsLoading,
+        isFetching: versionsFetching,
         isError: versionsError,
         error: _versionsErrorDetails,
         refetch: _refetchVersions
     } = useGetReportVersionsQuery(String(selectedReportId), {
         skip: !selectedReportId, // Skip the query if no report is selected
     });
+
+    // Show loading when fetching new data (includes report changes)
+    const isLoadingVersions = versionsLoading || versionsFetching;
 
     // Transform API response to match expected structure and apply local overrides
     const versions = useMemo(() => {
@@ -83,11 +86,10 @@ export default function VersionHistory() {
 
             return {
                 ...version,
-                reportId: version.reportID || version?.reportId,
+                reportLayoutID: version.reportLayoutID || version?.reportId,
                 modifiedBy: version.modifiedBy || version?.createdBy || '',
                 modifiedOn: version.modifiedOn || version?.createdOn,
                 isPublished: publishedStatus,
-                published: publishedStatus
             };
         });
     }, [versionsResponse, selectedReportId, selectedReportIds.length, currentCompany, versionsError, publishedStatusOverrides]);
@@ -148,7 +150,7 @@ export default function VersionHistory() {
         if (selectedReportIds.length > 0) {
             return 'Select a single report to view version history';
         }
-        if (versionsLoading) {
+        if (isLoadingVersions) {
             return 'Loading versions...';
         }
         if (versionsError) {
@@ -161,28 +163,26 @@ export default function VersionHistory() {
             return 'No report selected';
         }
         return `No versions available for "${currentReportName}"`;
-    }, [selectedReportIds.length, selectedReportId, currentReportName, versionsLoading, versionsError]);
+    }, [selectedReportIds.length, selectedReportId, currentReportName, isLoadingVersions, versionsError]);
 
     // Action handlers for the version actions renderer
     const handleVersionDownload = (versionId: number) => {
         showNotification('success', `Downloading version <strong>${getVersionById(versionId)?.version}</strong>...`);
     };
 
-    const handleVersionNewVersion = (versionId: number, reportId: number) => {
+    const handleVersionNewVersion = (versionId: number, _reportId: number) => {
         dispatch(setActionContext({
             type: 'new_version',
             versionId: versionId,
-            reportId: reportId,
             selectedVersion: getVersionById(versionId)
         }));
         navigate('/report-designer');
     };
 
-    const handleVersionEdit = (versionId: number, reportId: number) => {
+    const handleVersionEdit = (versionId: number, _reportId: number) => {
         dispatch(setActionContext({
             type: 'edit',
             versionId: versionId,
-            reportId: reportId,
             selectedVersion: getVersionById(versionId)
         }));
         navigate('/report-designer');
@@ -193,7 +193,7 @@ export default function VersionHistory() {
     };
 
     // Create renderer with callbacks
-    const createVersionActionsRenderer = useCallback((props: ICellRendererParams<VersionRowWithPublished>) => {
+    const createVersionActionsRenderer = useCallback((props: ICellRendererParams<HistoryRow>) => {
         return VersionHistoryActionsRenderer({
             ...props,
             onDownload: handleVersionDownload,
@@ -219,7 +219,7 @@ export default function VersionHistory() {
         showNotification('success', `Version <strong>${version?.version}</strong> unpublished successfully`);
     };
 
-    const createPublishedToggleRenderer = useCallback((props: ICellRendererParams<VersionRowWithPublished>) => {
+    const createPublishedToggleRenderer = useCallback((props: ICellRendererParams<HistoryRow>) => {
         return PublishedToggleRenderer({
             ...props,
             onPublish: handleVersionPublish,
@@ -240,7 +240,7 @@ export default function VersionHistory() {
     }, [selectedReportId, selectedReportIds.length, currentReportName]);
 
 
-    const handleRowClicked = (e: RowClickedEvent<VersionRowWithPublished>) => {
+    const handleRowClicked = (e: RowClickedEvent<HistoryRow>) => {
         // Only navigate if not clicking on checkbox, action buttons, or toggle
         if (e.event?.target &&
             !(e.event.target as HTMLElement).closest('.ag-checkbox-input') &&
@@ -295,7 +295,7 @@ export default function VersionHistory() {
         setPublishModal({ isOpen: false, versionId: null });
     };
 
-    const isAnyOperationLoading = versionsLoading;
+    const isAnyOperationLoading = isLoadingVersions;
 
     return (
         <>
@@ -303,9 +303,6 @@ export default function VersionHistory() {
                 <BaseCard.Header>
                     <div className="flex items-center gap-2">
                         <h3 className="font-bold">Version History</h3>
-                        {isAnyOperationLoading && (
-                            <span className="text-sm text-gray-500">Loading...</span>
-                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <BaseButton
@@ -321,7 +318,7 @@ export default function VersionHistory() {
                 </BaseCard.Header>
 
                 <BaseCard.Body>
-                    <BaseTable<VersionRowWithPublished>
+                    <BaseTable<HistoryRow>
                         key={tableKey}
                         rowData={versions}
                         columnDefs={columnDefs}
@@ -331,7 +328,7 @@ export default function VersionHistory() {
                         height={400}
                         rowSelection="multiple"
                         suppressRowClickSelection={true}
-                        loading={versionsLoading}
+                        loading={isLoadingVersions}
                         noRowsOverlayComponent={() => (
                             <EmptyStateRenderer
                                 message={noVersionsMessage}

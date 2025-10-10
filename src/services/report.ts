@@ -7,7 +7,7 @@ const API_BASE_URL = config.apiBaseUrl;
 
 // Custom base query with your existing request logic
 const customBaseQuery = fetchBaseQuery({
-    baseUrl: `${API_BASE_URL}/api/`,
+    baseUrl: `${API_BASE_URL}api/`,
     prepareHeaders: (headers) => {
         headers.set('Content-Type', 'application/json')
         // Add authentication headers here
@@ -37,7 +37,7 @@ export const reportsApi = createApi({
         getCompany: builder.query<Company, string>({
             query: (id) => `companies/${id}`,
             transformResponse: (response: ApiResponse<Company>) => response.data,
-            providesTags: (result, error, id) => [{ type: 'Company', id }],
+            providesTags: (_result, _error, id) => [{ type: 'Company', id }],
         }),
 
         // Reports API

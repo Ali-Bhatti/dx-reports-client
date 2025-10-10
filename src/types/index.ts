@@ -12,8 +12,8 @@ export interface Report {
 
 export interface ReportVersion {
     id: string | number;
-    reportId: string | number;
-    reportID?: string | number;
+    reportId?: string | number;
+    reportLayoutID?: string | number;
     version: string | number;
     createdOn: string;
     createdBy?: string;
@@ -62,7 +62,7 @@ export interface PaginatedResponse<T> {
 
 export interface ActionContext {
     type: 'edit' | 'new_version' | null;
-    reportId?: number;
+    reportLayoutID?: number;
     versionId?: number;
     selectedVersion?: ReportVersion | null;
 }

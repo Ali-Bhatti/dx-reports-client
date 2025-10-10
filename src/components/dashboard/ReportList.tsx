@@ -22,8 +22,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 
 import { useGetReportsQuery } from '../../services/report';
 
-import type { Company } from '../../types';
-import type { Report as ReportRow } from '../../types';
+import type { Company, Report as ReportRow } from '../../types';
 
 import {
   setCurrentCompany,
@@ -31,7 +30,6 @@ import {
   setSelectedReportId,
   setSelectedReportIds,
   clearSelectedReportIds,
-  setReportsPagination,
   setSelectedReport,
 } from '../../features/reports/reportsSlice';
 
@@ -40,12 +38,12 @@ import {
   selectQuery,
   selectSelectedReportId,
   selectSelectedReportIds,
-  selectReportsPagination,
 } from '../../features/reports/reportsSelectors';
 
 import {
   copyIcon,
   trashIcon,
+  filterClearIcon,
 } from '@progress/kendo-svg-icons';
 
 import type {
@@ -53,7 +51,6 @@ import type {
   RowClassParams,
   RowClickedEvent,
   SelectionChangedEvent,
-  FilterChangedEvent,
 } from 'ag-grid-community';
 
 export default function ReportsList() {
@@ -70,11 +67,8 @@ export default function ReportsList() {
   const query = useSelector(selectQuery);
   const selectedReportId = useSelector(selectSelectedReportId);
   const selectedReportIds = useSelector(selectSelectedReportIds);
-  const pagination = useSelector(selectReportsPagination);
 
-  // State for AG Grid filtering
-  const [filteredData, setFilteredData] = useState<ReportRow[]>([]);
-  const [isGridFiltered, setIsGridFiltered] = useState(false);
+  const [hasActiveFilters, setHasActiveFilters] = useState(false);
 
   // Restore selected company from localStorage on mount
   useEffect(() => {
@@ -88,18 +82,21 @@ export default function ReportsList() {
   const {
     data: reportsResponse,
     isLoading: reportsLoading,
+    isFetching: reportsFetching,
     isError: reportsError,
     error: _reportsErrorDetails,
   } = useGetReportsQuery(
     {
-      companyId: currentCompany?.toString(),
-      search: query || undefined
+      companyId: currentCompany?.toString()
     },
     {
       skip: !currentCompany,
       refetchOnMountOrArgChange: true
     }
   );
+
+  // Show loading when fetching new data (includes company changes)
+  const isLoadingReports = reportsLoading || reportsFetching;
 
   // Extract the actual reports array from the response
   const allReports = useMemo(() => {
@@ -124,23 +121,6 @@ export default function ReportsList() {
     return reports;
   }, [allReports, query]);
 
-  // Determine which data to use for the grid and calculations
-  const dataForGrid = isGridFiltered ? filteredData : searchFilteredReports;
-
-  // Update filtered data when search changes and reset grid filters
-  useEffect(() => {
-    setFilteredData(searchFilteredReports);
-    setIsGridFiltered(false);
-
-    // Reset grid filters when search changes
-    if (gridRef.current?.api) {
-      gridRef.current.api.setFilterModel(null);
-    }
-
-    // Reset pagination to first page
-    dispatch(setReportsPagination({ skip: 0, take: pagination.take }));
-  }, [searchFilteredReports, dispatch, pagination.take]);
-
   // Check if multiple reports are selected
   const hasMultipleSelected = selectedReportIds.length > 0;
 
@@ -163,7 +143,7 @@ export default function ReportsList() {
   // Fixed getNoRowsMessage function
   const getNoRowsMessage = (): string => {
     // Handle loading state first
-    if (reportsLoading) {
+    if (isLoadingReports) {
       return 'Loading reports...';
     }
 
@@ -180,11 +160,6 @@ export default function ReportsList() {
     // Handle search with no results
     if (query && query.trim().length > 0 && searchFilteredReports.length === 0) {
       return `No reports found matching "${query}"`;
-    }
-
-    // Handle grid filters with no results
-    if (isGridFiltered && filteredData.length === 0) {
-      return 'No reports match the current filters';
     }
 
     // Handle no reports for the company (this was missing proper condition)
@@ -245,7 +220,7 @@ export default function ReportsList() {
     const newQuery = e.value;
     dispatch(setQuery(newQuery));
     // Show notification after data is loaded
-    if (newQuery && newQuery.length > 2 && !reportsLoading) {
+    if (newQuery && newQuery.length > 2 && !isLoadingReports) {
       const resultCount = searchFilteredReports.length;
       if (resultCount === 0) {
         showNotification('warning', `No reports found matching "<strong>${newQuery}</strong>"`);
@@ -283,33 +258,6 @@ export default function ReportsList() {
     }
   };
 
-  // Handle AG Grid filter changes
-  const handleFilterChanged = (_e: FilterChangedEvent) => {
-    if (!gridRef.current?.api) return;
-
-    const filterModel = gridRef.current.api.getFilterModel();
-    const hasActiveFilters = Object.keys(filterModel).length > 0;
-
-    if (hasActiveFilters) {
-      // Get filtered data from AG Grid
-      const filteredNodes: ReportRow[] = [];
-      gridRef.current.api.forEachNodeAfterFilter((node: any) => {
-        if (node.data) {
-          filteredNodes.push(node.data);
-        }
-      });
-
-      setFilteredData(filteredNodes);
-      setIsGridFiltered(true);
-    } else {
-      // No active filters, use search filtered data
-      setFilteredData(searchFilteredReports);
-      setIsGridFiltered(false);
-    }
-
-    // Reset pagination to first page when filters change
-    dispatch(setReportsPagination({ skip: 0, take: pagination.take }));
-  };
 
   const getRowStyle = useCallback(
     (p: RowClassParams) => {
@@ -335,6 +283,20 @@ export default function ReportsList() {
       return;
     }
     setDeleteModal({ isOpen: true, reportId: null, isMultiple: true });
+  };
+
+  const handleClearAllFilters = () => {
+    if (gridRef?.current) {
+      gridRef.current.setFilterModel(null);
+      setHasActiveFilters(false);
+    }
+  };
+
+  const checkFilterState = () => {
+    console.log('Checking filter state...', gridRef.current);
+    if (!gridRef.current) return;
+    const filterModel = gridRef.current.getFilterModel();
+    setHasActiveFilters(Object.keys(filterModel).length > 0);
   };
 
   // Modal handlers
@@ -400,9 +362,9 @@ export default function ReportsList() {
     }
   };
 
-  const tableKey = useMemo(() => {
-    return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}`;
-  }, [selectedReportId, selectedReportIds.length, currentCompany]);
+  // const tableKey = useMemo(() => {
+  //   return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}`;
+  // }, [selectedReportId, selectedReportIds.length, currentCompany]);
 
   return (
     <>
@@ -434,7 +396,7 @@ export default function ReportsList() {
         </BaseCard.Header>
 
         <BaseCard.Body className="space-y-4">
-          <div>
+          <div className="flex items-center gap-2">
             <Input
               placeholder="search 'report name'"
               value={query}
@@ -442,22 +404,31 @@ export default function ReportsList() {
               disabled={currentCompany == null}
               className="w-full h-10 !bg-field"
             />
+            <BaseButton
+              color="gray"
+              svgIcon={filterClearIcon}
+              title="Clear All Filters"
+              onClick={handleClearAllFilters}
+              disabled={!hasActiveFilters}
+            >
+              Clear All Filters
+            </BaseButton>
           </div>
 
           <BaseTable<ReportRow>
             //key={tableKey}
             onGridReady={onGridReady}
-            rowData={dataForGrid} // Use the correct data based on filter state
+            rowData={searchFilteredReports}
             columnDefs={columnDefs}
             getRowId={(p) => String(p.data.id)}
             onRowClicked={handleRowClicked}
             onSelectionChanged={handleSelectionChanged}
-            onFilterChanged={handleFilterChanged}
+            onFilterChanged={checkFilterState}
             getRowStyle={getRowStyle}
             height={420}
             rowSelection={"multiple"}
             suppressRowClickSelection={true}
-            loading={reportsLoading}
+            loading={isLoadingReports}
             noRowsOverlayComponent={() => (
               <EmptyStateRenderer
                 message={getNoRowsMessage()}

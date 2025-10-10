@@ -5,17 +5,15 @@ import { formatDateTime } from '../../../utils/dateFormatters';
 import type { ReportVersion as HistoryRow } from '../../../types';
 import { type JSX } from 'react';
 
-type VersionRowWithPublished = HistoryRow & { published: boolean };
-
 interface VersionHistoryColDefsConfig {
-    createVersionActionsRenderer: (props: ICellRendererParams<VersionRowWithPublished>) => JSX.Element;
-    createPublishedToggleRenderer: (props: ICellRendererParams<VersionRowWithPublished>) => JSX.Element;
+    createVersionActionsRenderer: (props: ICellRendererParams<HistoryRow>) => JSX.Element;
+    createPublishedToggleRenderer: (props: ICellRendererParams<HistoryRow>) => JSX.Element;
 }
 
 export const getVersionHistoryColumnDefs = ({
     createVersionActionsRenderer,
     createPublishedToggleRenderer
-}: VersionHistoryColDefsConfig): ColDef<VersionRowWithPublished>[] => [
+}: VersionHistoryColDefsConfig): ColDef<HistoryRow>[] => [
         {
             headerName: 'Version',
             field: 'version',

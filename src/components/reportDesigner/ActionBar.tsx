@@ -18,13 +18,15 @@ import {
 
 interface ActionBarProps {
     isLoading?: boolean;
+    isDesignerModified?: boolean;
     onSave?: () => void;
     onDownload?: () => void;
 }
 
-function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
+function ActionBar({ isLoading = false, isDesignerModified = false, onSave, onDownload }: ActionBarProps) {
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const { showNotification } = useNotifications();
 
@@ -42,8 +44,8 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
     const isNewVersion = actionContext.type === 'new_version';
     const actionButtonText = isNewVersion ? 'Add Version' : 'Save';
     const ActionIcon = isNewVersion ? plusIcon : saveIcon;
-    const publishStatusColor = selectedVersion?.isPublished ? 'green' : 'yellow';
-    const publishText = `${!selectedVersion?.isPublished ? 'Not' : ''} Published`;
+    const publishStatusColor = selectedVersion?.isPublished && !isNewVersion ? 'green' : 'yellow';
+    const publishText = isNewVersion ? `Draft` : `${!selectedVersion?.isPublished ? 'Not' : ''} Published`;
 
     const handleSaveAction = () => {
         setShowSaveModal(true);
@@ -53,18 +55,25 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
         setShowDownloadModal(true);
     };
 
-    const confirmSaveAction = () => {
-        // Call the onSave function passed from parent
-        if (onSave) {
-            onSave();
-        }
+    const confirmSaveAction = async () => {
+        setIsSaving(true);
+        try {
+            // Call the onSave function passed from parent
+            if (onSave) {
+                await onSave();
+            }
 
-        showNotification('success',
-            isNewVersion
-                ? `New version created successfully for <strong>${selectedReport?.reportName}</strong>`
-                : `Report <strong>${selectedReport?.reportName}</strong> saved successfully`
-        );
-        setShowSaveModal(false);
+            showNotification('success',
+                isNewVersion
+                    ? `New version created successfully for <strong>${selectedReport?.reportName}</strong>`
+                    : `Report <strong>${selectedReport?.reportName}</strong> saved successfully`
+            );
+            setShowSaveModal(false);
+        } catch (error) {
+            showNotification('error', 'Failed to save report. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const confirmDownload = () => {
@@ -78,7 +87,7 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
     };
 
     // Determine if buttons should be disabled
-    const isButtonsDisabled = isLoading || !selectedReport;
+    const isButtonsDisabled = (!isNewVersion || isLoading) && (isLoading || !selectedReport || !isDesignerModified);
 
     return (
         <>
@@ -99,12 +108,12 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
 
                         <div className="flex flex-col">
                             <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                                Version
+                                {isNewVersion ? 'New ' : ''}Version
                             </span>
                             <div className="flex items-center mt-1">
-                                <span className="text-lg font-semibold text-gray-900">
+                                {!isNewVersion && (<span className="text-lg font-semibold text-gray-900">
                                     <VersionDisplay version={selectedVersion?.version || 'N/A'} />
-                                </span>
+                                </span>)}
                                 <BaseChip
                                     type={publishStatusColor}
                                     text={publishText}
@@ -116,7 +125,7 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
 
                     {/* Right side - Action buttons */}
                     <div className="flex items-center space-x-3">
-                        <BaseButton
+                        {false && (<BaseButton
                             color="gray"
                             onClick={handleDownload}
                             disabled={isButtonsDisabled}
@@ -124,7 +133,7 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
                             svgIcon={downloadIcon}
                         >
                             Download
-                        </BaseButton>
+                        </BaseButton>)}
 
                         <BaseButton
                             color="blue"
@@ -144,14 +153,18 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
                         <div className="flex items-center justify-between text-sm text-gray-500">
                             <div className="flex items-center space-x-4">
                                 <span>
-                                    <span className="font-medium">Created:</span> {formatDateTime(selectedReport.createdOn)}
+                                    <span className="font-medium">CreatedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedReport.createdOn)}
                                 </span>
-                                <span>
-                                    <span className="font-medium">Modified:</span> {formatDateTime(selectedReport.modifiedOn)}
-                                </span>
-                                <span>
-                                    <span className="font-medium">By:</span> {selectedReport.modifiedBy}
-                                </span>
+                                {selectedReport.modifiedOn && (
+                                    <span>
+                                        <span className="font-medium">ModifiedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedReport.modifiedOn)}
+                                    </span>
+                                )}
+                                {selectedReport.modifiedBy && (
+                                    <span>
+                                        <span className="font-medium">ModifiedBy:</span> {selectedReport.modifiedBy}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -165,6 +178,7 @@ function ActionBar({ isLoading = false, onSave, onDownload }: ActionBarProps) {
                 onConfirm={confirmSaveAction}
                 reportName={selectedReport?.reportName}
                 isNewVersion={isNewVersion}
+                isLoading={isSaving}
             />
 
             {/* Download Confirmation Modal */}

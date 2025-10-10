@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@azure/msal-browser": "^4.24.1",
+    "@azure/msal-react": "^3.0.20",
     "@devexpress/analytics-core": "^25.1.4",
     "@progress/kendo-data-query": "^1.7.1",
     "@progress/kendo-licensing": "^1.7.1",

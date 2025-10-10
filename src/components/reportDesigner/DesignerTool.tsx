@@ -3,8 +3,9 @@ import {
     useRef,
     useEffect
 } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../app/store';
+import { setActionContext } from '../../features/reports/reportsSlice';
 import ReportDesigner, {
     RequestOptions,
     DesignerModelSettings,
@@ -14,51 +15,125 @@ import ReportDesigner, {
     Callbacks,
     type DxReportDesignerRef
 } from 'devexpress-reporting-react/dx-report-designer';
-import { ActionId, type WizardRunType } from 'devexpress-reporting/dx-reportdesigner';
-import { Loader } from '@progress/kendo-react-indicators';
+import 'devexpress-reporting/dx-richedit';
+import { ActionId } from 'devexpress-reporting/dx-reportdesigner';
 import BaseCard from '../shared/BaseCard';
 import ActionBar from './ActionBar';
+import BaseLoader from '../shared/BaseLoader';
 
 import {
     ExportSettings,
     ProgressBarSettings,
     SearchSettings
 } from 'devexpress-reporting-react/dx-report-viewer';
+import moment from 'moment';
+import config from '../../config/config';
 
-// Extend Window interface for TypeScript
-declare global {
-    interface Window {
-        DevExpress: any;
-    }
+// import { ShowMessage, NotifyType } from '@devexpress/analytics-core/core/utils/_infoMessageHelpers';
+// import { getLocalization } from '@devexpress/analytics-core/property-grid/localization/localization_utils';
+import { NavigateTab } from 'devexpress-reporting/dx-reportdesigner'
+
+
+interface DesignerToolProps {
+    onDesignerLoaded?: () => void;
 }
 
-function DesignerTool() {
+function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
     const [isLoading, setIsLoading] = useState(true);
+    const [isModified, setIsModified] = useState(false);
     const designerRef = useRef<DxReportDesignerRef>(null);
+    const dispatch = useDispatch();
 
     // Get data from Redux store
-    const { actionContext } = useSelector((state: RootState) => ({
-        actionContext: state.reports.actionContext,
-        selectedReport: state.reports.selectedReport
-    }));
+    const actionContext = useSelector((state: RootState) => state.reports.actionContext);
+
+    // Initialize reportUrl from actionContext - using reportLayoutID for loading the designer
+    const [reportUrl, setReportUrl] = useState(
+        actionContext.selectedVersion?.id
+            ? `${actionContext.selectedVersion.id}`
+            : ""
+    );
 
     const isNewVersion = actionContext.type === 'new_version';
-    const doSaveReport = () => {
+    const doSaveReport = async () => {
         console.log('doSaveReport called. isNewVersion:', isNewVersion);
+        console.log('Current Designer Modified State:--------', designerRef.current?.instance().IsModified());
+
         if (isNewVersion) {
             console.log('Adding new version...');
-            designerRef.current?.instance().SaveNewReport("NewReportName");
+            // For new version, use reportLayoutID as the base
+            const reportLayoutID = actionContext.selectedVersion?.reportLayoutID;
+            const newReportUrl = `${actionContext.selectedVersion?.reportLayoutID}`;
+            const openTabVersionId = actionContext.selectedVersion?.id;
+
+            console.log('openTabVersionId:', openTabVersionId);
+
+
+            // SaveNewReport returns a promise with the new ID from backend
+            try {
+                let result = await designerRef.current?.instance().SaveNewReport(newReportUrl);
+                console.log('New version saved, result:', result);
+                result = result && JSON.parse(result);
+                console.log('Parsed result:', result);
+
+                // Update reportUrl with the returned ID and switch context to save mode
+                if (result) {
+                    // Close the old tab (template/base version) before the new one opens
+                    const tabs = designerRef.current?.instance().GetTabs() as NavigateTab[];
+                    console.log('Current tabs:', tabs.map(tab => tab.url()));
+                    const currentTab = tabs?.find(tab => tab.url() === String(openTabVersionId));
+                    console.log("Condition for OPEN TAB---------------", currentTab?.url());
+                    if (currentTab) {
+                        console.log("Closing tab:", currentTab?.url());
+                        // Reset the modified state of the tab before closing to prevent confirmation dialog
+                        if (currentTab.resetIsModified && typeof currentTab.resetIsModified === 'function') {
+                            currentTab.resetIsModified();
+                        }
+                        designerRef.current?.instance().CloseTab(currentTab, true);
+                    }
+
+                    // Update action context to 'edit' mode with new IDs
+                    dispatch(setActionContext({
+                        type: 'edit',
+                        versionId: result.version_id,
+                        selectedVersion: {
+                            id: result.version_id,
+                            version: result.version,
+                            reportLayoutID,
+                            createdOn: moment().toISOString(),
+                            isPublished: false,
+                            isDefault: false,
+                        }
+                    }));
+
+                    // After successful save, reset modified state
+                    //designerRef.current?.instance().ResetIsModified();
+                    //setIsModified(false);
+                }
+            } catch (error) {
+                console.error('Error saving new report version:', error);
+            }
         } else {
             console.log('Saving current report...');
-            //designerRef.current?.instance().SaveReport();
-            doCreateNewReport();
+            //clickMenuItem(ActionId.Save);
+            await designerRef.current?.instance().SaveReport();
+            designerRef.current?.instance().ResetIsModified();
         }
     };
 
-    const doCreateNewReport = () => {
-        console.log('Creating new blank report...');
-        designerRef.current?.instance().RunWizard('NewReport' as WizardRunType);
-    };
+    // generic function to click the option from menu which are passed as parameter
+    // const clickMenuItem = (menuItemId: string) => {
+    //     const designer = designerRef.current?.instance();
+    //     if (designer) {
+    //         const designerModel = designer.GetDesignerModel();
+    //         if (designerModel) {
+    //             const menuItem = designerModel.actionLists.menuItems.find((item: any) => item.id === menuItemId);
+    //             if (menuItem && menuItem?.clickAction) {
+    //                 menuItem.clickAction();
+    //             }
+    //         }
+    //     }
+    // };
 
     const doDownloadReport = () => {
         console.log('Downloading report...');
@@ -69,13 +144,14 @@ function DesignerTool() {
 
     const onCustomizeMenuActions = ({ args }: { args: any }) => {
         const hideMenuItems = [
-            //ActionId.NewReport,
+            ActionId.NewReport,
             ActionId.OpenReport,
             ActionId.NewReportViaWizard,
             ActionId.ReportWizard,
             ActionId.SaveAs,
             ActionId.Scripts,
             ActionId.AddDataSource,
+            ActionId.Exit,
         ];
 
         hideMenuItems.forEach(actionId => {
@@ -86,52 +162,11 @@ function DesignerTool() {
         });
     };
 
-    const onCustomizeElements = ({ sender, args }: { sender: any, args: any }) => {
-        // Hide the "Add new data source" button in Field List
-        if (args && args.GetById) {
-            const fieldList = args.GetById('fieldList');
-            if (fieldList && fieldList.dataSourceHelper) {
-                if (fieldList.dataSourceHelper.canAddDataSource) {
-                    fieldList.dataSourceHelper.canAddDataSource = false;
-                }
-            }
-
-            if (fieldList && fieldList.actions) {
-                const addAction = fieldList.actions().find((action: any) =>
-                    action.id === 'addDataSource' || action.id === 'add-datasource'
-                );
-                if (addAction) {
-                    addAction.visible = false;
-                }
-            }
-        }
-
-        if (sender && sender._propertyGrid) {
-            const propertyGrid = sender._propertyGrid;
-
-            propertyGrid.editorsInfo.subscribe((editors: any) => {
-                editors.forEach((editor: any) => {
-                    if (editor.propertyName === 'DataSource') {
-                        editor.disabled = true;
-                    }
-                });
-            });
-        }
-
-        if (args && args.GetById) {
-            const propertyGrid = args.GetById('propertyGrid');
-            if (propertyGrid) {
-                const dataSourceProperty = propertyGrid.findProperty &&
-                    propertyGrid.findProperty('DataSource');
-
-                if (dataSourceProperty) {
-                    dataSourceProperty.disabled = true;
-                }
-            }
-        }
-    };
 
     const onComponentAdded = ({ args }: { args: any }) => {
+        // Mark designer as modified when a component is added
+        setIsModified(true);
+
         if (args && args.model) {
             const component = args.model;
 
@@ -158,56 +193,68 @@ function DesignerTool() {
         }
     };
 
-    function onBeforeRender(event: any): void {
+    function onBeforeRender(_event: any): void {
         console.log("Before Render");
-
-        // Hide REPORT TASKS section using DevExpress Settings API
-        if (window.DevExpress &&
-            window.DevExpress.Reporting &&
-            window.DevExpress.Reporting.Designer &&
-            window.DevExpress.Reporting.Designer.Settings) {
-
-            // Hide the entire REPORT TASKS section
-            window.DevExpress.Reporting.Designer.Settings.PropertyGrid.TaskGroupVisible(false);
-        }
-
-        console.log("EVENT--------", event);
-        console.log("SENDER----------", event.sender);
-
-        var info = event.sender.GetPropertyInfo("DevExpress.XtraReports.UI.XtraReport", "Border Color");
-        console.log("INFO---------", info);
-
-        if (info.defaultVal == "Black") info.disabled = false;
-
-        // Hide various properties
-        info = event.sender.GetPropertyInfo("DevExpress.XtraReports.UI.XtraReport", ["Watermarks"]);
-        info.visible = false;
-
-        info = event.sender.GetPropertyInfo("DevExpress.XtraReports.UI.XtraReport", "DrawWatermark");
-        info.visible = false;
-
-        info = event.sender.GetPropertyInfo("DevExpress.XtraReports.UI.XtraReport", "ExportOptions.Csv.Separator");
-        info.visible = false;
-
-        info = event.sender.GetPropertyInfo("XRLabel", "Can Grow");
-        info.disabled = true;
-
-        info = event.sender.GetPropertyInfo("XRLabel", "EditOptions");
-        console.log("INFO LABEL---------", info);
-        info.visible = false;
     }
 
     const onReportOpened = () => {
         console.log("ReportOpened");
+        // Reset modified state when a report is opened
+        setIsModified(false);
+        // Hide loading indicator when report is actually loaded
+        setIsLoading(false);
+        // Notify parent that designer has loaded
+        onDesignerLoaded?.();
     };
 
     useEffect(() => {
+        const checkModifiedStatus = () => {
+            if (designerRef.current?.instance()) {
+                const isCurrentlyModified = designerRef.current.instance().IsModified();
+                setIsModified(isCurrentlyModified);
+            }
+        };
+
+        // Check every 100ms for changes
+        const interval = setInterval(checkModifiedStatus, 100);
+
+        return () => clearInterval(interval);
+    }, [isModified]);
+
+    useEffect(() => {
+        // Update reportUrl when actionContext changes
+        // Skip if it's a new version - SaveNewReport already handles opening the tab
+        if (actionContext.selectedVersion?.id) {
+            const newReportUrl = `${actionContext.selectedVersion.id}`;
+            if (reportUrl !== newReportUrl) {
+                setReportUrl(newReportUrl);
+            }
+        }
+    }, [actionContext.selectedVersion?.id, actionContext.type, reportUrl]);
+
+    useEffect(() => {
+        // Hide DevExpress notification bar
+        const hideNotificationBar = () => {
+            const notificationBar = document.querySelector('.dxrd-notification-bar');
+            if (notificationBar && notificationBar instanceof HTMLElement) {
+                notificationBar.style.display = 'none';
+            }
+        };
+
+        // Try to hide immediately and periodically
+        hideNotificationBar();
+        //const notificationTimer = setInterval(hideNotificationBar, 500);
+
+        // Fallback timeout in case ReportOpened event doesn't fire (e.g., errors)
         const fallbackTimer = setTimeout(() => {
             setIsLoading(false);
-        }, 3000);
+            onDesignerLoaded?.();
+            console.warn('Designer loading fallback timeout triggered');
+        }, 10000); // 10 seconds fallback
 
         return () => {
             clearTimeout(fallbackTimer);
+            //clearInterval(notificationTimer);
         };
     }, []);
 
@@ -216,6 +263,7 @@ function DesignerTool() {
             <div className='mb-5'>
                 <ActionBar
                     isLoading={isLoading}
+                    isDesignerModified={isModified}
                     onSave={doSaveReport}
                     onDownload={doDownloadReport}
                 />
@@ -224,55 +272,56 @@ function DesignerTool() {
             {isLoading && (
                 <BaseCard>
                     <div className="flex flex-col items-center space-y-4 p-8">
-                        <Loader
+                        <BaseLoader
                             type="pulsing"
                             themeColor="primary"
+                            loadingText="Loading Report Designer"
                         />
-                        <div className="text-center">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                                Loading Report Designer
-                            </h3>
-                        </div>
                     </div>
                 </BaseCard>
             )}
 
             <div
                 className={
-                    `bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-opacity duration-300 
+                    `bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-opacity duration-300
                     ${isLoading ? 'opacity-0' : 'opacity-100'}`
                 }
             >
-                <ReportDesigner
-                    ref={designerRef}
-                    reportUrl="XtraReport1"
-                >
-                    <RequestOptions
-                        host={import.meta.env.VITE_DX_HOST}
-                        getDesignerModelAction="DXXRD/GetDesignerModel"
-                    />
-                    <Callbacks
-                        CustomizeMenuActions={onCustomizeMenuActions}
-                        CustomizeElements={onCustomizeElements}
-                        ComponentAdded={onComponentAdded}
-                        BeforeRender={onBeforeRender}
-                        ReportOpened={onReportOpened}
-                    />
-                    <DesignerModelSettings allowMDI={false}>
-                        <DataSourceSettings
-                            allowAddDataSource={false}
-                            allowRemoveDataSource={false}
-                            allowEditDataSource={false}
+                {reportUrl ? (
+                    <ReportDesigner
+                        ref={designerRef}
+                        reportUrl={String(reportUrl)}
+                    >
+                        <RequestOptions
+                            host={config.dxHost}
+                            getDesignerModelAction="DXXRD/GetDesignerModel"
                         />
-                        <PreviewSettings>
+                        <Callbacks
+                            CustomizeMenuActions={onCustomizeMenuActions}
+                            ComponentAdded={onComponentAdded}
+                            BeforeRender={onBeforeRender}
+                            ReportOpened={onReportOpened}
+                        />
+                        <DesignerModelSettings allowMDI={false}>
+                            <DataSourceSettings
+                                allowAddDataSource={true}
+                                allowRemoveDataSource={false}
+                                allowEditDataSource={false}
+                            />
+                            <PreviewSettings>
+                                <WizardSettings useFullscreenWizard={false} />
+                                <ExportSettings useSameTab={false} />
+                                <ProgressBarSettings position='TopRight' />
+                                <SearchSettings searchEnabled={false} />
+                            </PreviewSettings>
                             <WizardSettings useFullscreenWizard={false} />
-                            <ExportSettings useSameTab={false} />
-                            <ProgressBarSettings position='TopRight' />
-                            <SearchSettings searchEnabled={false} />
-                        </PreviewSettings>
-                        <WizardSettings useFullscreenWizard={false} />
-                    </DesignerModelSettings>
-                </ReportDesigner>
+                        </DesignerModelSettings>
+                    </ReportDesigner>
+                ) : (
+                    <div className="flex items-center justify-center p-8">
+                        <p className="text-gray-500">No report layout selected</p>
+                    </div>
+                )}
             </div>
         </div>
     );
