@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AutoComplete, type AutoCompleteChangeEvent } from '@progress/kendo-react-dropdowns';
 import { useCompanies } from '../../hooks/useCompanies';
 import type { Company } from '../../types';
@@ -20,32 +20,48 @@ export const CompanySelector = ({
   const [selected, setSelected] = useState<Company | null>(null);
   const [value, setValue] = useState<string>('');
 
-  // Handle AutoComplete change
+  const sortedCompanies = useMemo(() => {
+    return [...companies].sort((a, b) => a.name.localeCompare(b.name));
+  }, [companies]);
+
+  const filteredCompanies = useMemo(() => {
+    if (!value || value === selected?.name) {
+      return sortedCompanies;
+    }
+
+    return sortedCompanies.filter(company =>
+      company.name.toLowerCase().includes(value.toLowerCase())
+    );
+  }, [sortedCompanies, value, selected]);
+
   const handleChange = (e: AutoCompleteChangeEvent) => {
     const inputValue = e.target.value;
     setValue(inputValue);
 
-    // Find the company that matches the input value
-    const selectedCompany = companies.find(company =>
-      company.name === inputValue
-    ) || null;
+    if (inputValue === '') {
+      setSelected(null);
+      onCompanyChange?.(null);
+      return;
+    }
 
-    setSelected(selectedCompany);
-    onCompanyChange?.(selectedCompany);
+    const selectedCompany = sortedCompanies.find(company =>
+      company.name === inputValue
+    );
+
+    if (selectedCompany) {
+      setSelected(selectedCompany);
+      onCompanyChange?.(selectedCompany);
+    }
   };
 
-  // Filter companies based on user input
-  // const filteredCompanies = companies.filter(company =>
-  //   company.name.toLowerCase().includes(value.toLowerCase())
-  // );
 
   useEffect(() => {
-    if (restoreSavedCompany && !loading && !error && companies.length > 0) {
+    if (restoreSavedCompany && !loading && !error && sortedCompanies.length > 0) {
       // Restore selected company from localStorage if not already selected
       if (!selected) {
         const savedCompanyId = localStorage.getItem('selectedCompanyId');
         if (savedCompanyId) {
-          const foundCompany = companies.find(c => String(c.id) === savedCompanyId);
+          const foundCompany = sortedCompanies.find(c => String(c.id) === savedCompanyId);
           if (foundCompany) {
             setSelected(foundCompany);
             setValue(foundCompany.name);
@@ -56,14 +72,15 @@ export const CompanySelector = ({
         setValue(selected.name);
       }
     }
-  }, [companies, loading, error, selected, onCompanyChange]);
+  }, [sortedCompanies, loading, error, selected, onCompanyChange]);
+
 
   return (
     <div className={className}>
       {/* Company AutoComplete */}
       <div className="flex items-center gap-2">
         <AutoComplete
-          data={companies}
+          data={filteredCompanies}
           textField="name"
           dataItemKey="id"
           value={value}
@@ -71,7 +88,7 @@ export const CompanySelector = ({
           placeholder={loading ? 'Loading companies...' : 'Search or select company'}
           disabled={disabled || loading}
           className="k-rounded-lg !h-10 flex-1 custom-autocomplete"
-          suggest={true}
+          suggest={false}
           clearButton={false}
           fillMode="outline"
         />

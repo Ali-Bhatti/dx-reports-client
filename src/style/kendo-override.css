@@ -10,7 +10,7 @@
     --kendo-color-on-info: var(--e-global-color-global_color_9);
     --kendo-color-info: var(--fg-info);
     --kendo-color-error: var(--fg-dark-red);
-    --kendo-color-warning: var(--fg-dark-yellow);
+    --kendo-color-warning: var(--fg-warning);
     /* --kendo-color-base: #ddf;
     --kendo-color-base-hover: #eef;
     --kendo-color-base-active: #ccf;
@@ -56,6 +56,11 @@ body,
 .k-button.k-input-button:hover {
     background-color: transparent;
     color: var(--e-global-color-global_color_6);
+}
+
+.k-list-item.k-focus {
+    background-color: var(--fg-primary);
+    box-shadow: 0 0 0 1px var(--fg-primary);
 }
 
 .custom-autocomplete {
