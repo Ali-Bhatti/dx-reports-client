@@ -44,10 +44,8 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
     const designerRef = useRef<DxReportDesignerRef>(null);
     const dispatch = useDispatch();
 
-    // Get data from Redux store
     const actionContext = useSelector((state: RootState) => state.reports.actionContext);
 
-    // Initialize reportUrl from actionContext - using reportLayoutID for loading the designer
     const [reportUrl, setReportUrl] = useState(
         actionContext.selectedVersion?.id
             ? `${actionContext.selectedVersion.id}`
@@ -56,35 +54,25 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
 
     const isNewVersion = actionContext.type === 'new_version';
     const doSaveReport = async () => {
-        console.log('doSaveReport called. isNewVersion:', isNewVersion);
-        console.log('Current Designer Modified State:--------', designerRef.current?.instance().IsModified());
 
         if (isNewVersion) {
-            console.log('Adding new version...');
             // For new version, use reportLayoutID as the base
             const reportLayoutID = actionContext.selectedVersion?.reportLayoutID;
             const newReportUrl = `${actionContext.selectedVersion?.reportLayoutID}`;
             const openTabVersionId = actionContext.selectedVersion?.id;
 
-            console.log('openTabVersionId:', openTabVersionId);
 
 
             // SaveNewReport returns a promise with the new ID from backend
             try {
                 let result = await designerRef.current?.instance().SaveNewReport(newReportUrl);
-                console.log('New version saved, result:', result);
                 result = result && JSON.parse(result);
-                console.log('Parsed result:', result);
 
-                // Update reportUrl with the returned ID and switch context to save mode
                 if (result) {
                     // Close the old tab (template/base version) before the new one opens
                     const tabs = designerRef.current?.instance().GetTabs() as NavigateTab[];
-                    console.log('Current tabs:', tabs.map(tab => tab.url()));
                     const currentTab = tabs?.find(tab => tab.url() === String(openTabVersionId));
-                    console.log("Condition for OPEN TAB---------------", currentTab?.url());
                     if (currentTab) {
-                        console.log("Closing tab:", currentTab?.url());
                         // Reset the modified state of the tab before closing to prevent confirmation dialog
                         if (currentTab.resetIsModified && typeof currentTab.resetIsModified === 'function') {
                             currentTab.resetIsModified();
@@ -109,16 +97,11 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
                             isDefault: false,
                         }
                     }));
-
-                    // After successful save, reset modified state
-                    //designerRef.current?.instance().ResetIsModified();
-                    //setIsModified(false);
                 }
             } catch (error) {
                 console.error('Error saving new report version:', error);
             }
         } else {
-            console.log('Saving current report...');
             //clickMenuItem(ActionId.Save);
             await designerRef.current?.instance().SaveReport();
             designerRef.current?.instance().ResetIsModified();
@@ -140,7 +123,6 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
     // };
 
     const doDownloadReport = () => {
-        console.log('Downloading report...');
         // Add your download logic here
         // For example, you might want to export the report
         // designerRef.current?.instance().ExportReport(...);
@@ -156,6 +138,7 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
             ActionId.Scripts,
             ActionId.AddDataSource,
             ActionId.Exit,
+            ActionId.Save,
         ];
 
         hideMenuItems.forEach(actionId => {
@@ -198,11 +181,9 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
     };
 
     function onBeforeRender(_event: any): void {
-        console.log("Before Render");
     }
 
     const onReportOpened = () => {
-        console.log("ReportOpened");
         // Reset modified state when a report is opened
         setIsModified(false);
         // Hide loading indicator when report is actually loaded
@@ -229,9 +210,7 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
         // Update reportUrl when actionContext changes
         if (actionContext.selectedVersion?.id) {
             const newReportUrl = `${actionContext.selectedVersion.id}`;
-            // Only update if the URL actually changed to prevent unnecessary re-renders
             if (reportUrl !== newReportUrl) {
-                console.log("Action Context Changed - Updating reportUrl from", reportUrl, "to", newReportUrl);
                 setReportUrl(newReportUrl);
             }
         }
@@ -255,7 +234,7 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
             setIsLoading(false);
             onDesignerLoaded?.();
             console.warn('Designer loading fallback timeout triggered');
-        }, 10000); // 10 seconds fallback
+        }, 10000);
 
         return () => {
             clearTimeout(fallbackTimer);

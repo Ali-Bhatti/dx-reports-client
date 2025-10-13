@@ -4,8 +4,9 @@ type BannerType = 'success' | 'error' | 'warning' | 'info';
 
 interface BaseBannerProps {
     type: BannerType;
-    message: string;
+    message: string | React.ReactNode;
     closable?: boolean;
+    className?: string;
     onClose?: () => void;
 }
 
@@ -13,6 +14,7 @@ export default function BaseBanner({
     type,
     message,
     closable = false,
+    className = '',
     onClose
 }: BaseBannerProps) {
     return (
@@ -35,7 +37,11 @@ export default function BaseBanner({
                 alignItems: 'center'
             }}
         >
-            <span dangerouslySetInnerHTML={{ __html: message }} />
+            {typeof message === 'string' ? (
+                <span className={className} dangerouslySetInnerHTML={{ __html: message }} />
+            ) : (
+                message
+            )}
         </Notification>
     );
 }

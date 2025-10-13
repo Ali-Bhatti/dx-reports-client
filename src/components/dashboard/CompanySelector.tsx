@@ -78,8 +78,8 @@ export const CompanySelector = ({
       </div>
 
       {error && (
-        <div className='mt-1 text-sm text-red-600'>
-          <span>Failed to load companies: {error}</span>
+        <div className='mt-1 text-sm text-fg-red'>
+          <span>Failed to load companies</span>
         </div>
       )}
     </div>

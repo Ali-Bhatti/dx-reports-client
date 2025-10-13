@@ -400,6 +400,7 @@ export default function VersionHistory() {
                         <BaseBanner
                             type="warning"
                             message="Be aware that no versions are currently published. Please publish a version."
+                            className=' text-sm'
                         />
                     )}
 

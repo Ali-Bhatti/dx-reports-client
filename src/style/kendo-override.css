@@ -27,7 +27,6 @@ html,
 body,
 #root {
     font-family: var(--kendo-font-family);
-    font-size: 14px;
 }
 
 .ag-theme-quartz,
@@ -174,7 +173,7 @@ body,
 /* Root wrapper styling */
 .ag-theme-quartz .ag-root-wrapper {
     border: none;
-    border-radius: 12px;
+    border-radius: 7px;
     overflow: hidden;
 }
 
