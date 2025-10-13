@@ -10,13 +10,20 @@ import { useNavigate } from 'react-router-dom';
 import BaseCard from '../shared/BaseCard';
 import BaseButton from '../shared/BaseButton';
 import BaseTable from '../shared/BaseTable';
-import { EmptyStateRenderer, VersionHistoryActionsRenderer, PublishedToggleRenderer } from '../table/renderers';
+import BaseBanner from '../shared/BaseBanner';
+import {
+    EmptyStateRenderer,
+    VersionHistoryActionsRenderer,
+    PublishedToggleRenderer
+} from '../table/renderers';
 import { getVersionHistoryColumnDefs } from '../table/columnDefs';
 import DeleteModal from '../modals/DeleteModal';
 import PublishModal from '../modals/PublishModal';
+import WarningModal from '../modals/WarningModal';
 import { useNotifications } from '../../hooks/useNotifications';
+import { pluralize } from '../../utils/pluralize';
 
-import type { ReportVersion as HistoryRow } from "../../types";
+import type { ReportVersion as HistoryRow, PublishModalState } from "../../types";
 import {
     setSelectedVersionIds,
     clearSelectedVersionIds,
@@ -24,14 +31,17 @@ import {
 } from '../../features/reports/reportsSlice';
 
 import {
-    selectReports,
-    selectSelectedReportId,
+    selectReportSelected,
     selectSelectedReportIds,
     selectCurrentCompany
 } from '../../features/reports/reportsSelectors';
 
 import {
     useGetReportVersionsQuery,
+    usePublishVersionMutation,
+    useUnpublishVersionMutation,
+    useDownloadReportVersionMutation,
+    useDeleteReportVersionMutation,
 } from '../../services/report';
 
 import {
@@ -49,55 +59,50 @@ export default function VersionHistory() {
     const navigate = useNavigate();
     const { showNotification } = useNotifications();
 
-    // Redux selectors
     const selectedVersionIds = useSelector((state: any) => state.reports.selectedVersionIds);
-    const reports = useSelector(selectReports);
-    const selectedReportId = useSelector(selectSelectedReportId);
+    const selectedReport = useSelector(selectReportSelected);
     const selectedReportIds = useSelector(selectSelectedReportIds);
     const currentCompany = useSelector(selectCurrentCompany);
+    const selectedReportId = selectedReport?.id || null;
 
-    // Local state to track published status changes
-    const [publishedStatusOverrides, setPublishedStatusOverrides] = useState<Record<number, boolean>>({});
 
-    // API call for versions - only fetch when we have a selected report
     const {
         data: versionsResponse,
         isLoading: versionsLoading,
         isFetching: versionsFetching,
         isError: versionsError,
         error: _versionsErrorDetails,
-        refetch: _refetchVersions
+        refetch: refetchVersions
     } = useGetReportVersionsQuery(String(selectedReportId), {
-        skip: !selectedReportId, // Skip the query if no report is selected
+        skip: !selectedReportId,
     });
 
-    // Show loading when fetching new data (includes report changes)
+    const [publishVersion, { isLoading: isPublishing }] = usePublishVersionMutation();
+    const [unpublishVersion, { isLoading: isUnpublishing }] = useUnpublishVersionMutation();
+    const [downloadVersion] = useDownloadReportVersionMutation();
+    const [deleteVersions, { isLoading: isDeleting }] = useDeleteReportVersionMutation();
+
     const isLoadingVersions = versionsLoading || versionsFetching;
 
-    // Transform API response to match expected structure and apply local overrides
+    // Transform API response
     const versions = useMemo(() => {
         if (!versionsResponse || !currentCompany || versionsError || !selectedReportId) return [];
         if (selectedReportIds.length > 1) return [];
 
         return versionsResponse.map(version => {
-            const versionId = Number(version.id);
-            const hasOverride = publishedStatusOverrides.hasOwnProperty(versionId);
-            const publishedStatus = hasOverride ? publishedStatusOverrides[versionId] : version.isPublished;
 
             return {
                 ...version,
                 reportLayoutID: version.reportLayoutID || version?.reportId,
                 modifiedBy: version.modifiedBy || version?.createdBy || '',
                 modifiedOn: version.modifiedOn || version?.createdOn,
-                isPublished: publishedStatus,
             };
         });
-    }, [versionsResponse, selectedReportId, selectedReportIds.length, currentCompany, versionsError, publishedStatusOverrides]);
+    }, [versionsResponse, selectedReportId, selectedReportIds.length, currentCompany, versionsError]);
 
-    // Clear local overrides when report changes
-    useEffect(() => {
-        setPublishedStatusOverrides({});
-    }, [selectedReportId]);
+    const currentPublishedVersion = useMemo(() => {
+        return versions.find(v => v.isPublished);
+    }, [versions]);
 
 
     // Modal states
@@ -106,9 +111,13 @@ export default function VersionHistory() {
         versionId: null as number | null,
         isMultiple: false
     });
-    const [publishModal, setPublishModal] = useState({
+    const [publishModal, setPublishModal] = useState<PublishModalState>({
         isOpen: false,
-        versionId: null as number | null
+        versionId: null,
+    });
+    const [warningModal, setWarningModal] = useState({
+        isOpen: false,
+        message: ''
     });
 
     // Clear selections when report changes
@@ -116,7 +125,6 @@ export default function VersionHistory() {
         dispatch(clearSelectedVersionIds());
     }, [selectedReportId, dispatch]);
 
-    // Helper functions
     const getVersionById = (id: number) => {
         return versions.find(v => v.id === id);
     };
@@ -127,21 +135,10 @@ export default function VersionHistory() {
             .map(v => `${v.version}`);
     };
 
-    const getReportNameForVersion = (versionId: number) => {
-        const version = getVersionById(versionId);
-        if (!version) return 'Unknown Report';
-
-        const report = reports.find(r => r.id === version.reportId);
-        if (!report) return 'Unknown Report';
-
-        return report.reportName;
-    };
-
     const currentReportName = useMemo(() => {
-        if (!selectedReportId) return 'Unknown Report';
-        const report = reports.find(r => r.id === selectedReportId);
-        return report?.reportName || 'Unknown Report';
-    }, [selectedReportId, reports]);
+        if (!selectedReport?.reportName) return 'Unknown Report';
+        return selectedReport.reportName;
+    }, [selectedReport]);
 
     const noVersionsMessage = useMemo(() => {
         if (!selectedReportId) {
@@ -156,7 +153,7 @@ export default function VersionHistory() {
         if (versionsError) {
             return 'Error loading versions. Please try again.';
         }
-        if(versions.length === 0) {
+        if (versions.length === 0) {
             return `No versions available`;
         }
         if (currentReportName === 'Unknown Report') {
@@ -166,8 +163,31 @@ export default function VersionHistory() {
     }, [selectedReportIds.length, selectedReportId, currentReportName, isLoadingVersions, versionsError]);
 
     // Action handlers for the version actions renderer
-    const handleVersionDownload = (versionId: number) => {
-        showNotification('success', `Downloading version <strong>${getVersionById(versionId)?.version}</strong>...`);
+    const handleVersionDownload = async (versionId: number) => {
+        if (!selectedReportId) return;
+
+        const version = getVersionById(versionId);
+        try {
+            showNotification('info', `Downloading version <strong>${version?.version}</strong>...`);
+
+            const blob = await downloadVersion({
+                reportId: String(selectedReportId),
+                versionId: String(versionId)
+            }).unwrap();
+
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${currentReportName}_v${version?.version}.repx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            showNotification('success', `Version <strong>${version?.version}</strong> downloaded successfully`);
+        } catch (error) {
+            showNotification('error', `Failed to download version <strong>${version?.version}</strong>`);
+        }
     };
 
     const handleVersionNewVersion = (versionId: number, _reportId: number) => {
@@ -189,6 +209,32 @@ export default function VersionHistory() {
     };
 
     const handleVersionDelete = (versionId: number) => {
+        const version = getVersionById(versionId);
+
+        if (version?.isPublished && version?.isDefault) {
+            setWarningModal({
+                isOpen: true,
+                message: 'Published or Default version cannot be deleted.'
+            });
+            return;
+        }
+
+        if (version?.isPublished) {
+            setWarningModal({
+                isOpen: true,
+                message: 'Published version cannot be deleted.'
+            });
+            return;
+        }
+
+        if (version?.isDefault) {
+            setWarningModal({
+                isOpen: true,
+                message: 'Default version cannot be deleted.'
+            });
+            return;
+        }
+
         setDeleteModal({ isOpen: true, versionId, isMultiple: false });
     };
 
@@ -204,19 +250,12 @@ export default function VersionHistory() {
     }, [handleVersionDownload, handleVersionNewVersion, handleVersionEdit, handleVersionDelete]);
 
 
-    // Published toggle handlers with local state updates
     const handleVersionPublish = (versionId: number) => {
         setPublishModal({ isOpen: true, versionId });
     };
 
     const handleVersionUnpublish = (versionId: number) => {
-        const version = getVersionById(versionId);
-        // Update local state to immediately reflect the change
-        setPublishedStatusOverrides(prev => ({
-            ...prev,
-            [versionId]: false
-        }));
-        showNotification('success', `Version <strong>${version?.version}</strong> unpublished successfully`);
+        setPublishModal({ isOpen: true, versionId, isResetPublished: true });
     };
 
     const createPublishedToggleRenderer = useCallback((props: ICellRendererParams<HistoryRow>) => {
@@ -227,7 +266,6 @@ export default function VersionHistory() {
         });
     }, [handleVersionPublish, handleVersionUnpublish]);
 
-    // Column definitions using the separate module
     const columnDefs = useMemo(() => {
         return getVersionHistoryColumnDefs({
             createVersionActionsRenderer,
@@ -258,37 +296,77 @@ export default function VersionHistory() {
     };
 
     const handleDeleteVersion = () => {
+        const selectedVersions = versions.filter(v => selectedVersionIds.includes(v.id));
+        const hasPublishedOrDefault = selectedVersions.some(v => v.isPublished || v.isDefault);
+
+        if (hasPublishedOrDefault) {
+            setWarningModal({
+                isOpen: true,
+                message: 'Published or Default versions cannot be deleted.'
+            });
+            return;
+        }
+
         setDeleteModal({ isOpen: true, versionId: null, isMultiple: true });
     };
 
-    // Modal handlers - only local state updates, no API calls
-    const handleDeleteConfirm = () => {
-        if (deleteModal.isMultiple) {
-            dispatch(clearSelectedVersionIds());
+    const handleDeleteConfirm = async () => {
+        const { isMultiple, versionId } = deleteModal;
 
-            const versionCount = selectedVersionIds.length;
-            const versionText = versionCount === 1 ? 'version' : 'versions';
-            showNotification('success', `Successfully deleted <strong>${versionCount} ${versionText}</strong>`);
-        } else if (deleteModal.versionId) {
-            const version = getVersionById(deleteModal.versionId);
-            showNotification('success', `Version <strong>${version?.version || ''}</strong> deleted successfully`);
+        const versionIdsToDelete = isMultiple
+            ? selectedVersionIds.map(String)
+            : versionId
+                ? [String(versionId)]
+                : null;
+
+        if (!versionIdsToDelete || !versionIdsToDelete?.length) return;
+
+        try {
+            await deleteVersions({ versionIds: versionIdsToDelete }).unwrap();
+
+            const count = versionIdsToDelete.length;
+            const message = isMultiple
+                ? `Successfully deleted <strong>${count} ${pluralize(count, 'version')}</strong>`
+                : `Version <strong>${getVersionById(versionId!)?.version || ''}</strong> deleted successfully`;
+
+            if (isMultiple) dispatch(clearSelectedVersionIds());
+
+            showNotification('success', message);
+            setDeleteModal({ isOpen: false, versionId: null, isMultiple: false });
+            refetchVersions();
+        } catch (error: any) {
+            const count = versionIdsToDelete.length;
+            const errorMessage = error?.data?.message || 'Please try again.';
+            showNotification('error', `Failed to delete ${pluralize(count, 'version')}. ${errorMessage}`);
         }
-
-        setDeleteModal({ isOpen: false, versionId: null, isMultiple: false });
     };
 
-    const handlePublishConfirm = () => {
-        if (publishModal.versionId) {
-            const version = getVersionById(publishModal.versionId);
-            // Update local state to immediately reflect the change
-            setPublishedStatusOverrides(prev => ({
-                ...prev,
-                [publishModal.versionId!]: true
-            }));
-            showNotification('success', `Version <strong>${version?.version || ''}</strong> published successfully`);
+    const handlePublishConfirm = async () => {
+        const { versionId, isResetPublished } = publishModal;
+
+        if (!versionId || !selectedReportId) {
+            setPublishModal({ isOpen: false, versionId: null });
+            return;
         }
 
-        setPublishModal({ isOpen: false, versionId: null });
+        const version = getVersionById(versionId);
+        const action = isResetPublished ? 'unpublish' : 'publish';
+        const actionPastTense = isResetPublished ? 'unpublished' : 'published';
+        const mutationFn = isResetPublished ? unpublishVersion : publishVersion;
+
+        try {
+            await mutationFn({
+                reportId: String(selectedReportId),
+                versionId: Number(versionId)
+            }).unwrap();
+
+            refetchVersions();
+            showNotification('success', `Version <strong>${version?.version || ''}</strong> ${actionPastTense} successfully`);
+        } catch (error) {
+            showNotification('error', `Failed to ${action} version <strong>${version?.version || ''}</strong>`);
+        } finally {
+            setPublishModal({ isOpen: false, versionId: null });
+        }
     };
 
     const handlePublishConfirmCancel = () => {
@@ -318,6 +396,13 @@ export default function VersionHistory() {
                 </BaseCard.Header>
 
                 <BaseCard.Body>
+                    {versions.length > 0 && !currentPublishedVersion && (
+                        <BaseBanner
+                            type="warning"
+                            message="Be aware that no versions are currently published. Please publish a version."
+                        />
+                    )}
+
                     <BaseTable<HistoryRow>
                         key={tableKey}
                         rowData={versions}
@@ -343,7 +428,6 @@ export default function VersionHistory() {
                 </BaseCard.Body>
             </BaseCard>
 
-            {/* Modals */}
             <DeleteModal
                 isOpen={deleteModal.isOpen}
                 onClose={() => setDeleteModal({ isOpen: false, versionId: null, isMultiple: false })}
@@ -355,11 +439,12 @@ export default function VersionHistory() {
                         : []
                 }
                 itemType="version"
+                isLoading={isDeleting}
                 versionInfo={
                     !deleteModal.isMultiple && deleteModal.versionId
                         ? {
                             version: String(getVersionById(deleteModal.versionId)?.version ?? ''),
-                            reportName: getReportNameForVersion(deleteModal.versionId)
+                            reportName: currentReportName
                         }
                         : undefined
                 }
@@ -369,8 +454,17 @@ export default function VersionHistory() {
                 isOpen={publishModal.isOpen}
                 onClose={handlePublishConfirmCancel}
                 onConfirm={handlePublishConfirm}
-                version={publishModal.versionId ? `v${String(getVersionById(publishModal.versionId)?.version)}` : ''}
-                reportName={publishModal.versionId ? getReportNameForVersion(publishModal.versionId) : ''}
+                version={publishModal.versionId ? String(getVersionById(publishModal.versionId)?.version) : ''}
+                reportName={currentReportName}
+                isLoading={isPublishing || isUnpublishing}
+                currentPublishedVersion={currentPublishedVersion ? currentPublishedVersion.version : undefined}
+                isResetPublished={publishModal.isResetPublished}
+            />
+
+            <WarningModal
+                isOpen={warningModal.isOpen}
+                onClose={() => setWarningModal({ isOpen: false, message: '' })}
+                message={warningModal.message}
             />
         </>
     );

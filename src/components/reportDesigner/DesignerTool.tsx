@@ -89,11 +89,15 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
                         if (currentTab.resetIsModified && typeof currentTab.resetIsModified === 'function') {
                             currentTab.resetIsModified();
                         }
-                        designerRef.current?.instance().CloseTab(currentTab, true);
+                        await designerRef.current?.instance().CloseTab(currentTab, true);
                     }
 
+                    // Update reportUrl to the new version ID
+                    const newVersionUrl = `${result.version_id}`;
+                    setReportUrl(newVersionUrl);
+
                     // Update action context to 'edit' mode with new IDs
-                    dispatch(setActionContext({
+                    await dispatch(setActionContext({
                         type: 'edit',
                         versionId: result.version_id,
                         selectedVersion: {
@@ -223,14 +227,15 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
 
     useEffect(() => {
         // Update reportUrl when actionContext changes
-        // Skip if it's a new version - SaveNewReport already handles opening the tab
         if (actionContext.selectedVersion?.id) {
             const newReportUrl = `${actionContext.selectedVersion.id}`;
+            // Only update if the URL actually changed to prevent unnecessary re-renders
             if (reportUrl !== newReportUrl) {
+                console.log("Action Context Changed - Updating reportUrl from", reportUrl, "to", newReportUrl);
                 setReportUrl(newReportUrl);
             }
         }
-    }, [actionContext.selectedVersion?.id, actionContext.type, reportUrl]);
+    }, [actionContext.selectedVersion?.id, actionContext.type]);
 
     useEffect(() => {
         // Hide DevExpress notification bar
