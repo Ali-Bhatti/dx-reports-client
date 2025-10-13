@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import BaseCard from '../shared/BaseCard';
 import BaseButton from '../shared/BaseButton';
 import BaseTable from '../shared/BaseTable';
+import BaseBanner from '../shared/BaseBanner';
 import {
     EmptyStateRenderer,
     VersionHistoryActionsRenderer,
@@ -18,6 +19,7 @@ import {
 import { getVersionHistoryColumnDefs } from '../table/columnDefs';
 import DeleteModal from '../modals/DeleteModal';
 import PublishModal from '../modals/PublishModal';
+import WarningModal from '../modals/WarningModal';
 import { useNotifications } from '../../hooks/useNotifications';
 import { pluralize } from '../../utils/pluralize';
 
@@ -113,6 +115,10 @@ export default function VersionHistory() {
         isOpen: false,
         versionId: null,
     });
+    const [warningModal, setWarningModal] = useState({
+        isOpen: false,
+        message: ''
+    });
 
     // Clear selections when report changes
     useEffect(() => {
@@ -203,6 +209,32 @@ export default function VersionHistory() {
     };
 
     const handleVersionDelete = (versionId: number) => {
+        const version = getVersionById(versionId);
+
+        if (version?.isPublished && version?.isDefault) {
+            setWarningModal({
+                isOpen: true,
+                message: 'Published or Default version cannot be deleted.'
+            });
+            return;
+        }
+
+        if (version?.isPublished) {
+            setWarningModal({
+                isOpen: true,
+                message: 'Published version cannot be deleted.'
+            });
+            return;
+        }
+
+        if (version?.isDefault) {
+            setWarningModal({
+                isOpen: true,
+                message: 'Default version cannot be deleted.'
+            });
+            return;
+        }
+
         setDeleteModal({ isOpen: true, versionId, isMultiple: false });
     };
 
@@ -264,6 +296,17 @@ export default function VersionHistory() {
     };
 
     const handleDeleteVersion = () => {
+        const selectedVersions = versions.filter(v => selectedVersionIds.includes(v.id));
+        const hasPublishedOrDefault = selectedVersions.some(v => v.isPublished || v.isDefault);
+
+        if (hasPublishedOrDefault) {
+            setWarningModal({
+                isOpen: true,
+                message: 'Published or Default versions cannot be deleted.'
+            });
+            return;
+        }
+
         setDeleteModal({ isOpen: true, versionId: null, isMultiple: true });
     };
 
@@ -353,6 +396,13 @@ export default function VersionHistory() {
                 </BaseCard.Header>
 
                 <BaseCard.Body>
+                    {versions.length > 0 && !currentPublishedVersion && (
+                        <BaseBanner
+                            type="warning"
+                            message="Be aware that no versions are currently published. Please publish a version."
+                        />
+                    )}
+
                     <BaseTable<HistoryRow>
                         key={tableKey}
                         rowData={versions}
@@ -409,6 +459,12 @@ export default function VersionHistory() {
                 isLoading={isPublishing || isUnpublishing}
                 currentPublishedVersion={currentPublishedVersion ? currentPublishedVersion.version : undefined}
                 isResetPublished={publishModal.isResetPublished}
+            />
+
+            <WarningModal
+                isOpen={warningModal.isOpen}
+                onClose={() => setWarningModal({ isOpen: false, message: '' })}
+                message={warningModal.message}
             />
         </>
     );

@@ -27,6 +27,7 @@ html,
 body,
 #root {
     font-family: var(--kendo-font-family);
+    font-size: 14px;
 }
 
 .ag-theme-quartz,
