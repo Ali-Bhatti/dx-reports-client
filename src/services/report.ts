@@ -62,37 +62,16 @@ export const reportsApi = createApi({
             },
         }),
 
-        getReport: builder.query<Report, string>({
-            query: (id) => `reports/${id}`,
-            transformResponse: (response: ApiResponse<Report>) => response.data,
-            providesTags: (_result, _error, id) => [{ type: 'Report', id }],
-        }),
 
-        createReport: builder.mutation<Report, Partial<Report>>({
-            query: (report) => ({
-                url: 'reports',
-                method: 'POST',
-                body: report,
-            }),
-            transformResponse: (response: ApiResponse<Report>) => response.data,
-            invalidatesTags: [{ type: 'Report', id: 'LIST' }],
-        }),
-
-        updateReport: builder.mutation<Report, { id: string; report: Partial<Report> }>({
-            query: ({ id, report }) => ({
-                url: `reports/${id}`,
-                method: 'PUT',
-                body: report,
-            }),
-            transformResponse: (response: ApiResponse<Report>) => response.data,
-            invalidatesTags: (_result, _error, { id }) => [{ type: 'Report', id }],
-        }),
-
-        deleteReport: builder.mutation<void, string>({
-            query: (id) => ({
-                url: `reports/${id}`,
-                method: 'DELETE',
-            }),
+        deleteReports: builder.mutation<void, { reportIds: string[] }>({
+            query: ({ reportIds }) => {
+                const params = new URLSearchParams();
+                params.append('ids', reportIds.join(','));
+                return {
+                    url: `reports?${params}`,
+                    method: 'DELETE',
+                };
+            },
             invalidatesTags: [{ type: 'Report', id: 'LIST' }],
         }),
 
@@ -199,10 +178,7 @@ export const {
 
     // Reports
     useGetReportsQuery,
-    useGetReportQuery,
-    useCreateReportMutation,
-    useUpdateReportMutation,
-    useDeleteReportMutation,
+    useDeleteReportsMutation,
     useCopyReportMutation,
 
     // Report Versions

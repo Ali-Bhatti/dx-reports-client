@@ -20,9 +20,10 @@ import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 import { getReportListColumnDefs } from '../table/columnDefs';
 import { useNotifications } from '../../hooks/useNotifications';
 
-import { useGetReportsQuery } from '../../services/report';
+import { useGetReportsQuery, useDeleteReportsMutation } from '../../services/report';
 
 import type { Company, Report as ReportRow } from '../../types';
+import { pluralize } from '../../utils/pluralize';
 
 import {
   setCurrentCompany,
@@ -78,7 +79,6 @@ export default function ReportsList() {
     }
   }, [dispatch, currentCompany]);
 
-  // RTK Query - Fetch reports data
   const {
     data: reportsResponse,
     isLoading: reportsLoading,
@@ -95,14 +95,14 @@ export default function ReportsList() {
     }
   );
 
-  // Show loading when fetching new data (includes company changes)
+  const [deleteReports, { isLoading: isDeleting }] = useDeleteReportsMutation();
+
   const isLoadingReports = reportsLoading || reportsFetching;
 
   // Extract the actual reports array from the response
   const allReports = useMemo(() => {
     if (!reportsResponse || !currentCompany || reportsError) return [];
 
-    // If reportsResponse is already an array (fallback)
     if (Array.isArray(reportsResponse)) {
       return reportsResponse;
     }
@@ -110,7 +110,6 @@ export default function ReportsList() {
     return reportsResponse.data || [];
   }, [reportsResponse, currentCompany, reportsError]);
 
-  // Apply search filter only (AG Grid will handle other filters)
   const searchFilteredReports = useMemo(() => {
     let reports = allReports;
     // Apply search filter
@@ -140,34 +139,27 @@ export default function ReportsList() {
     return allReports.find(r => Number(r.id) === id);
   };
 
-  // Fixed getNoRowsMessage function
   const getNoRowsMessage = (): string => {
-    // Handle loading state first
     if (isLoadingReports) {
       return 'Loading reports...';
     }
 
-    // Handle no company selected
     if (currentCompany == null) {
       return 'Please select a company to view reports';
     }
 
-    // Handle API error
     if (reportsError) {
       return 'Error loading reports. Please try again.';
     }
 
-    // Handle search with no results
     if (query && query.trim().length > 0 && searchFilteredReports.length === 0) {
       return `No reports found matching "${query}"`;
     }
 
-    // Handle no reports for the company (this was missing proper condition)
     if (allReports.length === 0 && currentCompany) {
       return 'No reports available for this company';
     }
 
-    // Default fallback
     return 'No rows to show';
   };
 
@@ -252,7 +244,6 @@ export default function ReportsList() {
     dispatch(setSelectedReportIds(selectedIds));
 
     if (selectedIds.length > 0) {
-      // Clear single selection when multiple items are selected
       dispatch(setSelectedReportId(null));
       dispatch(setSelectedReport(null));
     }
@@ -322,23 +313,27 @@ export default function ReportsList() {
   };
 
   const handleDeleteConfirm = async () => {
+    const reportNames = deleteModal.isMultiple ? getSelectedReportNames() : [getReportById(deleteModal.reportId!)?.reportName || ''];
+    const reportCount = reportNames.length;
     try {
-      const reportNames = deleteModal.isMultiple ? getSelectedReportNames() : [getReportById(deleteModal.reportId!)?.reportName || ''];
+      const reportIds = deleteModal.isMultiple
+        ? selectedReportIds.map(id => String(id))
+        : [String(deleteModal.reportId!)];
 
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await deleteReports({ reportIds }).unwrap();
 
-      const reportCount = reportNames.length;
-      const reportText = reportCount === 1 ? 'report' : 'reports';
-
-      showNotification('success', `Successfully deleted <strong>${reportCount} ${reportText}</strong>`);
+      showNotification('success', `Successfully deleted <strong>${reportCount} ${pluralize(reportCount, 'report')}</strong>`);
 
       setDeleteModal({ isOpen: false, reportId: null, isMultiple: false });
 
       if (deleteModal.isMultiple) {
         dispatch(clearSelectedReportIds());
       }
-    } catch (error) {
-      showNotification('error', 'Failed to delete reports. Please try again.');
+      if (gridRef?.current) {
+        gridRef.current.deselectAll();
+      }
+    } catch (error: any) {
+      showNotification('error', `Failed to delete ${pluralize(reportCount, 'report')}. Please try again. <br/> ${error?.data?.message}`);
     }
   };
 
@@ -453,6 +448,7 @@ export default function ReportsList() {
       <DeleteModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, reportId: null, isMultiple: false })}
+        isLoading={isDeleting}
         onConfirm={handleDeleteConfirm}
         itemNames={deleteModal.isMultiple ? getSelectedReportNames() : deleteModal.reportId ? [getReportById(deleteModal.reportId)?.reportName || ''] : []}
         itemType={deleteModal.isMultiple ? 'reports' : 'report'}
