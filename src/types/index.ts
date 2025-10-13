@@ -72,3 +72,9 @@ export interface PublishModalState {
     versionId: number | null;
     isResetPublished?: boolean;
 }
+
+export interface LinkedPage {
+    pageId: number;
+    name: string;
+    isLinked: boolean;
+}

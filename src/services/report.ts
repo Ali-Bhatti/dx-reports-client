@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import type { Report, ReportVersion, Company, User, ReportStatistics, ApiResponse, PaginatedResponse } from '../types'
+import type { Report, ReportVersion, Company, User, ReportStatistics, ApiResponse, PaginatedResponse, LinkedPage } from '../types'
 import config from '../config/config';
 
 // API Configuration
@@ -24,7 +24,7 @@ const customBaseQuery = fetchBaseQuery({
 export const reportsApi = createApi({
     reducerPath: 'reportsApi',
     baseQuery: customBaseQuery,
-    tagTypes: ['Report', 'ReportVersion', 'Company', 'ReportStatistics', 'User'],
+    tagTypes: ['Report', 'ReportVersion', 'Company', 'ReportStatistics', 'User', 'LinkedPage'],
     endpoints: (builder) => ({
 
         // Companies API
@@ -63,7 +63,7 @@ export const reportsApi = createApi({
         }),
 
 
-        deleteReports: builder.mutation<void, { reportIds: string[] }>({
+        deleteReports: builder.mutation<void, { reportIds: string[]; companyId?: string }>({
             query: ({ reportIds }) => {
                 const params = new URLSearchParams();
                 params.append('ids', reportIds.join(','));
@@ -72,7 +72,13 @@ export const reportsApi = createApi({
                     method: 'DELETE',
                 };
             },
-            invalidatesTags: [{ type: 'Report', id: 'LIST' }],
+            invalidatesTags: (_result, _error, { companyId }) => {
+                const tags: any[] = [{ type: 'Report', id: 'LIST' }];
+                if (companyId) {
+                    tags.push({ type: 'ReportStatistics', id: companyId });
+                }
+                return tags;
+            },
         }),
 
         copyReport: builder.mutation<Report, string>({
@@ -82,6 +88,21 @@ export const reportsApi = createApi({
             }),
             transformResponse: (response: ApiResponse<Report>) => response.data,
             invalidatesTags: [{ type: 'Report', id: 'LIST' }],
+        }),
+
+        getLinkedPages: builder.query<LinkedPage[], string>({
+            query: (reportId) => `${reportId}/linked-pages`,
+            transformResponse: (response: ApiResponse<LinkedPage[]>) => response.data,
+            providesTags: (_result, _error, reportId) => [{ type: 'LinkedPage', id: reportId }],
+        }),
+
+        saveLinkedPages: builder.mutation<void, { reportId: string; pageIds: number[] }>({
+            query: ({ reportId, pageIds }) => ({
+                url: `${reportId}/generate-link`,
+                method: 'POST',
+                body: { pageIds },
+            }),
+            invalidatesTags: (_result, _error, { reportId }) => [{ type: 'LinkedPage', id: reportId }],
         }),
 
         // Report Versions API
@@ -180,6 +201,8 @@ export const {
     useGetReportsQuery,
     useDeleteReportsMutation,
     useCopyReportMutation,
+    useGetLinkedPagesQuery,
+    useSaveLinkedPagesMutation,
 
     // Report Versions
     useGetReportVersionsQuery,

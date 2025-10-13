@@ -20,7 +20,7 @@ import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 import { getReportListColumnDefs } from '../table/columnDefs';
 import { useNotifications } from '../../hooks/useNotifications';
 
-import { useGetReportsQuery, useDeleteReportsMutation } from '../../services/report';
+import { useGetReportsQuery, useDeleteReportsMutation, useGetLinkedPagesQuery, useSaveLinkedPagesMutation } from '../../services/report';
 
 import type { Company, Report as ReportRow } from '../../types';
 import { pluralize } from '../../utils/pluralize';
@@ -70,6 +70,9 @@ export default function ReportsList() {
   const selectedReportIds = useSelector(selectSelectedReportIds);
 
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
+  const [copyModal, setCopyModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
+  const [linkModal, setLinkModal] = useState({ isOpen: false, reportId: null as number | null });
 
   // Restore selected company from localStorage on mount
   useEffect(() => {
@@ -96,6 +99,12 @@ export default function ReportsList() {
   );
 
   const [deleteReports, { isLoading: isDeleting }] = useDeleteReportsMutation();
+  const [saveLinkedPages, { isLoading: isSavingLinkedPages }] = useSaveLinkedPagesMutation();
+
+  const { data: linkedPages = [], isLoading: isLoadingLinkedPages, isFetching: isFetchingLinkedPages } = useGetLinkedPagesQuery(
+    String(linkModal.reportId),
+    { skip: !linkModal.isOpen || !linkModal.reportId }
+  );
 
   const isLoadingReports = reportsLoading || reportsFetching;
 
@@ -122,11 +131,6 @@ export default function ReportsList() {
 
   // Check if multiple reports are selected
   const hasMultipleSelected = selectedReportIds.length > 0;
-
-  // Modal states
-  const [copyModal, setCopyModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
-  const [linkModal, setLinkModal] = useState({ isOpen: false, reportId: null as number | null });
 
   // Helper functions
   const getSelectedReportNames = () => {
@@ -320,7 +324,7 @@ export default function ReportsList() {
         ? selectedReportIds.map(id => String(id))
         : [String(deleteModal.reportId!)];
 
-      await deleteReports({ reportIds }).unwrap();
+      await deleteReports({ reportIds, companyId: currentCompany?.toString() }).unwrap();
 
       showNotification('success', `Successfully deleted <strong>${reportCount} ${pluralize(reportCount, 'report')}</strong>`);
 
@@ -337,23 +341,32 @@ export default function ReportsList() {
     }
   };
 
-  const handleLinkConfirm = async (selectedPages: string[]) => {
+  const handleLinkConfirm = async (selectedPageIds: number[]) => {
+    const pageCount = selectedPageIds.length;
+    const initialLinkedCount = linkedPages.filter(p => p.isLinked).length;
+    const isUnlinking = pageCount === 0 && initialLinkedCount > 0;
+
     try {
       const report = getReportById(linkModal.reportId!);
 
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await saveLinkedPages({ reportId: String(linkModal.reportId!), pageIds: selectedPageIds }).unwrap();
 
-      const pageCount = selectedPages.length;
-      const pageText = pageCount === 1 ? 'page' : 'pages';
-
-      showNotification(
-        'success',
-        `Successfully linked <strong>${report?.reportName}</strong> to <strong>${pageCount} ${pageText}</strong>`
-      );
+      if (isUnlinking) {
+        showNotification(
+          'success',
+          `Successfully unlinked <strong>${report?.reportName}</strong> from all pages`
+        );
+      } else {
+        showNotification(
+          'success',
+          `Successfully linked <strong>${report?.reportName}</strong> to <strong>${pageCount} ${pluralize(pageCount, 'page')}</strong>`
+        );
+      }
 
       setLinkModal({ isOpen: false, reportId: null });
-    } catch (error) {
-      showNotification('error', 'Failed to link report to pages. Please try again.');
+    } catch (error: any) {
+      const action = isUnlinking ? 'unlink' : 'link';
+      showNotification('error', `Failed to ${action} report. Please try again. ${error?.data?.message}`);
     }
   };
 
@@ -459,6 +472,9 @@ export default function ReportsList() {
         onClose={() => setLinkModal({ isOpen: false, reportId: null })}
         onConfirm={handleLinkConfirm}
         reportName={linkModal.reportId ? getReportById(linkModal.reportId)?.reportName || '' : ''}
+        pages={linkedPages}
+        isLoading={isLoadingLinkedPages || isFetchingLinkedPages}
+        isSaving={isSavingLinkedPages}
       />
     </>
   );

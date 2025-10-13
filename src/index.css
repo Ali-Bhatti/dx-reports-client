@@ -3,7 +3,7 @@
 
 
 /* Map CSS variables -> Tailwind tokens */
-:root {
+@theme {
   --color-fg-primary: var(--fg-primary);
   --color-fg-primary-hover: var(--fg-primary-hover);
 
