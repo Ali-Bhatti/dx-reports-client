@@ -199,3 +199,36 @@ body,
 .ag-overlay-loading-wrapper {
     background-color: white !important;
 }
+
+/* Kendo Switch - Compact size for table rows (35px height) */
+.k-switch {
+    width: 45px !important;
+    height: 20px !important;
+    min-width: 45px !important;
+}
+
+.k-switch-track {
+    width: 45px !important;
+    height: 20px !important;
+    border-radius: 17px !important;
+}
+
+.k-switch-thumb {
+    width: 20px !important;
+    height: 20px !important;
+    margin: 0px !important;
+}
+
+.k-switch-on .k-switch-thumb-wrap {
+    left:35px !important;
+}
+
+.k-switch-off .k-switch-thumb-wrap {
+    left:11px !important;
+}
+
+.ag-theme-quartz .ag-cell:has(.k-switch) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}

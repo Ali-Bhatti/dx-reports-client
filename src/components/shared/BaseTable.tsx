@@ -62,8 +62,8 @@ const BaseTable = <TData extends any = any>({
 
     // Default grid options
     const mergedGridOptions = useMemo<GridOptions<TData>>(() => ({
-        rowHeight: 40,
-        headerHeight: 40,
+        rowHeight: 30,
+        headerHeight: 35,
         theme: "legacy",
         rowSelection: {
             mode: "multiRow",

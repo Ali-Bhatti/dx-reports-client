@@ -195,16 +195,17 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
     useEffect(() => {
         const checkModifiedStatus = () => {
             if (designerRef.current?.instance()) {
+                console.log('Checking modified status...', designerRef.current.instance().IsModified());
                 const isCurrentlyModified = designerRef.current.instance().IsModified();
                 setIsModified(isCurrentlyModified);
             }
         };
 
-        // Check every 100ms for changes
-        const interval = setInterval(checkModifiedStatus, 100);
+        // Check every 1000ms for changes
+        const interval = setInterval(checkModifiedStatus, 1000);
 
         return () => clearInterval(interval);
-    }, [isModified]);
+    }, []);
 
     useEffect(() => {
         // Update reportUrl when actionContext changes
@@ -234,7 +235,7 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
             setIsLoading(false);
             onDesignerLoaded?.();
             console.warn('Designer loading fallback timeout triggered');
-        }, 10000);
+        }, 40000);
 
         return () => {
             clearTimeout(fallbackTimer);

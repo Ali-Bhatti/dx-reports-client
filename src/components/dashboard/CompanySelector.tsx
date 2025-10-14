@@ -20,19 +20,15 @@ export const CompanySelector = ({
   const [selected, setSelected] = useState<Company | null>(null);
   const [value, setValue] = useState<string>('');
 
-  const sortedCompanies = useMemo(() => {
-    return [...companies].sort((a, b) => a.name.localeCompare(b.name));
-  }, [companies]);
-
   const filteredCompanies = useMemo(() => {
     if (!value || value === selected?.name) {
-      return sortedCompanies;
+      return companies;
     }
 
-    return sortedCompanies.filter(company =>
+    return companies.filter(company =>
       company.name.toLowerCase().includes(value.toLowerCase())
     );
-  }, [sortedCompanies, value, selected]);
+  }, [companies, value, selected]);
 
   const handleChange = (e: AutoCompleteChangeEvent) => {
     const inputValue = e.target.value;
@@ -44,7 +40,7 @@ export const CompanySelector = ({
       return;
     }
 
-    const selectedCompany = sortedCompanies.find(company =>
+    const selectedCompany = companies.find(company =>
       company.name === inputValue
     );
 
@@ -56,12 +52,12 @@ export const CompanySelector = ({
 
 
   useEffect(() => {
-    if (restoreSavedCompany && !loading && !error && sortedCompanies.length > 0) {
+    if (restoreSavedCompany && !loading && !error && companies.length > 0) {
       // Restore selected company from localStorage if not already selected
       if (!selected) {
         const savedCompanyId = localStorage.getItem('selectedCompanyId');
         if (savedCompanyId) {
-          const foundCompany = sortedCompanies.find(c => String(c.id) === savedCompanyId);
+          const foundCompany = companies.find(c => String(c.id) === savedCompanyId);
           if (foundCompany) {
             setSelected(foundCompany);
             setValue(foundCompany.name);
@@ -72,7 +68,7 @@ export const CompanySelector = ({
         setValue(selected.name);
       }
     }
-  }, [sortedCompanies, loading, error, selected, onCompanyChange]);
+  }, [companies, loading, error, selected, onCompanyChange]);
 
 
   return (

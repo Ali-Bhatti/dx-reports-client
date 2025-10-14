@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import type { RootState } from '../../app/store';
 import BaseButton from '../shared/BaseButton';
 import BaseCard from '../shared/BaseCard';
 import DownloadConfirmationModal from '../modals/DownloadConfirmationModal';
@@ -9,6 +8,7 @@ import BaseChip from '../shared/BaseChip';
 import { useNotifications } from '../../hooks/useNotifications';
 import { VersionDisplay } from '../dashboard/VersionDisplay';
 import { formatDateTime } from '../../utils/dateFormatters';
+import { selectActionBarData } from '../../features/reports/reportsSelectors';
 
 import {
     saveIcon,
@@ -30,13 +30,7 @@ function ActionBar({ isLoading = false, isDesignerModified = false, onSave, onDo
 
     const { showNotification } = useNotifications();
 
-    // Get data from Redux store
-    const { actionContext, selectedReport } = useSelector((state: RootState) => ({
-        history: state.reports.history,
-        selectedReportId: state.reports.selectedReportId,
-        actionContext: state.reports.actionContext,
-        selectedReport: state.reports.selectedReport
-    }));
+    const { actionContext, selectedReport } = useSelector(selectActionBarData);
 
     const selectedVersion = actionContext.selectedVersion;
 
