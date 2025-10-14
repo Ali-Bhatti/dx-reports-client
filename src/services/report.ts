@@ -81,12 +81,21 @@ export const reportsApi = createApi({
             },
         }),
 
-        copyReport: builder.mutation<Report, string>({
-            query: (id) => ({
-                url: `reports/${id}/copy`,
+        copyReports: builder.mutation<void, {
+            destination_company_ids: number[];
+            source_company_id: number;
+            reports: Array<{
+                ReportId: number;
+                ReportVersionId: number;
+                ReportName: string;
+                RenderWhenNoData: boolean;
+            }>;
+        }>({
+            query: (body) => ({
+                url: 'copy',
                 method: 'POST',
+                body,
             }),
-            transformResponse: (response: ApiResponse<Report>) => response.data,
             invalidatesTags: [{ type: 'Report', id: 'LIST' }],
         }),
 
@@ -176,18 +185,6 @@ export const reportsApi = createApi({
             providesTags: (_result, _error, companyId) => [{ type: 'ReportStatistics', id: companyId }],
         }),
 
-        // Users API
-        getCurrentUser: builder.query<User, void>({
-            query: () => 'users/me',
-            transformResponse: (response: ApiResponse<User>) => response.data,
-            providesTags: ['User'],
-        }),
-
-        getUsers: builder.query<User[], void>({
-            query: () => 'users',
-            transformResponse: (response: ApiResponse<User[]>) => response.data,
-            providesTags: ['User'],
-        }),
     }),
 })
 
@@ -200,7 +197,7 @@ export const {
     // Reports
     useGetReportsQuery,
     useDeleteReportsMutation,
-    useCopyReportMutation,
+    useCopyReportsMutation,
     useGetLinkedPagesQuery,
     useSaveLinkedPagesMutation,
 
@@ -213,10 +210,6 @@ export const {
 
     // Statistics
     useGetReportStatisticsQuery,
-
-    // Users
-    useGetCurrentUserQuery,
-    useGetUsersQuery,
 } = reportsApi
 
 // Export the API reducer and middleware

@@ -8,27 +8,35 @@ type Props = {
   disabled?: boolean;
   className?: string;
   restoreSavedCompany?: boolean;
+  excludeCompanyIds?: number[];
 };
 
 export const CompanySelector = ({
   onCompanyChange,
   disabled = false,
   className = '',
-  restoreSavedCompany = false
+  restoreSavedCompany = false,
+  excludeCompanyIds = []
 }: Props) => {
   const { companies, loading, error } = useCompanies();
   const [selected, setSelected] = useState<Company | null>(null);
   const [value, setValue] = useState<string>('');
 
   const filteredCompanies = useMemo(() => {
-    if (!value || value === selected?.name) {
-      return companies;
+    let filtered = companies;
+
+    if (excludeCompanyIds.length > 0) {
+      filtered = filtered.filter(company => !excludeCompanyIds.includes(company.id));
     }
 
-    return companies.filter(company =>
-      company.name.toLowerCase().includes(value.toLowerCase())
-    );
-  }, [companies, value, selected]);
+    if (value && value !== selected?.name) {
+      filtered = filtered.filter(company =>
+        company.name.toLowerCase().includes(value.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [companies, value, selected, excludeCompanyIds]);
 
   const handleChange = (e: AutoCompleteChangeEvent) => {
     const inputValue = e.target.value;

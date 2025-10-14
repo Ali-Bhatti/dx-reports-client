@@ -6,8 +6,9 @@ export interface Report {
     createdOn?: string;
     modifiedOn?: string;
     modifiedBy?: string;
-    merged: boolean; // active/inactive
+    merged: boolean;
     companyId: string | number;
+    renderWhenNoData?: boolean;
 }
 
 export interface ReportVersion {

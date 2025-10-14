@@ -20,9 +20,10 @@ import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 import { getReportListColumnDefs } from '../table/columnDefs';
 import { useNotifications } from '../../hooks/useNotifications';
 
-import { useGetReportsQuery, useDeleteReportsMutation, useGetLinkedPagesQuery, useSaveLinkedPagesMutation } from '../../services/report';
+import { useGetReportsQuery, useDeleteReportsMutation, useCopyReportsMutation, useGetLinkedPagesQuery, useSaveLinkedPagesMutation } from '../../services/report';
 
 import type { Company, Report as ReportRow } from '../../types';
+import type { CopyReportData } from '../modals/CopyModal';
 import { pluralize } from '../../utils/pluralize';
 
 import {
@@ -99,6 +100,7 @@ export default function ReportsList() {
   );
 
   const [deleteReports, { isLoading: isDeleting }] = useDeleteReportsMutation();
+  const [copyReports, { isLoading: isCopying }] = useCopyReportsMutation();
   const [saveLinkedPages, { isLoading: isSavingLinkedPages }] = useSaveLinkedPagesMutation();
 
   const { data: linkedPages = [], isLoading: isLoadingLinkedPages, isFetching: isFetchingLinkedPages } = useGetLinkedPagesQuery(
@@ -295,24 +297,32 @@ export default function ReportsList() {
   };
 
   // Modal handlers
-  const handleCopyConfirm = async (destinationCompany: Company) => {
+  const handleCopyConfirm = async (destinationCompany: Company, reportsData: CopyReportData[]) => {
     try {
-      const reportNames = copyModal.isMultiple ? getSelectedReportNames() : [getReportById(copyModal.reportId!)?.reportName || ''];
+      if (!currentCompany) {
+        showNotification('error', 'No source company selected');
+        return;
+      }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await copyReports({
+        destination_company_ids: [destinationCompany.id],
+        source_company_id: currentCompany,
+        reports: reportsData
+      }).unwrap();
 
-      const reportCount = reportNames.length;
-      const reportText = reportCount === 1 ? 'report' : 'reports';
-
-      showNotification('success', `Successfully copied <strong>${reportCount} ${reportText}</strong> to <strong>${destinationCompany.name}</strong>`);
+      const reportCount = reportsData.length;
+      showNotification('success', `Successfully copied <strong>${reportCount} ${pluralize(reportCount, 'report')}</strong> to <strong>${destinationCompany.name}</strong>`);
 
       setCopyModal({ isOpen: false, reportId: null, isMultiple: false });
 
       if (copyModal.isMultiple) {
         dispatch(clearSelectedReportIds());
+        if (gridRef?.current) {
+          gridRef.current.deselectAll();
+        }
       }
-    } catch (error) {
-      showNotification('error', 'Failed to copy reports. Please try again.');
+    } catch (error: any) {
+      showNotification('error', `Failed to copy reports. Please try again. <br/> ${error?.data?.message || ''}`);
     }
   };
 
@@ -382,7 +392,7 @@ export default function ReportsList() {
             <CompanySelector onCompanyChange={handleCompanyChange} restoreSavedCompany={true} className="flex-1 sm:flex-initial" />
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <BaseButton
+            {false && (<BaseButton
               color="gray"
               svgIcon={copyIcon}
               title="Copy"
@@ -390,7 +400,7 @@ export default function ReportsList() {
               disabled={!hasMultipleSelected}
             >
               <span className="hidden sm:inline">Copy</span>
-            </BaseButton>
+            </BaseButton>)}
             <BaseButton
               color="red"
               svgIcon={trashIcon}
@@ -454,7 +464,14 @@ export default function ReportsList() {
         isOpen={copyModal.isOpen}
         onClose={() => setCopyModal({ isOpen: false, reportId: null, isMultiple: false })}
         onConfirm={handleCopyConfirm}
-        reportNames={copyModal.isMultiple ? getSelectedReportNames() : copyModal.reportId ? [getReportById(copyModal.reportId)?.reportName || ''] : []}
+        isLoading={isCopying}
+        reports={
+          copyModal.isMultiple
+            ? allReports.filter(r => selectedReportIds.includes(Number(r.id)))
+            : copyModal.reportId
+              ? [getReportById(copyModal.reportId)].filter(Boolean) as ReportRow[]
+              : []
+        }
         isMultiple={copyModal.isMultiple}
       />
 

@@ -208,7 +208,6 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
     }, []);
 
     useEffect(() => {
-        // Update reportUrl when actionContext changes
         if (actionContext.selectedVersion?.id) {
             const newReportUrl = `${actionContext.selectedVersion.id}`;
             if (reportUrl !== newReportUrl) {
@@ -217,31 +216,6 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
         }
     }, [actionContext.selectedVersion?.id, actionContext.type]);
 
-    useEffect(() => {
-        // Hide DevExpress notification bar
-        const hideNotificationBar = () => {
-            const notificationBar = document.querySelector('.dxrd-notification-bar');
-            if (notificationBar && notificationBar instanceof HTMLElement) {
-                notificationBar.style.display = 'none';
-            }
-        };
-
-        // Try to hide immediately and periodically
-        hideNotificationBar();
-        //const notificationTimer = setInterval(hideNotificationBar, 500);
-
-        // Fallback timeout in case ReportOpened event doesn't fire (e.g., errors)
-        const fallbackTimer = setTimeout(() => {
-            setIsLoading(false);
-            onDesignerLoaded?.();
-            console.warn('Designer loading fallback timeout triggered');
-        }, 40000);
-
-        return () => {
-            clearTimeout(fallbackTimer);
-            //clearInterval(notificationTimer);
-        };
-    }, []);
 
     return (
         <div className="relative">
