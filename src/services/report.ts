@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import type { Report, ReportVersion, Company, User, ReportStatistics, ApiResponse, PaginatedResponse } from '../types'
+import type { Report, ReportVersion, Company, ReportStatistics, ApiResponse, PaginatedResponse, LinkedPage } from '../types'
 import config from '../config/config';
 
 // API Configuration
@@ -7,7 +7,7 @@ const API_BASE_URL = config.apiBaseUrl;
 
 // Custom base query with your existing request logic
 const customBaseQuery = fetchBaseQuery({
-    baseUrl: `${API_BASE_URL}/api/`,
+    baseUrl: `${API_BASE_URL}api/report/`,
     prepareHeaders: (headers) => {
         headers.set('Content-Type', 'application/json')
         // Add authentication headers here
@@ -24,12 +24,12 @@ const customBaseQuery = fetchBaseQuery({
 export const reportsApi = createApi({
     reducerPath: 'reportsApi',
     baseQuery: customBaseQuery,
-    tagTypes: ['Report', 'ReportVersion', 'Company', 'ReportStatistics', 'User'],
+    tagTypes: ['Report', 'ReportVersion', 'Company', 'ReportStatistics', 'User', 'LinkedPage'],
     endpoints: (builder) => ({
 
         // Companies API
         getCompanies: builder.query<Company[], void>({
-            query: () => 'report/companies',
+            query: () => 'companies',
             transformResponse: (response: ApiResponse<Company[]>) => response.data,
             providesTags: ['Company'],
         }),
@@ -45,7 +45,7 @@ export const reportsApi = createApi({
             query: ({ companyId, search }) => {
                 const params = new URLSearchParams()
                 if (search) params.append('search', search)
-                return `report/companies/${companyId}/reports?${params}`
+                return `companies/${companyId}/reports?${params}`
             },
             transformResponse: (response: ApiResponse<PaginatedResponse<Report>>) => {
                 return response.data;
@@ -62,52 +62,61 @@ export const reportsApi = createApi({
             },
         }),
 
-        getReport: builder.query<Report, string>({
-            query: (id) => `reports/${id}`,
-            transformResponse: (response: ApiResponse<Report>) => response.data,
-            providesTags: (_result, _error, id) => [{ type: 'Report', id }],
+
+        deleteReports: builder.mutation<void, { reportIds: string[]; companyId?: string }>({
+            query: ({ reportIds }) => {
+                const params = new URLSearchParams();
+                params.append('ids', reportIds.join(','));
+                return {
+                    url: `reports?${params}`,
+                    method: 'DELETE',
+                };
+            },
+            invalidatesTags: (_result, _error, { companyId }) => {
+                const tags: any[] = [{ type: 'Report', id: 'LIST' }];
+                if (companyId) {
+                    tags.push({ type: 'ReportStatistics', id: companyId });
+                }
+                return tags;
+            },
         }),
 
-        createReport: builder.mutation<Report, Partial<Report>>({
-            query: (report) => ({
-                url: 'reports',
+        copyReports: builder.mutation<void, {
+            destination_company_ids: number[];
+            source_company_id: number;
+            reports: Array<{
+                ReportId: number;
+                ReportVersionId: number;
+                ReportName: string;
+                RenderWhenNoData: boolean;
+            }>;
+        }>({
+            query: (body) => ({
+                url: 'copy',
                 method: 'POST',
-                body: report,
-            }),
-            transformResponse: (response: ApiResponse<Report>) => response.data,
-            invalidatesTags: [{ type: 'Report', id: 'LIST' }],
-        }),
-
-        updateReport: builder.mutation<Report, { id: string; report: Partial<Report> }>({
-            query: ({ id, report }) => ({
-                url: `reports/${id}`,
-                method: 'PUT',
-                body: report,
-            }),
-            transformResponse: (response: ApiResponse<Report>) => response.data,
-            invalidatesTags: (_result, _error, { id }) => [{ type: 'Report', id }],
-        }),
-
-        deleteReport: builder.mutation<void, string>({
-            query: (id) => ({
-                url: `reports/${id}`,
-                method: 'DELETE',
+                body,
             }),
             invalidatesTags: [{ type: 'Report', id: 'LIST' }],
         }),
 
-        copyReport: builder.mutation<Report, string>({
-            query: (id) => ({
-                url: `reports/${id}/copy`,
+        getLinkedPages: builder.query<LinkedPage[], string>({
+            query: (reportId) => `${reportId}/linked-pages`,
+            transformResponse: (response: ApiResponse<LinkedPage[]>) => response.data,
+            providesTags: (_result, _error, reportId) => [{ type: 'LinkedPage', id: reportId }],
+        }),
+
+        saveLinkedPages: builder.mutation<void, { reportId: string; pageIds: number[] }>({
+            query: ({ reportId, pageIds }) => ({
+                url: `${reportId}/generate-link`,
                 method: 'POST',
+                body: { pageIds },
             }),
-            transformResponse: (response: ApiResponse<Report>) => response.data,
-            invalidatesTags: [{ type: 'Report', id: 'LIST' }],
+            invalidatesTags: (_result, _error, { reportId }) => [{ type: 'LinkedPage', id: reportId }],
         }),
 
         // Report Versions API
         getReportVersions: builder.query<ReportVersion[], string>({
-            query: (reportId) => `report/${reportId}/versions`,
+            query: (reportId) => `${reportId}/versions`,
             transformResponse: (response: ApiResponse<ReportVersion[]>) => {
                 return response.data;
             },
@@ -120,87 +129,62 @@ export const reportsApi = createApi({
                     : [{ type: 'ReportVersion', id: `LIST-${reportId}` }],
         }),
 
-        createReportVersion: builder.mutation<ReportVersion, { reportId: string; version: Partial<ReportVersion> }>({
-            query: ({ reportId, version }) => ({
-                url: `reports/${reportId}/versions`,
-                method: 'POST',
-                body: version,
-            }),
-            transformResponse: (response: ApiResponse<ReportVersion>) => response.data,
-            invalidatesTags: (_result, _error, { reportId }) => [
-                { type: 'ReportVersion', id: `LIST-${reportId}` }
-            ],
-        }),
-
-        publishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: string }>({
+        publishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: number | string }>({
             query: ({ reportId, versionId }) => ({
-                url: `reports/${reportId}/versions/${versionId}/publish`,
+                url: `${reportId}/versions/publish`,
                 method: 'POST',
+                body: { version_id: versionId },
             }),
             transformResponse: (response: ApiResponse<ReportVersion>) => response.data,
             invalidatesTags: (_result, _error, { reportId, versionId }) => [
-                { type: 'ReportVersion', id: versionId },
-                { type: 'ReportVersion', id: `LIST-${reportId}` }
+                { type: 'ReportVersion' as const, id: versionId },
+                { type: 'ReportVersion' as const, id: `LIST-${reportId}` }
             ],
         }),
 
-        // NEW: Unpublish version mutation
-        unpublishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: string }>({
+        unpublishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: number | string }>({
             query: ({ reportId, versionId }) => ({
-                url: `reports/${reportId}/versions/${versionId}/unpublish`,
+                url: `${reportId}/versions/publish`,
                 method: 'POST',
+                body: { version_id: versionId, is_reset_published: true },
             }),
             transformResponse: (response: ApiResponse<ReportVersion>) => response.data,
             invalidatesTags: (_result, _error, { reportId, versionId }) => [
-                { type: 'ReportVersion', id: versionId },
-                { type: 'ReportVersion', id: `LIST-${reportId}` }
+                { type: 'ReportVersion' as const, id: versionId },
+                { type: 'ReportVersion' as const, id: `LIST-${reportId}` }
             ],
         }),
 
-        // NEW: Delete single version mutation
-        deleteReportVersion: builder.mutation<void, { reportId: string; versionId: string }>({
-            query: ({ reportId, versionId }) => ({
-                url: `reports/${reportId}/versions/${versionId}`,
-                method: 'DELETE',
-            }),
-            invalidatesTags: (_result, _error, { reportId, versionId }) => [
-                { type: 'ReportVersion', id: versionId },
-                { type: 'ReportVersion', id: `LIST-${reportId}` }
-            ],
-        }),
-
-        // NEW: Delete multiple versions mutation
-        deleteMultipleReportVersions: builder.mutation<void, { reportId: string; versionIds: string[] }>({
-            query: ({ reportId, versionIds }) => ({
-                url: `reports/${reportId}/versions/bulk-delete`,
-                method: 'POST',
-                body: { versionIds },
-            }),
-            invalidatesTags: (_result, _error, { reportId, versionIds }) => [
+        deleteReportVersion: builder.mutation<void, { versionIds: string[] }>({
+            query: ({ versionIds }) => {
+                const params = new URLSearchParams();
+                params.append('ids', versionIds.join(', '));
+                return {
+                    url: `versions?${params}`,
+                    method: 'DELETE',
+                };
+            },
+            invalidatesTags: (_result, _error, { versionIds }) => [
                 ...versionIds.map(id => ({ type: 'ReportVersion' as const, id })),
-                { type: 'ReportVersion', id: `LIST-${reportId}` }
+                { type: 'ReportVersion', id: 'LIST' }
             ],
+        }),
+
+        downloadReportVersion: builder.mutation<Blob, { reportId: string; versionId: string }>({
+            query: ({ reportId, versionId }) => ({
+                url: `${reportId}/versions/${versionId}/download`,
+                method: 'GET',
+                responseHandler: async (response) => response.blob(),
+            }),
         }),
 
         // Statistics API
         getReportStatistics: builder.query<ReportStatistics[], string>({
-            query: (companyId) => `report/companies/${companyId}/report-kpis`,
+            query: (companyId) => `companies/${companyId}/report-kpis`,
             transformResponse: (response: ApiResponse<ReportStatistics[]>) => response.data,
             providesTags: (_result, _error, companyId) => [{ type: 'ReportStatistics', id: companyId }],
         }),
 
-        // Users API
-        getCurrentUser: builder.query<User, void>({
-            query: () => 'users/me',
-            transformResponse: (response: ApiResponse<User>) => response.data,
-            providesTags: ['User'],
-        }),
-
-        getUsers: builder.query<User[], void>({
-            query: () => 'users',
-            transformResponse: (response: ApiResponse<User[]>) => response.data,
-            providesTags: ['User'],
-        }),
     }),
 })
 
@@ -212,26 +196,20 @@ export const {
 
     // Reports
     useGetReportsQuery,
-    useGetReportQuery,
-    useCreateReportMutation,
-    useUpdateReportMutation,
-    useDeleteReportMutation,
-    useCopyReportMutation,
+    useDeleteReportsMutation,
+    useCopyReportsMutation,
+    useGetLinkedPagesQuery,
+    useSaveLinkedPagesMutation,
 
     // Report Versions
     useGetReportVersionsQuery,
-    useCreateReportVersionMutation,
+    useDownloadReportVersionMutation,
     usePublishVersionMutation,
     useUnpublishVersionMutation,
     useDeleteReportVersionMutation,
-    useDeleteMultipleReportVersionsMutation,
 
     // Statistics
     useGetReportStatisticsQuery,
-
-    // Users
-    useGetCurrentUserQuery,
-    useGetUsersQuery,
 } = reportsApi
 
 // Export the API reducer and middleware

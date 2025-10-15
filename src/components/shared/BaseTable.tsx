@@ -5,11 +5,24 @@ import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import type {
     ColDef,
     GridOptions,
+    ILoadingOverlayParams,
 } from 'ag-grid-community';
 import type { AgGridReactProps } from 'ag-grid-react';
+import BaseLoader from './BaseLoader';
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule]);
+
+const CustomLoadingOverlay = (_props: ILoadingOverlayParams) => {
+    return (
+        <div style={{
+            backgroundColor: 'white',
+            zIndex: 999
+        }}>
+            <BaseLoader type="pulsing" themeColor="primary" loadingText="Loading..." loadingTextSize='text-lg' />
+        </div>
+    );
+};
 
 export interface BaseTableProps<TData = any> extends Omit<AgGridReactProps<TData>, 'columnDefs' | 'defaultColDef' | 'gridOptions'> {
     columnDefs?: ColDef<TData>[];
@@ -49,8 +62,8 @@ const BaseTable = <TData extends any = any>({
 
     // Default grid options
     const mergedGridOptions = useMemo<GridOptions<TData>>(() => ({
-        rowHeight: 40,
-        headerHeight: 40,
+        rowHeight: 30,
+        headerHeight: 35,
         theme: "legacy",
         rowSelection: {
             mode: "multiRow",
@@ -58,6 +71,7 @@ const BaseTable = <TData extends any = any>({
             headerCheckbox: showCheckboxColumn,
             enableClickSelection: true,
         },
+        loadingOverlayComponent: CustomLoadingOverlay,
         ...gridOptions,
     }), [gridOptions, showCheckboxColumn]);
 

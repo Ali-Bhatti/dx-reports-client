@@ -10,7 +10,7 @@ export default function ReportsPage() {
 
 
     return (
-        <div className="p-5 px-25">
+        <div>
             {/* KPIs */}
             <StatisticsCards />
 

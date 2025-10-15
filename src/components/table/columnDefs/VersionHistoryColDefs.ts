@@ -5,17 +5,16 @@ import { formatDateTime } from '../../../utils/dateFormatters';
 import type { ReportVersion as HistoryRow } from '../../../types';
 import { type JSX } from 'react';
 
-type VersionRowWithPublished = HistoryRow & { published: boolean };
-
 interface VersionHistoryColDefsConfig {
-    createVersionActionsRenderer: (props: ICellRendererParams<VersionRowWithPublished>) => JSX.Element;
-    createPublishedToggleRenderer: (props: ICellRendererParams<VersionRowWithPublished>) => JSX.Element;
+    createVersionActionsRenderer: (props: ICellRendererParams<HistoryRow>) => JSX.Element;
+    createPublishedToggleRenderer: (props: ICellRendererParams<HistoryRow>) => JSX.Element;
 }
+const isMobile = () => window.innerWidth < 640; 
 
 export const getVersionHistoryColumnDefs = ({
     createVersionActionsRenderer,
     createPublishedToggleRenderer
-}: VersionHistoryColDefsConfig): ColDef<VersionRowWithPublished>[] => [
+}: VersionHistoryColDefsConfig): ColDef<HistoryRow>[] => [
         {
             headerName: 'Version',
             field: 'version',
@@ -24,7 +23,7 @@ export const getVersionHistoryColumnDefs = ({
             maxWidth: 140,
             checkboxSelection: true,
             headerCheckboxSelection: true,
-            pinned: 'left',
+            pinned: isMobile() ? null : 'left',
             cellRenderer: VersionNameRenderer,
         },
         {
@@ -68,6 +67,6 @@ export const getVersionHistoryColumnDefs = ({
             cellRenderer: createVersionActionsRenderer,
             sortable: false,
             filter: false,
-            pinned: 'right',
+            pinned: isMobile() ? null : 'right',
         }
     ];

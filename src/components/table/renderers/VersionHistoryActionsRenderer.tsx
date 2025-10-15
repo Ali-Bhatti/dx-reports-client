@@ -13,9 +13,8 @@ import {
     plusOutlineIcon
 } from '@progress/kendo-svg-icons';
 
-type VersionRowWithPublished = HistoryRow & { published: boolean };
 
-interface VersionHistoryActionsRendererProps extends ICellRendererParams<VersionRowWithPublished> {
+interface VersionHistoryActionsRendererProps extends ICellRendererParams<HistoryRow> {
     onDownload?: (versionId: number) => void;
     onNewVersion?: (versionId: number, reportId: number) => void;
     onEdit?: (versionId: number, reportId: number) => void;

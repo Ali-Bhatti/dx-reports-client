@@ -6,14 +6,15 @@ export interface Report {
     createdOn?: string;
     modifiedOn?: string;
     modifiedBy?: string;
-    merged: boolean; // active/inactive
+    merged: boolean;
     companyId: string | number;
+    renderWhenNoData?: boolean;
 }
 
 export interface ReportVersion {
     id: string | number;
-    reportId: string | number;
-    reportID?: string | number;
+    reportId?: string | number;
+    reportLayoutID?: string | number;
     version: string | number;
     createdOn: string;
     createdBy?: string;
@@ -62,7 +63,19 @@ export interface PaginatedResponse<T> {
 
 export interface ActionContext {
     type: 'edit' | 'new_version' | null;
-    reportId?: number;
+    reportLayoutID?: number;
     versionId?: number;
     selectedVersion?: ReportVersion | null;
+}
+
+export interface PublishModalState {
+    isOpen: boolean;
+    versionId: number | null;
+    isResetPublished?: boolean;
+}
+
+export interface LinkedPage {
+    pageId: number;
+    name: string;
+    isLinked: boolean;
 }

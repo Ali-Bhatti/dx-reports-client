@@ -42,7 +42,7 @@ const BaseNotification = () => {
         <NotificationGroup
             style={{
                 position: 'fixed',
-                zIndex: 9999,
+                zIndex: 99999,
                 flexDirection: 'column',
                 gap: '8px',
                 maxWidth: '400px',

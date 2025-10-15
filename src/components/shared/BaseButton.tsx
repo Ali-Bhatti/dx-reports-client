@@ -1,4 +1,6 @@
 import { Button, type ButtonProps } from '@progress/kendo-react-buttons';
+import { SvgIcon } from '@progress/kendo-react-common';
+import { arrowRotateCwIcon } from '@progress/kendo-svg-icons';
 
 type FGColor =
     | 'gray'
@@ -12,7 +14,7 @@ type FGColor =
     | 'none'
     ;
 
-type FGType = 'default' | 'iconButton';
+type FGType = 'default' | 'iconButton' | 'loader';
 
 export type BaseButtonProps = Omit<ButtonProps, 'className'> & {
     color?: FGColor;
@@ -52,13 +54,25 @@ export default function BaseButton(props: BaseButtonProps) {
 
     // For icon-only button: hide text; leave icon and aria-label to the caller
     const isIcon = typeVariant === 'iconButton';
+    const isLoader = typeVariant === 'loader';
 
     return (
         <Button
             {...rest}
             className={composed}
+            disabled={isLoader || rest.disabled}
         >
-            {isIcon ? null : children}
+
+            {isLoader ?
+                <span className="flex items-center justify-center gap-2">
+                    <SvgIcon
+                        icon={arrowRotateCwIcon}
+                        className="animate-spin"
+                        size="medium"
+                    />
+                </span> : 
+                isIcon ? null : children
+            }
         </Button>
     );
 }

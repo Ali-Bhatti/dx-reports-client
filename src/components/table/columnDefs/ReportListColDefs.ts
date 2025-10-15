@@ -7,18 +7,20 @@ import type { Report as ReportRow } from '../../../types';
 interface ReportListColDefsConfig {
   createReportActionsRenderer: (props: ICellRendererParams<ReportRow>) => React.JSX.Element;
 }
+const isMobile = () => window.innerWidth < 640;
 
-export const getReportListColumnDefs = ({ 
-  createReportActionsRenderer 
+export const getReportListColumnDefs = ({
+  createReportActionsRenderer
 }: ReportListColDefsConfig): ColDef<ReportRow>[] => [
   {
     headerName: 'Report Name',
     field: 'reportName',
     flex: 2,
-    minWidth: 140,
+    width: 400,
+    maxWidth: 400,
     checkboxSelection: true,
     headerCheckboxSelection: true,
-    pinned: 'left',
+    pinned: isMobile() ? null : 'left',
   },
   {
     headerName: 'Creation Date',
@@ -71,6 +73,6 @@ export const getReportListColumnDefs = ({
     cellRenderer: createReportActionsRenderer,
     sortable: false,
     filter: false,
-    pinned: 'right',
+    pinned: isMobile() ? null : 'right',
   }
 ];

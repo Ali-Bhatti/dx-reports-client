@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AutoComplete, type AutoCompleteChangeEvent } from '@progress/kendo-react-dropdowns';
 import { useCompanies } from '../../hooks/useCompanies';
 import type { Company } from '../../types';
@@ -8,36 +8,56 @@ type Props = {
   disabled?: boolean;
   className?: string;
   restoreSavedCompany?: boolean;
+  excludeCompanyIds?: number[];
 };
 
 export const CompanySelector = ({
   onCompanyChange,
   disabled = false,
   className = '',
-  restoreSavedCompany = false
+  restoreSavedCompany = false,
+  excludeCompanyIds = []
 }: Props) => {
   const { companies, loading, error } = useCompanies();
   const [selected, setSelected] = useState<Company | null>(null);
   const [value, setValue] = useState<string>('');
 
-  // Handle AutoComplete change
+  const filteredCompanies = useMemo(() => {
+    let filtered = companies;
+
+    if (excludeCompanyIds.length > 0) {
+      filtered = filtered.filter(company => !excludeCompanyIds.includes(company.id));
+    }
+
+    if (value && value !== selected?.name) {
+      filtered = filtered.filter(company =>
+        company.name.toLowerCase().includes(value.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [companies, value, selected, excludeCompanyIds]);
+
   const handleChange = (e: AutoCompleteChangeEvent) => {
     const inputValue = e.target.value;
     setValue(inputValue);
 
-    // Find the company that matches the input value
+    if (inputValue === '') {
+      setSelected(null);
+      onCompanyChange?.(null);
+      return;
+    }
+
     const selectedCompany = companies.find(company =>
       company.name === inputValue
-    ) || null;
+    );
 
-    setSelected(selectedCompany);
-    onCompanyChange?.(selectedCompany);
+    if (selectedCompany) {
+      setSelected(selectedCompany);
+      onCompanyChange?.(selectedCompany);
+    }
   };
 
-  // Filter companies based on user input
-  // const filteredCompanies = companies.filter(company =>
-  //   company.name.toLowerCase().includes(value.toLowerCase())
-  // );
 
   useEffect(() => {
     if (restoreSavedCompany && !loading && !error && companies.length > 0) {
@@ -58,12 +78,13 @@ export const CompanySelector = ({
     }
   }, [companies, loading, error, selected, onCompanyChange]);
 
+
   return (
     <div className={className}>
       {/* Company AutoComplete */}
       <div className="flex items-center gap-2">
         <AutoComplete
-          data={companies}
+          data={filteredCompanies}
           textField="name"
           dataItemKey="id"
           value={value}
@@ -71,15 +92,15 @@ export const CompanySelector = ({
           placeholder={loading ? 'Loading companies...' : 'Search or select company'}
           disabled={disabled || loading}
           className="k-rounded-lg !h-10 flex-1 custom-autocomplete"
-          suggest={true}
+          suggest={false}
           clearButton={false}
           fillMode="outline"
         />
       </div>
 
       {error && (
-        <div className='mt-1 text-sm text-red-600'>
-          <span>Failed to load companies: {error}</span>
+        <div className='mt-1 text-sm text-fg-red'>
+          <span>Failed to load companies</span>
         </div>
       )}
     </div>

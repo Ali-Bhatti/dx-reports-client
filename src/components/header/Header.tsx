@@ -1,6 +1,8 @@
 
-import { gearIcon, userIcon } from '@progress/kendo-svg-icons';
+import { gearIcon, homeIcon } from '@progress/kendo-svg-icons';
+import { SvgIcon } from '@progress/kendo-react-common';
 import BaseButton from '../shared/BaseButton';
+import AuthButton from '../auth/AuthButton';
 
 // Default User type for the component
 interface User {
@@ -16,23 +18,17 @@ interface HeaderProps {
 }
 
 export const Header = ({
-  user = {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com'
-  },
   onSettingsClick = () => console.log('Settings clicked'),
-  onUserClick = () => console.log('User clicked')
 }: HeaderProps) => {
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-3">
-      <div className="flex items-center justify-between max-w-full">
+    <header className="bg-white border-b border-gray-200 px-3 sm:px-6 py-3">
+      <div className="flex items-center justify-between max-w-full gap-2">
         {/* Left - Brand Logo */}
-        <div className="flex items-center">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <img
             src="https://fleetgo.com/wp-content/uploads/2023/06/RGB-FleetGO-Logo.svg"
             alt="FleetGO Logo"
-            className="h-8 w-auto"
+            className="h-6 sm:h-8 w-auto flex-shrink-0"
           />
           <span
             className="text-xl font-bold fg-primary:hover hidden"
@@ -41,39 +37,26 @@ export const Header = ({
             FleetGO
           </span>
 
-          <nav className="pl-10">
+          <nav className="sm:pl-6">
             <a
               href="/"
-              className="px-4 py-2 fg-primary hover:fg-primary:hover font-medium transition-colors rounded-md hover:bg-gray-50"
+              className="px-2 sm:px-4 py-2 fg-primary hover:fg-primary:hover font-medium transition-colors rounded-md hover:bg-gray-50 flex items-center gap-2"
+              title="Home"
             >
-              Home
+              <SvgIcon icon={homeIcon} size="small" className="sm:hidden" />
+              <span className="hidden sm:inline">Home</span>
             </a>
           </nav>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <BaseButton
+        <div className="flex items-center space-x-2 flex-shrink-0">
+          {false && (<BaseButton
             svgIcon={gearIcon}
             title='Settings'
             typeVariant='iconButton'
             onClick={onSettingsClick}
-          />
-
-          <BaseButton
-            svgIcon={userIcon}
-            title={user?.name || 'User Profile'}
-            typeVariant='iconButton'
-            onClick={onUserClick}
-          >
-            {/* <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-medium">
-              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-            </div>
-            {user && (
-              <span className="text-sm font-medium text-gray-700 hidden sm:inline">
-                {user.name}
-              </span>
-            )} */}
-          </BaseButton>
+          />)}
+          <AuthButton />
         </div>
       </div>
     </header>
