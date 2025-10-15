@@ -1,6 +1,15 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap");
 @import "tailwindcss";
 
+html {
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
 
 /* Map CSS variables -> Tailwind tokens */
 @theme {
@@ -41,4 +50,30 @@
 .dxrd-notification-bar,
 .dx-notification-bar {
   display: none !important;
+}
+
+/* Override AG Grid font size to match app font size */
+.ag-theme-quartz {
+  font-size: 1rem !important;
+}
+
+.ag-theme-quartz .ag-header-cell-text,
+.ag-theme-quartz .ag-cell {
+  font-size: 1rem !important;
+}
+
+.ag-theme-quartz .ag-row {
+  font-size: 1rem !important;
+}
+
+@media (max-width: 768px) {
+  .ag-theme-quartz {
+    font-size: 14px !important;
+  }
+
+  .ag-theme-quartz .ag-header-cell-text,
+  .ag-theme-quartz .ag-cell,
+  .ag-theme-quartz .ag-row {
+    font-size: 14px !important;
+  }
 }

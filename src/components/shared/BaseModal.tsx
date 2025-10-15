@@ -20,6 +20,7 @@ export type BaseModalProps = Omit<DialogProps, 'title' | 'className'> & {
     autoHeight?: boolean;
     customMinHeight?: number;
     customMaxHeight?: number;
+    customWidth?: number;
 };
 
 export default function BaseModal(props: BaseModalProps) {
@@ -35,6 +36,7 @@ export default function BaseModal(props: BaseModalProps) {
         autoHeight = false,
         customMinHeight,
         customMaxHeight,
+        customWidth,
         ...rest
     } = props;
 
@@ -98,7 +100,7 @@ export default function BaseModal(props: BaseModalProps) {
             {...rest}
             title={kendoTitle}
             style={{ ...dialogStyle }}
-            width={dialogDimensions.w}
+            width={!isMobile ? customWidth || dialogDimensions.w : dialogDimensions.w}
             {...heightProps}
         >
             {bodyContent && (

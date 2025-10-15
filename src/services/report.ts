@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import type { Report, ReportVersion, Company, User, ReportStatistics, ApiResponse, PaginatedResponse } from '../types'
+import type { Report, ReportVersion, Company, ReportStatistics, ApiResponse, PaginatedResponse, LinkedPage } from '../types'
 import config from '../config/config';
 
 // API Configuration
@@ -24,7 +24,7 @@ const customBaseQuery = fetchBaseQuery({
 export const reportsApi = createApi({
     reducerPath: 'reportsApi',
     baseQuery: customBaseQuery,
-    tagTypes: ['Report', 'ReportVersion', 'Company', 'ReportStatistics', 'User'],
+    tagTypes: ['Report', 'ReportVersion', 'Company', 'ReportStatistics', 'User', 'LinkedPage'],
     endpoints: (builder) => ({
 
         // Companies API
@@ -62,47 +62,56 @@ export const reportsApi = createApi({
             },
         }),
 
-        getReport: builder.query<Report, string>({
-            query: (id) => `reports/${id}`,
-            transformResponse: (response: ApiResponse<Report>) => response.data,
-            providesTags: (_result, _error, id) => [{ type: 'Report', id }],
+
+        deleteReports: builder.mutation<void, { reportIds: string[]; companyId?: string }>({
+            query: ({ reportIds }) => {
+                const params = new URLSearchParams();
+                params.append('ids', reportIds.join(','));
+                return {
+                    url: `reports?${params}`,
+                    method: 'DELETE',
+                };
+            },
+            invalidatesTags: (_result, _error, { companyId }) => {
+                const tags: any[] = [{ type: 'Report', id: 'LIST' }];
+                if (companyId) {
+                    tags.push({ type: 'ReportStatistics', id: companyId });
+                }
+                return tags;
+            },
         }),
 
-        createReport: builder.mutation<Report, Partial<Report>>({
-            query: (report) => ({
-                url: 'reports',
+        copyReports: builder.mutation<void, {
+            destination_company_ids: number[];
+            source_company_id: number;
+            reports: Array<{
+                ReportId: number;
+                ReportVersionId: number;
+                ReportName: string;
+                RenderWhenNoData: boolean;
+            }>;
+        }>({
+            query: (body) => ({
+                url: 'copy',
                 method: 'POST',
-                body: report,
-            }),
-            transformResponse: (response: ApiResponse<Report>) => response.data,
-            invalidatesTags: [{ type: 'Report', id: 'LIST' }],
-        }),
-
-        updateReport: builder.mutation<Report, { id: string; report: Partial<Report> }>({
-            query: ({ id, report }) => ({
-                url: `reports/${id}`,
-                method: 'PUT',
-                body: report,
-            }),
-            transformResponse: (response: ApiResponse<Report>) => response.data,
-            invalidatesTags: (_result, _error, { id }) => [{ type: 'Report', id }],
-        }),
-
-        deleteReport: builder.mutation<void, string>({
-            query: (id) => ({
-                url: `reports/${id}`,
-                method: 'DELETE',
+                body,
             }),
             invalidatesTags: [{ type: 'Report', id: 'LIST' }],
         }),
 
-        copyReport: builder.mutation<Report, string>({
-            query: (id) => ({
-                url: `reports/${id}/copy`,
+        getLinkedPages: builder.query<LinkedPage[], string>({
+            query: (reportId) => `${reportId}/linked-pages`,
+            transformResponse: (response: ApiResponse<LinkedPage[]>) => response.data,
+            providesTags: (_result, _error, reportId) => [{ type: 'LinkedPage', id: reportId }],
+        }),
+
+        saveLinkedPages: builder.mutation<void, { reportId: string; pageIds: number[] }>({
+            query: ({ reportId, pageIds }) => ({
+                url: `${reportId}/generate-link`,
                 method: 'POST',
+                body: { pageIds },
             }),
-            transformResponse: (response: ApiResponse<Report>) => response.data,
-            invalidatesTags: [{ type: 'Report', id: 'LIST' }],
+            invalidatesTags: (_result, _error, { reportId }) => [{ type: 'LinkedPage', id: reportId }],
         }),
 
         // Report Versions API
@@ -176,18 +185,6 @@ export const reportsApi = createApi({
             providesTags: (_result, _error, companyId) => [{ type: 'ReportStatistics', id: companyId }],
         }),
 
-        // Users API
-        getCurrentUser: builder.query<User, void>({
-            query: () => 'users/me',
-            transformResponse: (response: ApiResponse<User>) => response.data,
-            providesTags: ['User'],
-        }),
-
-        getUsers: builder.query<User[], void>({
-            query: () => 'users',
-            transformResponse: (response: ApiResponse<User[]>) => response.data,
-            providesTags: ['User'],
-        }),
     }),
 })
 
@@ -199,11 +196,10 @@ export const {
 
     // Reports
     useGetReportsQuery,
-    useGetReportQuery,
-    useCreateReportMutation,
-    useUpdateReportMutation,
-    useDeleteReportMutation,
-    useCopyReportMutation,
+    useDeleteReportsMutation,
+    useCopyReportsMutation,
+    useGetLinkedPagesQuery,
+    useSaveLinkedPagesMutation,
 
     // Report Versions
     useGetReportVersionsQuery,
@@ -214,10 +210,6 @@ export const {
 
     // Statistics
     useGetReportStatisticsQuery,
-
-    // Users
-    useGetCurrentUserQuery,
-    useGetUsersQuery,
 } = reportsApi
 
 // Export the API reducer and middleware

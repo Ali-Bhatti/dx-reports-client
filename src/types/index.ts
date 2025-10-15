@@ -6,8 +6,9 @@ export interface Report {
     createdOn?: string;
     modifiedOn?: string;
     modifiedBy?: string;
-    merged: boolean; // active/inactive
+    merged: boolean;
     companyId: string | number;
+    renderWhenNoData?: boolean;
 }
 
 export interface ReportVersion {
@@ -71,4 +72,10 @@ export interface PublishModalState {
     isOpen: boolean;
     versionId: number | null;
     isResetPublished?: boolean;
+}
+
+export interface LinkedPage {
+    pageId: number;
+    name: string;
+    isLinked: boolean;
 }

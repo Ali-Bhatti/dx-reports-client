@@ -24,3 +24,17 @@ export const selectHasMultipleReportsSelected = createSelector(
   [selectSelectedReportIds],
   (selectedReportIds) => selectedReportIds.length > 0
 );
+
+// Action bar data (memoized to prevent unnecessary rerenders)
+export const selectActionBarData = createSelector(
+  [
+    (state: RootState) => state.reports.actionContext,
+    (state: RootState) => state.reports.selectedReport,
+    (state: RootState) => state.reports.selectedReportId
+  ],
+  (actionContext, selectedReport, selectedReportId) => ({
+    actionContext,
+    selectedReport,
+    selectedReportId
+  })
+);

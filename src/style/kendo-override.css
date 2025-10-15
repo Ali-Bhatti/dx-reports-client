@@ -10,7 +10,7 @@
     --kendo-color-on-info: var(--e-global-color-global_color_9);
     --kendo-color-info: var(--fg-info);
     --kendo-color-error: var(--fg-dark-red);
-    --kendo-color-warning: var(--fg-dark-yellow);
+    --kendo-color-warning: var(--fg-warning);
     /* --kendo-color-base: #ddf;
     --kendo-color-base-hover: #eef;
     --kendo-color-base-active: #ccf;
@@ -27,7 +27,6 @@ html,
 body,
 #root {
     font-family: var(--kendo-font-family);
-    font-size: 14px;
 }
 
 .ag-theme-quartz,
@@ -57,6 +56,11 @@ body,
 .k-button.k-input-button:hover {
     background-color: transparent;
     color: var(--e-global-color-global_color_6);
+}
+
+.k-list-item.k-focus {
+    background-color: var(--fg-primary);
+    box-shadow: 0 0 0 1px var(--fg-primary);
 }
 
 .custom-autocomplete {
@@ -174,7 +178,7 @@ body,
 /* Root wrapper styling */
 .ag-theme-quartz .ag-root-wrapper {
     border: none;
-    border-radius: 12px;
+    border-radius: 7px;
     overflow: hidden;
 }
 
@@ -194,4 +198,37 @@ body,
 
 .ag-overlay-loading-wrapper {
     background-color: white !important;
+}
+
+/* Kendo Switch - Compact size for table rows (35px height) */
+.k-switch {
+    width: 45px !important;
+    height: 20px !important;
+    min-width: 45px !important;
+}
+
+.k-switch-track {
+    width: 45px !important;
+    height: 20px !important;
+    border-radius: 17px !important;
+}
+
+.k-switch-thumb {
+    width: 20px !important;
+    height: 20px !important;
+    margin: 0px !important;
+}
+
+.k-switch-on .k-switch-thumb-wrap {
+    left:35px !important;
+}
+
+.k-switch-off .k-switch-thumb-wrap {
+    left:11px !important;
+}
+
+.ag-theme-quartz .ag-cell:has(.k-switch) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }

@@ -20,9 +20,11 @@ import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 import { getReportListColumnDefs } from '../table/columnDefs';
 import { useNotifications } from '../../hooks/useNotifications';
 
-import { useGetReportsQuery } from '../../services/report';
+import { useGetReportsQuery, useDeleteReportsMutation, useCopyReportsMutation, useGetLinkedPagesQuery, useSaveLinkedPagesMutation } from '../../services/report';
 
 import type { Company, Report as ReportRow } from '../../types';
+import type { CopyReportData } from '../modals/CopyModal';
+import { pluralize } from '../../utils/pluralize';
 
 import {
   setCurrentCompany,
@@ -69,6 +71,9 @@ export default function ReportsList() {
   const selectedReportIds = useSelector(selectSelectedReportIds);
 
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
+  const [copyModal, setCopyModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
+  const [linkModal, setLinkModal] = useState({ isOpen: false, reportId: null as number | null });
 
   // Restore selected company from localStorage on mount
   useEffect(() => {
@@ -76,9 +81,12 @@ export default function ReportsList() {
     if (savedCompanyId && !currentCompany) {
       dispatch(setCurrentCompany(Number(savedCompanyId)));
     }
+
+    if ((currentCompany === null || !currentCompany) && query !== '') {
+      dispatch(setQuery(''));
+    }
   }, [dispatch, currentCompany]);
 
-  // RTK Query - Fetch reports data
   const {
     data: reportsResponse,
     isLoading: reportsLoading,
@@ -95,14 +103,21 @@ export default function ReportsList() {
     }
   );
 
-  // Show loading when fetching new data (includes company changes)
+  const [deleteReports, { isLoading: isDeleting }] = useDeleteReportsMutation();
+  const [copyReports, { isLoading: isCopying }] = useCopyReportsMutation();
+  const [saveLinkedPages, { isLoading: isSavingLinkedPages }] = useSaveLinkedPagesMutation();
+
+  const { data: linkedPages = [], isLoading: isLoadingLinkedPages, isFetching: isFetchingLinkedPages } = useGetLinkedPagesQuery(
+    String(linkModal.reportId),
+    { skip: !linkModal.isOpen || !linkModal.reportId }
+  );
+
   const isLoadingReports = reportsLoading || reportsFetching;
 
   // Extract the actual reports array from the response
   const allReports = useMemo(() => {
     if (!reportsResponse || !currentCompany || reportsError) return [];
 
-    // If reportsResponse is already an array (fallback)
     if (Array.isArray(reportsResponse)) {
       return reportsResponse;
     }
@@ -110,7 +125,6 @@ export default function ReportsList() {
     return reportsResponse.data || [];
   }, [reportsResponse, currentCompany, reportsError]);
 
-  // Apply search filter only (AG Grid will handle other filters)
   const searchFilteredReports = useMemo(() => {
     let reports = allReports;
     // Apply search filter
@@ -124,11 +138,6 @@ export default function ReportsList() {
   // Check if multiple reports are selected
   const hasMultipleSelected = selectedReportIds.length > 0;
 
-  // Modal states
-  const [copyModal, setCopyModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
-  const [linkModal, setLinkModal] = useState({ isOpen: false, reportId: null as number | null });
-
   // Helper functions
   const getSelectedReportNames = () => {
     return allReports
@@ -140,34 +149,27 @@ export default function ReportsList() {
     return allReports.find(r => Number(r.id) === id);
   };
 
-  // Fixed getNoRowsMessage function
   const getNoRowsMessage = (): string => {
-    // Handle loading state first
     if (isLoadingReports) {
       return 'Loading reports...';
     }
 
-    // Handle no company selected
     if (currentCompany == null) {
       return 'Please select a company to view reports';
     }
 
-    // Handle API error
     if (reportsError) {
       return 'Error loading reports. Please try again.';
     }
 
-    // Handle search with no results
     if (query && query.trim().length > 0 && searchFilteredReports.length === 0) {
       return `No reports found matching "${query}"`;
     }
 
-    // Handle no reports for the company (this was missing proper condition)
     if (allReports.length === 0 && currentCompany) {
       return 'No reports available for this company';
     }
 
-    // Default fallback
     return 'No rows to show';
   };
 
@@ -252,7 +254,6 @@ export default function ReportsList() {
     dispatch(setSelectedReportIds(selectedIds));
 
     if (selectedIds.length > 0) {
-      // Clear single selection when multiple items are selected
       dispatch(setSelectedReportId(null));
       dispatch(setSelectedReport(null));
     }
@@ -297,68 +298,106 @@ export default function ReportsList() {
     if (!gridRef.current) return;
     const filterModel = gridRef.current.getFilterModel();
     setHasActiveFilters(Object.keys(filterModel).length > 0);
+
+    // Check if selected report is still visible after filter
+    if (selectedReportId) {
+      const rowNode = gridRef.current.getRowNode(String(selectedReportId));
+
+      // If row doesn't exist or is filtered out
+      if (!rowNode || !rowNode.displayed) {
+        // Clear the selected report and its version history
+        dispatch(setSelectedReportId(null));
+        dispatch(setSelectedReport(null));
+        console.log('Selected report filtered out, clearing selection');
+      } else {
+        // Row is visible, scroll to it
+        gridRef.current.ensureIndexVisible(rowNode.rowIndex!, 'middle');
+        console.log('Scrolling to selected report');
+      }
+    }
   };
 
   // Modal handlers
-  const handleCopyConfirm = async (destinationCompany: Company) => {
+  const handleCopyConfirm = async (destinationCompany: Company, reportsData: CopyReportData[]) => {
     try {
-      const reportNames = copyModal.isMultiple ? getSelectedReportNames() : [getReportById(copyModal.reportId!)?.reportName || ''];
+      if (!currentCompany) {
+        showNotification('error', 'No source company selected');
+        return;
+      }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await copyReports({
+        destination_company_ids: [destinationCompany.id],
+        source_company_id: currentCompany,
+        reports: reportsData
+      }).unwrap();
 
-      const reportCount = reportNames.length;
-      const reportText = reportCount === 1 ? 'report' : 'reports';
-
-      showNotification('success', `Successfully copied <strong>${reportCount} ${reportText}</strong> to <strong>${destinationCompany.name}</strong>`);
+      const reportCount = reportsData.length;
+      showNotification('success', `Successfully copied <strong>${reportCount} ${pluralize(reportCount, 'report')}</strong> to <strong>${destinationCompany.name}</strong>`);
 
       setCopyModal({ isOpen: false, reportId: null, isMultiple: false });
 
       if (copyModal.isMultiple) {
         dispatch(clearSelectedReportIds());
+        if (gridRef?.current) {
+          gridRef.current.deselectAll();
+        }
       }
-    } catch (error) {
-      showNotification('error', 'Failed to copy reports. Please try again.');
+    } catch (error: any) {
+      showNotification('error', `Failed to copy reports. Please try again. <br/> ${error?.data?.message || ''}`);
     }
   };
 
   const handleDeleteConfirm = async () => {
+    const reportNames = deleteModal.isMultiple ? getSelectedReportNames() : [getReportById(deleteModal.reportId!)?.reportName || ''];
+    const reportCount = reportNames.length;
     try {
-      const reportNames = deleteModal.isMultiple ? getSelectedReportNames() : [getReportById(deleteModal.reportId!)?.reportName || ''];
+      const reportIds = deleteModal.isMultiple
+        ? selectedReportIds.map(id => String(id))
+        : [String(deleteModal.reportId!)];
 
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await deleteReports({ reportIds, companyId: currentCompany?.toString() }).unwrap();
 
-      const reportCount = reportNames.length;
-      const reportText = reportCount === 1 ? 'report' : 'reports';
-
-      showNotification('success', `Successfully deleted <strong>${reportCount} ${reportText}</strong>`);
+      showNotification('success', `Successfully deleted <strong>${reportCount} ${pluralize(reportCount, 'report')}</strong>`);
 
       setDeleteModal({ isOpen: false, reportId: null, isMultiple: false });
 
       if (deleteModal.isMultiple) {
         dispatch(clearSelectedReportIds());
       }
-    } catch (error) {
-      showNotification('error', 'Failed to delete reports. Please try again.');
+      if (gridRef?.current) {
+        gridRef.current.deselectAll();
+      }
+    } catch (error: any) {
+      showNotification('error', `Failed to delete ${pluralize(reportCount, 'report')}. Please try again. <br/> ${error?.data?.message}`);
     }
   };
 
-  const handleLinkConfirm = async (selectedPages: string[]) => {
+  const handleLinkConfirm = async (selectedPageIds: number[]) => {
+    const pageCount = selectedPageIds.length;
+    const initialLinkedCount = linkedPages.filter(p => p.isLinked).length;
+    const isUnlinking = pageCount === 0 && initialLinkedCount > 0;
+
     try {
       const report = getReportById(linkModal.reportId!);
 
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await saveLinkedPages({ reportId: String(linkModal.reportId!), pageIds: selectedPageIds }).unwrap();
 
-      const pageCount = selectedPages.length;
-      const pageText = pageCount === 1 ? 'page' : 'pages';
-
-      showNotification(
-        'success',
-        `Successfully linked <strong>${report?.reportName}</strong> to <strong>${pageCount} ${pageText}</strong>`
-      );
+      if (isUnlinking) {
+        showNotification(
+          'success',
+          `Successfully unlinked <strong>${report?.reportName}</strong> from all pages`
+        );
+      } else {
+        showNotification(
+          'success',
+          `Successfully linked <strong>${report?.reportName}</strong> to <strong>${pageCount} ${pluralize(pageCount, 'page')}</strong>`
+        );
+      }
 
       setLinkModal({ isOpen: false, reportId: null });
-    } catch (error) {
-      showNotification('error', 'Failed to link report to pages. Please try again.');
+    } catch (error: any) {
+      const action = isUnlinking ? 'unlink' : 'link';
+      showNotification('error', `Failed to ${action} report. Please try again. ${error?.data?.message}`);
     }
   };
 
@@ -374,7 +413,7 @@ export default function ReportsList() {
             <CompanySelector onCompanyChange={handleCompanyChange} restoreSavedCompany={true} className="flex-1 sm:flex-initial" />
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <BaseButton
+            {false && (<BaseButton
               color="gray"
               svgIcon={copyIcon}
               title="Copy"
@@ -382,7 +421,7 @@ export default function ReportsList() {
               disabled={!hasMultipleSelected}
             >
               <span className="hidden sm:inline">Copy</span>
-            </BaseButton>
+            </BaseButton>)}
             <BaseButton
               color="red"
               svgIcon={trashIcon}
@@ -412,7 +451,7 @@ export default function ReportsList() {
               disabled={!hasActiveFilters}
               className="whitespace-nowrap"
             >
-              <span className="hidden sm:inline">Clear All Filters</span>
+              <span className="sm:inline">Clear All Filters</span>
             </BaseButton>
           </div>
 
@@ -446,13 +485,21 @@ export default function ReportsList() {
         isOpen={copyModal.isOpen}
         onClose={() => setCopyModal({ isOpen: false, reportId: null, isMultiple: false })}
         onConfirm={handleCopyConfirm}
-        reportNames={copyModal.isMultiple ? getSelectedReportNames() : copyModal.reportId ? [getReportById(copyModal.reportId)?.reportName || ''] : []}
+        isLoading={isCopying}
+        reports={
+          copyModal.isMultiple
+            ? allReports.filter(r => selectedReportIds.includes(Number(r.id)))
+            : copyModal.reportId
+              ? [getReportById(copyModal.reportId)].filter(Boolean) as ReportRow[]
+              : []
+        }
         isMultiple={copyModal.isMultiple}
       />
 
       <DeleteModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, reportId: null, isMultiple: false })}
+        isLoading={isDeleting}
         onConfirm={handleDeleteConfirm}
         itemNames={deleteModal.isMultiple ? getSelectedReportNames() : deleteModal.reportId ? [getReportById(deleteModal.reportId)?.reportName || ''] : []}
         itemType={deleteModal.isMultiple ? 'reports' : 'report'}
@@ -463,6 +510,9 @@ export default function ReportsList() {
         onClose={() => setLinkModal({ isOpen: false, reportId: null })}
         onConfirm={handleLinkConfirm}
         reportName={linkModal.reportId ? getReportById(linkModal.reportId)?.reportName || '' : ''}
+        pages={linkedPages}
+        isLoading={isLoadingLinkedPages || isFetchingLinkedPages}
+        isSaving={isSavingLinkedPages}
       />
     </>
   );
