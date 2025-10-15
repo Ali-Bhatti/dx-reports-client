@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
 import { Input } from '@progress/kendo-react-inputs';
 import { DropDownList } from '@progress/kendo-react-dropdowns';
 import { Checkbox } from '@progress/kendo-react-inputs';
@@ -10,7 +9,6 @@ import BaseButton from '../shared/BaseButton';
 import CompanySelector from '../dashboard/CompanySelector';
 import { useGetReportVersionsQuery } from '../../services/report';
 import type { Company, Report, ReportVersion } from '../../types';
-import { selectCurrentCompany } from '../../features/reports/reportsSelectors';
 
 export interface CopyReportData {
     ReportId: number;
@@ -38,7 +36,6 @@ export default function CopyModal({
 }: CopyModalProps) {
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
     const [reportData, setReportData] = useState<Map<number, CopyReportData>>(new Map());
-    const currentCompany = useSelector(selectCurrentCompany);
 
     // Fetch versions for the first report (for single report case)
     const firstReport = reports[0];

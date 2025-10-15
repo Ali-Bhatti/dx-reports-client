@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import type { Report, ReportVersion, Company, User, ReportStatistics, ApiResponse, PaginatedResponse, LinkedPage } from '../types'
+import type { Report, ReportVersion, Company, ReportStatistics, ApiResponse, PaginatedResponse, LinkedPage } from '../types'
 import config from '../config/config';
 
 // API Configuration

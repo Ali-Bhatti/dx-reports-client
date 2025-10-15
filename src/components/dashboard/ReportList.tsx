@@ -82,7 +82,7 @@ export default function ReportsList() {
       dispatch(setCurrentCompany(Number(savedCompanyId)));
     }
 
-    if((currentCompany === null || !currentCompany) && query !== '') {
+    if ((currentCompany === null || !currentCompany) && query !== '') {
       dispatch(setQuery(''));
     }
   }, [dispatch, currentCompany]);
