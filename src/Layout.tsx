@@ -12,7 +12,7 @@ const Layout = () => {
     <div className="min-h-screen bg-neutral-100">
       {isAuthenticated && <Header />}
       <ProtectedRoute>
-        <div className="p-2 sm:p-5 sm:px-25">
+        <div className="p-2 md:p-5 md:px-8 lg:px-25">
           <Outlet />
         </div>
       </ProtectedRoute>

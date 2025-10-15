@@ -100,7 +100,7 @@ export default function BaseModal(props: BaseModalProps) {
             {...rest}
             title={kendoTitle}
             style={{ ...dialogStyle }}
-            width={customWidth || dialogDimensions.w}
+            width={!isMobile ? customWidth || dialogDimensions.w : dialogDimensions.w}
             {...heightProps}
         >
             {bodyContent && (

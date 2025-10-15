@@ -81,6 +81,10 @@ export default function ReportsList() {
     if (savedCompanyId && !currentCompany) {
       dispatch(setCurrentCompany(Number(savedCompanyId)));
     }
+
+    if((currentCompany === null || !currentCompany) && query !== '') {
+      dispatch(setQuery(''));
+    }
   }, [dispatch, currentCompany]);
 
   const {
@@ -294,6 +298,23 @@ export default function ReportsList() {
     if (!gridRef.current) return;
     const filterModel = gridRef.current.getFilterModel();
     setHasActiveFilters(Object.keys(filterModel).length > 0);
+
+    // Check if selected report is still visible after filter
+    if (selectedReportId) {
+      const rowNode = gridRef.current.getRowNode(String(selectedReportId));
+
+      // If row doesn't exist or is filtered out
+      if (!rowNode || !rowNode.displayed) {
+        // Clear the selected report and its version history
+        dispatch(setSelectedReportId(null));
+        dispatch(setSelectedReport(null));
+        console.log('Selected report filtered out, clearing selection');
+      } else {
+        // Row is visible, scroll to it
+        gridRef.current.ensureIndexVisible(rowNode.rowIndex!, 'middle');
+        console.log('Scrolling to selected report');
+      }
+    }
   };
 
   // Modal handlers
@@ -430,7 +451,7 @@ export default function ReportsList() {
               disabled={!hasActiveFilters}
               className="whitespace-nowrap"
             >
-              <span className="hidden sm:inline">Clear All Filters</span>
+              <span className="sm:inline">Clear All Filters</span>
             </BaseButton>
           </div>
 

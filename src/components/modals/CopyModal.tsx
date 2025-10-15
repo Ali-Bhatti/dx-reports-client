@@ -151,6 +151,7 @@ export default function CopyModal({
                         </label>
                         <CompanySelector
                             onCompanyChange={handleCompanyChange}
+                            restoreSavedCompany={true}
                         />
                         <p className="text-xs text-gray-500 mt-2 flex items-center gap-1.5">
                             <SvgIcon icon={infoCircleIcon} className="text-gray-400 flex-shrink-0" size="small" />
