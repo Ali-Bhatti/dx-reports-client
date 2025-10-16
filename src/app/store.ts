@@ -16,6 +16,7 @@ export const store = configureStore({
           'notifications/addNotification',
           'notifications/showNotification',
         ],
+        ignoredPaths: ['reportsApi.mutations', 'reportsApi.queries'],
       },
     }).concat(reportsApi.middleware),
 });

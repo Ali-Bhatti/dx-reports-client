@@ -361,6 +361,9 @@ export default function ReportsList() {
 
       setDeleteModal({ isOpen: false, reportId: null, isMultiple: false });
 
+      dispatch(setSelectedReportId(null));
+      dispatch(setSelectedReport(null));
+
       if (deleteModal.isMultiple) {
         dispatch(clearSelectedReportIds());
       }

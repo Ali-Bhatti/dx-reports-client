@@ -11,14 +11,6 @@ interface ReportsState {
   selectedReportIds: number[];
   currentCompany: number | null;
   query: string;
-  reportsPagination: {
-    skip: number;
-    take: number;
-  };
-  versionsPagination: {
-    skip: number;
-    take: number;
-  };
   loading: boolean;
   error: string | null;
   selectedVersionIds: number[];
@@ -33,8 +25,6 @@ const initialState: ReportsState = {
   selectedReportIds: [],
   currentCompany: null,
   query: '',
-  reportsPagination: { skip: 0, take: 10 },
-  versionsPagination: { skip: 0, take: 10 },
   error: null,
   selectedVersionIds: [],
   loading: false,
@@ -51,15 +41,12 @@ const reportsSlice = createSlice({
       state.currentCompany = action.payload;
       state.selectedReportId = null;
       state.selectedReportIds = [];
-      state.reportsPagination.skip = 0;
     },
     setQuery: (state, action: PayloadAction<string>) => {
       state.query = action.payload;
-      state.reportsPagination.skip = 0;
     },
     setSelectedReportId: (state, action: PayloadAction<number | null>) => {
       state.selectedReportId = action.payload;
-      state.versionsPagination.skip = 0;
     },
     setSelectedReport: (state, action: PayloadAction<ReportRow | null>) => {
       state.selectedReport = action.payload;
@@ -80,12 +67,6 @@ const reportsSlice = createSlice({
     },
     clearSelectedReportIds: (state) => {
       state.selectedReportIds = [];
-    },
-    setReportsPagination: (state, action: PayloadAction<{ skip: number; take: number }>) => {
-      state.reportsPagination = action.payload;
-    },
-    setVersionsPagination: (state, action: PayloadAction<{ skip: number; take: number }>) => {
-      state.versionsPagination = action.payload;
     },
     setSelectedVersionIds: (state, action: PayloadAction<number[]>) => {
       state.selectedVersionIds = action.payload;
@@ -123,8 +104,6 @@ export const {
   addSelectedReportId,
   removeSelectedReportId,
   clearSelectedReportIds,
-  setReportsPagination,
-  setVersionsPagination,
   setSelectedVersionIds,
   addSelectedVersionId,
   removeSelectedVersionId,

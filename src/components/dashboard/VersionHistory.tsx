@@ -63,7 +63,7 @@ export default function VersionHistory() {
     const selectedReport = useSelector(selectReportSelected);
     const selectedReportIds = useSelector(selectSelectedReportIds);
     const currentCompany = useSelector(selectCurrentCompany);
-    const selectedReportId = selectedReport?.id || null;
+    const selectedReportId = useMemo(() => selectedReport?.id || null, [selectedReport]);
 
 
     const {
@@ -86,11 +86,13 @@ export default function VersionHistory() {
 
     // Transform API response
     const versions = useMemo(() => {
-        if (!versionsResponse || !currentCompany || versionsError || !selectedReportId) return [];
+        // Return empty array if no report is selected (even if cache exists)
+        if (!selectedReportId) return [];
+        if (!versionsResponse) return [];
+        if (!currentCompany || versionsError) return [];
         if (selectedReportIds.length > 1) return [];
 
         return versionsResponse.map(version => {
-
             return {
                 ...version,
                 reportLayoutID: version.reportLayoutID || version?.reportId,

@@ -78,4 +78,5 @@ export interface LinkedPage {
     pageId: number;
     name: string;
     isLinked: boolean;
+    pageTitle?: string;
 }

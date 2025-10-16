@@ -139,7 +139,7 @@ export default function LinkModal({
                                             onChange={() => handlePageToggle(page.pageId)}
                                             className="rounded border-gray-300"
                                         />
-                                        <span>{page.name}</span>
+                                        <span>{page.pageTitle}</span>
                                     </label>
                                 ))}
                             </>
