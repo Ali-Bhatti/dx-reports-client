@@ -72,7 +72,7 @@ const VersionHistoryActionsRenderer = ({
                 title="Edit"
                 onClick={handleEditClick}
             />
-            {!row.isDefault && (
+            {!row.isDefault && !row.isPublished && (
                 <ActionButton
                     icon={trashIcon}
                     title="Delete"

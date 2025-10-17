@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Input } from '@progress/kendo-react-inputs';
 import BaseModal from '../shared/BaseModal';
 import BaseButton from '../shared/BaseButton';
 import BaseLoader from '../shared/BaseLoader';
@@ -25,6 +26,7 @@ export default function LinkModal({
 }: LinkModalProps) {
     const [selectedPageIds, setSelectedPageIds] = useState<number[]>([]);
     const [selectAll, setSelectAll] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Initialize selected pages with already linked pages
     useEffect(() => {
@@ -39,29 +41,60 @@ export default function LinkModal({
         if (!isOpen) {
             setSelectedPageIds([]);
             setSelectAll(false);
+            setSearchQuery('');
         }
     }, [isOpen]);
+
+    const filteredPages = useMemo(() => {
+        if (!searchQuery.trim()) {
+            return pages;
+        }
+        return pages.filter(page =>
+            page.pageTitle?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [pages, searchQuery]);
+
+    useEffect(() => {
+        if (filteredPages.length > 0) {
+            const allFilteredSelected = filteredPages.every(page =>
+                selectedPageIds.includes(page.pageId)
+            );
+            setSelectAll(allFilteredSelected);
+        } else {
+            setSelectAll(false);
+        }
+    }, [filteredPages, selectedPageIds]);
 
     const handlePageToggle = (pageId: number) => {
         setSelectedPageIds(prev => {
             const newPageIds = prev.includes(pageId)
                 ? prev.filter(id => id !== pageId)
                 : [...prev, pageId];
-
-            // Update selectAll state based on selection
-            setSelectAll(newPageIds.length === pages.length);
             return newPageIds;
         });
     };
 
     const handleSelectAll = () => {
         if (selectAll) {
-            setSelectedPageIds([]);
-            setSelectAll(false);
+            setSelectedPageIds(prev =>
+                prev.filter(id => !filteredPages.some(p => p.pageId === id))
+            );
         } else {
-            setSelectedPageIds(pages.map(p => p.pageId));
-            setSelectAll(true);
+            setSelectedPageIds(prev => {
+                const filteredPageIds = filteredPages.map(p => p.pageId);
+                const newIds = [...prev];
+                filteredPageIds.forEach(id => {
+                    if (!newIds.includes(id)) {
+                        newIds.push(id);
+                    }
+                });
+                return newIds;
+            });
         }
+    };
+
+    const handleSearchChange = (e: { value?: string }) => {
+        setSearchQuery(e.value || '');
     };
 
     const handleConfirm = () => {
@@ -129,19 +162,36 @@ export default function LinkModal({
                                     <span>Select All</span>
                                 </label>
 
+                                <div className="py-2">
+                                    <Input
+                                        placeholder="Search pages..."
+                                        value={searchQuery}
+                                        onChange={handleSearchChange}
+                                        className="w-full"
+                                    />
+                                </div>
+
                                 <hr className="border-gray-200" />
 
-                                {pages.map((page) => (
-                                    <label key={page.pageId} className="flex items-center space-x-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedPageIds.includes(page.pageId)}
-                                            onChange={() => handlePageToggle(page.pageId)}
-                                            className="rounded border-gray-300"
-                                        />
-                                        <span>{page.pageTitle}</span>
-                                    </label>
-                                ))}
+                                <div className="max-h-64 overflow-y-auto space-y-2">
+                                    {filteredPages.length > 0 ? (
+                                        filteredPages.map((page) => (
+                                            <label key={page.pageId} className="flex items-center space-x-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedPageIds.includes(page.pageId)}
+                                                    onChange={() => handlePageToggle(page.pageId)}
+                                                    className="rounded border-gray-300"
+                                                />
+                                                <span>{page.pageTitle}</span>
+                                            </label>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-4 text-gray-500 text-sm">
+                                            No pages found matching "{searchQuery}"
+                                        </div>
+                                    )}
+                                </div>
                             </>
                         )}
                     </div>
