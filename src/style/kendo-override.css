@@ -233,7 +233,8 @@ body,
     justify-content: center !important;
 }
 
-/* LinkModal page row styling
+/* LinkModal page row styling */
+.page-row:hover{
     background-color: var(--fg-row-select);
 }
 
