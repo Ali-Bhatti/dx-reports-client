@@ -27,6 +27,9 @@ html {
   --color-field: var(--fg-bg-fields);
   --color-fg-green: var(--fg-green);
   --color-fg-red: var(--fg-dark-red);
+  --color-fg-row-select-primary: var(--fg-row-select-primary);
+  --color-fg-row-select: var(--fg-row-select);
+  --color-fg-row-hover: var(--fg-row-hover);
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, Segoe UI,
                Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }

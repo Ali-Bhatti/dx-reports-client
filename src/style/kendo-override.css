@@ -160,10 +160,10 @@ body,
 /* AG Grid Minimal Styling - FIXED VERSION */
 .ag-theme-quartz {
     --ag-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    /* --ag-row-hover-color: #F9FAFC; */
+    /* --ag-row-hover-color: #F9FAFC; 
+    --ag-selected-row-background-color1: #c8e6c9;*/
     --ag-row-hover-color: #d3ebd43a;
-    --ag-selected-row-background-color1: #c8e6c9;
-    --ag-selected-row-background-color: #c8e6c971;
+    --ag-selected-row-background-color: var(--fg-row-select);
     --ag-cell-horizontal-padding: 10px;
     --ag-header-background-color: #2fbfcc3a;
     --ag-cell-focus-border-color: transparent;
@@ -189,11 +189,11 @@ body,
 
 /* Custom row highlighting (not selection) */
 .ag-theme-quartz .ag-row[style*="background-color: rgb(200, 230, 201)"] {
-    background-color: #c8e6c971 !important;
+    background-color: var(--fg-row-select) !important;
 }
 
 .ag-theme-quartz .ag-row[style*="background-color: rgb(200, 230, 201)"]:hover {
-    background-color: #c8e6c9B3 !important;
+    background-color: var(--fg-row-hover) !important;
 }
 
 .ag-overlay-loading-wrapper {
@@ -231,4 +231,21 @@ body,
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+}
+
+/* LinkModal page row styling
+    background-color: var(--fg-row-select);
+}
+
+.page-row:has(.k-checkbox-wrap input:checked) {
+    background-color: var(--fg-row-hover);
+}
+
+.page-row:has(.k-checkbox-wrap input:checked):hover {
+    background-color: var(--fg-row-hover);
+}
+
+/* Selected row border styling */
+.page-row:has(.k-checkbox-wrap input:checked).border-b {
+    border-bottom-color: var(--fg-row-hover);
 }
