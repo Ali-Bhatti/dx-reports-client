@@ -42,6 +42,8 @@ import {
   selectSelectedReportIds,
 } from '../../features/reports/reportsSelectors';
 
+import { selectCurrentEnvironment } from '../../features/app/appSelectors';
+
 import {
   copyIcon,
   trashIcon,
@@ -69,6 +71,7 @@ export default function ReportsList() {
   const query = useSelector(selectQuery);
   const selectedReportId = useSelector(selectSelectedReportId);
   const selectedReportIds = useSelector(selectSelectedReportIds);
+  const currentEnvironment = useSelector(selectCurrentEnvironment);
 
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
   const [copyModal, setCopyModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
@@ -413,7 +416,14 @@ export default function ReportsList() {
       <BaseCard dividers={false}>
         <BaseCard.Header>
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <CompanySelector onCompanyChange={handleCompanyChange} restoreSavedCompany={true} className="flex-1 sm:flex-initial" />
+            <CompanySelector
+              onCompanyChange={handleCompanyChange}
+              restoreSavedCompany={true}
+              className="flex-1 sm:flex-initial"
+              showEnvironmentMessage={!currentEnvironment}
+              disabled={!currentEnvironment}
+              currentEnvironment={currentEnvironment}
+            />
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {false && (<BaseButton

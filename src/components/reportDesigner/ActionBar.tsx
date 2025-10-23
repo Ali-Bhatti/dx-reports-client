@@ -150,16 +150,16 @@ function ActionBar({ isLoading = false, isDesignerModified = false, onSave, onDo
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm text-gray-500 gap-2">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:space-x-4">
                                 <span className="truncate">
-                                    <span className="font-medium">CreatedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedReport.createdOn)}
+                                    <span className="font-medium">CreatedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedReport.creationDate)}
                                 </span>
-                                {selectedReport.modifiedOn && (
+                                {selectedReport.modificationDate && (
                                     <span className="truncate">
-                                        <span className="font-medium">ModifiedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedReport.modifiedOn)}
+                                        <span className="font-medium">ModifiedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedReport.modificationDate)}
                                     </span>
                                 )}
-                                {selectedReport.modifiedBy && (
+                                {selectedReport.editorId && (
                                     <span className="truncate">
-                                        <span className="font-medium">ModifiedBy:</span> {selectedReport.modifiedBy}
+                                        <span className="font-medium">ModifiedBy:</span> {selectedReport.editorId}
                                     </span>
                                 )}
                             </div>

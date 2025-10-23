@@ -6,6 +6,8 @@ import AuthButton from '../auth/AuthButton';
 import { EnvironmentSelector } from '../dashboard/EnvironmentSelector';
 import { useAppDispatch } from '../../app/hooks';
 import { setCurrentEnvironment, clearCurrentEnvironment } from '../../features/app/appSlice';
+import { resetReportState } from '../../features/reports/reportsSlice';
+import { reportsApi } from '../../services/report';
 import type { Environment } from '../../types';
 
 // Default User type for the component
@@ -27,6 +29,13 @@ export const Header = ({
   const dispatch = useAppDispatch();
 
   const handleEnvironmentChange = (environment: Environment | null) => {
+    dispatch(resetReportState());
+
+    localStorage.removeItem('selectedCompanyId');
+
+    // Reset the entire API state to clear all cached data
+    dispatch(reportsApi.util.resetApiState());
+
     if (environment) {
       localStorage.setItem('selectedEnvironment', JSON.stringify(environment));
       dispatch(setCurrentEnvironment(environment));

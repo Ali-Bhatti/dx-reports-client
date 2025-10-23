@@ -1,4 +1,6 @@
+import { useSelector } from 'react-redux';
 import { useGetCompaniesQuery } from '../services/report';
+import { selectCurrentEnvironment } from '../features/app/appSelectors';
 import type { Company } from '../types';
 
 interface UseCompaniesReturn {
@@ -9,16 +11,20 @@ interface UseCompaniesReturn {
 }
 
 export const useCompanies = (): UseCompaniesReturn => {
+    const currentEnvironment = useSelector(selectCurrentEnvironment);
+
     const {
         data: companies = [],
         isLoading,
         isError,
         error,
         refetch,
-    } = useGetCompaniesQuery();
+    } = useGetCompaniesQuery(undefined, {
+        skip: !currentEnvironment,
+    });
 
     return {
-        companies,
+        companies: currentEnvironment ? companies : [],
         loading: isLoading,
         error: isError ? (error as any)?.message || 'Failed to fetch companies' : null,
         refetch: () => refetch(),

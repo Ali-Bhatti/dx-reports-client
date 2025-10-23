@@ -3,9 +3,10 @@
 export interface Report {
     id: string | number;
     reportName: string;
-    createdOn?: string;
-    modifiedOn?: string;
-    modifiedBy?: string;
+    creationDate?: string;
+    modificationDate?: string;
+    editorId?: string | number | null;
+    creatorId?: string | number | null;
     merged: boolean;
     companyId: string | number;
     renderWhenNoData?: boolean;
@@ -16,10 +17,10 @@ export interface ReportVersion {
     reportId?: string | number;
     reportLayoutID?: string | number;
     version: string | number;
-    createdOn: string;
-    createdBy?: string;
-    modifiedOn?: string | null;
-    modifiedBy?: string;
+    creationDate: string;
+    creatorId?: string | number | null;
+    modificationDate?: string | null;
+    editorId?: string | number | null;
     isPublished: boolean;
     isDefault: boolean;
     content?: any;

@@ -92,7 +92,7 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
                             id: result.version_id,
                             version: result.version,
                             reportLayoutID,
-                            createdOn: moment().toISOString(),
+                            creationDate: moment().toISOString(),
                             isPublished: false,
                             isDefault: false,
                         }

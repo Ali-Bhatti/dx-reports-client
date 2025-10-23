@@ -200,7 +200,7 @@ export default function CopyModal({
                                         {selectedVersion && (
                                             <p className="text-xs text-gray-500 mt-1.5">
                                                 {selectedVersion.isPublished && '✓ Published • '}
-                                                Created: {new Date(selectedVersion.createdOn).toLocaleDateString()}
+                                                Created: {new Date(selectedVersion.creationDate).toLocaleDateString()}
                                             </p>
                                         )}
                                     </div>

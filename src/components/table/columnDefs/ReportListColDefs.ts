@@ -24,7 +24,7 @@ export const getReportListColumnDefs = ({
   },
   {
     headerName: 'Creation Date',
-    field: 'createdOn',
+    field: 'creationDate',
     flex: 1,
     minWidth: 140,
     valueFormatter: (params) => { 
@@ -34,23 +34,17 @@ export const getReportListColumnDefs = ({
   },
   {
     headerName: 'Modified On',
-    field: 'modifiedOn',
+    field: 'modificationDate',
     flex: 1,
     minWidth: 140,
-    valueFormatter: (params) => { 
-      if(!params.value) return '--';
-      return formatDateTime(params.value);
-    },
+    valueFormatter: (params) => formatDateTime(params.value, "--"),
   },
   {
     headerName: 'Modified By',
-    field: 'modifiedBy',
+    field: 'editorId',
     flex: 1,
     minWidth: 140,
-    valueFormatter: (params) => { 
-      if(!params.value) return '--';
-      return params.value;
-    },
+    valueFormatter: (params) => formatDateTime(params.value, "--"),
   },
   {
     headerName: 'Migrated',
