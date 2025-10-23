@@ -31,6 +31,11 @@ export interface Company {
     status?: string;
     licenseInfo?: string;
 }
+export interface Environment {
+    id: number;
+    name: string;
+    url: string;
+}
 
 export interface User {
     id: string;
@@ -79,4 +84,8 @@ export interface LinkedPage {
     name: string;
     isLinked: boolean;
     pageTitle?: string;
+}
+
+export interface AppState {
+    currentEnvironment: number | null;
 }

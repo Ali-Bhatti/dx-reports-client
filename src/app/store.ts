@@ -1,10 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import reportsReducer from '../features/reports/reportsSlice';
 import notificationsReducer from '../features/notifications/notificationsSlice';
+import appReducer from '../features/app/appSlice';
 import { reportsApi } from '../services/report'
 
 export const store = configureStore({
   reducer: {
+    app: appReducer,
     reports: reportsReducer,
     notifications: notificationsReducer,
     [reportsApi.reducerPath]: reportsApi.reducer,

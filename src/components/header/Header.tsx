@@ -3,6 +3,10 @@ import { gearIcon, homeIcon } from '@progress/kendo-svg-icons';
 import { SvgIcon } from '@progress/kendo-react-common';
 import BaseButton from '../shared/BaseButton';
 import AuthButton from '../auth/AuthButton';
+import { EnvironmentSelector } from '../dashboard/EnvironmentSelector';
+import { useAppDispatch } from '../../app/hooks';
+import { setCurrentEnvironment, clearCurrentEnvironment } from '../../features/app/appSlice';
+import type { Environment } from '../../types';
 
 // Default User type for the component
 interface User {
@@ -20,6 +24,17 @@ interface HeaderProps {
 export const Header = ({
   onSettingsClick = () => console.log('Settings clicked'),
 }: HeaderProps) => {
+  const dispatch = useAppDispatch();
+
+  const handleEnvironmentChange = (environment: Environment | null) => {
+    if (environment) {
+      localStorage.setItem('selectedEnvironmentId', String(environment.id));
+      dispatch(setCurrentEnvironment(Number(environment.id)));
+    } else {
+      localStorage.removeItem('selectedEnvironmentId');
+      dispatch(clearCurrentEnvironment());
+    }
+  };
   return (
     <header className="bg-white border-b border-gray-200 px-3 sm:px-6 py-3">
       <div className="flex items-center justify-between max-w-full gap-2">
@@ -37,7 +52,13 @@ export const Header = ({
             FleetGO
           </span>
 
-          <nav className="sm:pl-6">
+          <EnvironmentSelector
+            onEnvironmentChange={handleEnvironmentChange}
+            restoreSavedEnvironment={true}
+            className="w-24 sm:w-30 lg:w-50"
+          />
+
+          <nav className="sm:block sm:pl-4 sm:border-l sm:border-gray-200">
             <a
               href="/"
               className="px-2 sm:px-4 py-2 fg-primary hover:fg-primary:hover font-medium transition-colors rounded-md hover:bg-gray-50 flex items-center gap-2"

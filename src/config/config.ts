@@ -1,3 +1,11 @@
+import type { Environment } from '../types';
+
+export const environments: Environment[] = [
+    { id: 1, name: 'DEV', url: 'https://et-etrans-svc-reporting-dev-app.azurewebsites.net/' },
+    { id: 2, name: 'UAT', url: '' },
+    { id: 3, name: 'PROD', url: '' }
+];
+
 const config = {
     apiBaseUrl: String(import.meta.env.VITE_API_BASE_URL || 'https://localhost:7074/'),
     timeout: 5000,
