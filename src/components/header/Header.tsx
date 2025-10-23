@@ -21,10 +21,12 @@ interface HeaderProps {
   user?: User;
   onSettingsClick?: () => void;
   onUserClick?: () => void;
+  disableEnvironmentSelector?: boolean;
 }
 
 export const Header = ({
   onSettingsClick = () => console.log('Settings clicked'),
+  disableEnvironmentSelector = false,
 }: HeaderProps) => {
   const dispatch = useAppDispatch();
 
@@ -65,6 +67,7 @@ export const Header = ({
             onEnvironmentChange={handleEnvironmentChange}
             restoreSavedEnvironment={true}
             className="w-24 sm:w-30 lg:w-50"
+            disabled={disableEnvironmentSelector}
           />
 
           <nav className="sm:block sm:pl-4 sm:border-l sm:border-gray-200">
