@@ -139,7 +139,7 @@ export default function LinkModal({
                         <strong>Report Name:</strong> {reportName}
                     </div>
 
-                    <div className="border border-gray-300 rounded overflow-hidden">
+                    <div className="border border-gray-300 rounded-xl overflow-hidden">
                         {isLoading ? (
                             <div className="flex flex-col items-center justify-center py-8">
                                 <BaseLoader
@@ -179,7 +179,7 @@ export default function LinkModal({
                                             placeholder="Search pages..."
                                             value={searchQuery}
                                             onChange={handleSearchChange}
-                                            className="w-full pl-10 pr-10 h-10 text-sm"
+                                            className="w-full pl-10 pr-10 h-10 text-sm !rounded-lg"
                                         />
                                         {searchQuery && (
                                             <div className="absolute inset-y-0 right-0 flex items-center pr-2">

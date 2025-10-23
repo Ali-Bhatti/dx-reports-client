@@ -142,7 +142,7 @@ export default function CopyModal({
             customWidth={500}
             body={
                 <div className="space-y-6">
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                         <label className="block text-sm font-semibold text-gray-900 mb-3">
                             Destination Company <span className="text-red-500">*</span>
                         </label>
@@ -206,7 +206,7 @@ export default function CopyModal({
                                     </div>
 
                                     {/* Render Options */}
-                                    <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                                    <div className="bg-blue-50 p-3 rounded-xl border border-blue-200">
                                         <div className="flex items-center gap-2">
                                             <Checkbox
                                                 checked={currentReport.RenderWhenNoData}
@@ -225,14 +225,14 @@ export default function CopyModal({
                             </div>
                         </div>
                     ) : isMultiple && reports.length > 0 ? (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                             <div className="flex items-start gap-3">
                                 <SvgIcon icon={infoCircleIcon} className="text-blue-600 mt-0.5" />
                                 <div className="flex-1">
                                     <p className="text-sm font-semibold text-blue-900 mb-2">
                                         Copying {reports.length} Report{reports.length > 1 ? 's' : ''}
                                     </p>
-                                    <div className="bg-white rounded border border-blue-200 p-3 mb-3 max-h-32 overflow-y-auto">
+                                    <div className="bg-white rounded-lg border border-blue-200 p-3 mb-3 max-h-32 overflow-y-auto">
                                         <ul className="space-y-1.5">
                                             {reports.map((report) => (
                                                 <li key={report.id} className="text-sm text-gray-700 flex items-center gap-2">
