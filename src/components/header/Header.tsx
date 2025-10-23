@@ -28,10 +28,10 @@ export const Header = ({
 
   const handleEnvironmentChange = (environment: Environment | null) => {
     if (environment) {
-      localStorage.setItem('selectedEnvironmentId', String(environment.id));
-      dispatch(setCurrentEnvironment(Number(environment.id)));
+      localStorage.setItem('selectedEnvironment', JSON.stringify(environment));
+      dispatch(setCurrentEnvironment(environment));
     } else {
-      localStorage.removeItem('selectedEnvironmentId');
+      localStorage.removeItem('selectedEnvironment');
       dispatch(clearCurrentEnvironment());
     }
   };

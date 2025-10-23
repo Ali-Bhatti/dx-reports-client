@@ -1,25 +1,44 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query'
 import type { Report, ReportVersion, Company, ReportStatistics, ApiResponse, PaginatedResponse, LinkedPage } from '../types'
+import type { RootState } from '../app/store'
 import config from '../config/config';
 
 // API Configuration
 const API_BASE_URL = config.apiBaseUrl;
 
-// Custom base query with your existing request logic
-const customBaseQuery = fetchBaseQuery({
-    baseUrl: `${API_BASE_URL}api/report/`,
-    prepareHeaders: (headers) => {
-        headers.set('Content-Type', 'application/json')
-        // Add authentication headers here
-        // headers.set('Authorization', `Bearer ${getToken()}`)
-        return headers
-    },
-    // Transform response to match your ApiResponse structure
-    responseHandler: async (response) => {
-        const data = await response.json()
-        return data
-    },
-})
+// Custom base query with dynamic base URL based on selected environment
+const customBaseQuery: BaseQueryFn<
+    string | FetchArgs,
+    unknown,
+    FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+    const state = api.getState() as RootState;
+    const currentEnvironment = state.app.currentEnvironment;
+
+    let baseUrl = API_BASE_URL;
+    if (currentEnvironment && currentEnvironment.url) {
+        baseUrl = currentEnvironment.url;
+    }
+
+    // Create the base query with the dynamic URL
+    const baseQuery = fetchBaseQuery({
+        baseUrl: `${baseUrl}api/report/`,
+        prepareHeaders: (headers) => {
+            headers.set('Content-Type', 'application/json')
+            // Add authentication headers here
+            // headers.set('Authorization', `Bearer ${getToken()}`)
+            return headers
+        },
+        // Transform response to match your ApiResponse structure
+        responseHandler: async (response) => {
+            const data = await response.json()
+            return data
+        },
+    });
+
+    return baseQuery(args, api, extraOptions);
+};
 
 export const reportsApi = createApi({
     reducerPath: 'reportsApi',

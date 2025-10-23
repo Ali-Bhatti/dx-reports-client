@@ -87,5 +87,5 @@ export interface LinkedPage {
 }
 
 export interface AppState {
-    currentEnvironment: number | null;
+    currentEnvironment: Environment | null;
 }

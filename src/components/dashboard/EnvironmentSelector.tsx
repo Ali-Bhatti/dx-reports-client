@@ -54,13 +54,19 @@ export const EnvironmentSelector = ({
   useEffect(() => {
     if (restoreSavedEnvironment && environments.length > 0) {
       if (!selected) {
-        const savedEnvironmentId = localStorage.getItem('selectedEnvironmentId');
-        if (savedEnvironmentId) {
-          const foundEnvironment = environments.find(e => String(e.id) === savedEnvironmentId);
-          if (foundEnvironment) {
-            setSelected(foundEnvironment);
-            setValue(foundEnvironment.name);
-            onEnvironmentChange?.(foundEnvironment);
+        const savedEnvironmentJson = localStorage.getItem('selectedEnvironment');
+        if (savedEnvironmentJson) {
+          try {
+            const savedEnvironment = JSON.parse(savedEnvironmentJson) as Environment;
+            const foundEnvironment = environments.find(e => e.id === savedEnvironment.id);
+            if (foundEnvironment) {
+              setSelected(foundEnvironment);
+              setValue(foundEnvironment.name);
+              onEnvironmentChange?.(foundEnvironment);
+            }
+          } catch (error) {
+            console.error('Failed to parse saved environment:', error);
+            localStorage.removeItem('selectedEnvironment');
           }
         }
       } else {

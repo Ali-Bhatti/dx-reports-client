@@ -27,7 +27,6 @@ import {
     SearchSettings
 } from 'devexpress-reporting-react/dx-report-viewer';
 import moment from 'moment';
-import config from '../../config/config';
 
 // import { ShowMessage, NotifyType } from '@devexpress/analytics-core/core/utils/_infoMessageHelpers';
 // import { getLocalization } from '@devexpress/analytics-core/property-grid/localization/localization_utils';
@@ -45,6 +44,7 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
     const dispatch = useDispatch();
 
     const actionContext = useSelector((state: RootState) => state.reports.actionContext);
+    const dxHost = useSelector((state: RootState) => state.app.currentEnvironment?.url);
 
     const [reportUrl, setReportUrl] = useState(
         actionContext.selectedVersion?.id
@@ -252,7 +252,7 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
                         reportUrl={String(reportUrl)}
                     >
                         <RequestOptions
-                            host={config.dxHost}
+                            host={dxHost ?? ""}
                             getDesignerModelAction="DXXRD/GetDesignerModel"
                         />
                         <Callbacks
