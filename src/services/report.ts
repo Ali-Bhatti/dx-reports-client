@@ -15,10 +15,18 @@ const customBaseQuery: BaseQueryFn<
 > = async (args, api, extraOptions) => {
     const state = api.getState() as RootState;
     const currentEnvironment = state.app.currentEnvironment;
+    const copyModalEnvironment = state.app.copyModalEnvironment;
+    const useCopyModalEnv = typeof args === 'object' && 'meta' in args && (args.meta as any)?.useCopyModalEnvironment === true;
+
+    // Determine which environment to use for the base URL
+    let environmentToUse = currentEnvironment;
+    if (useCopyModalEnv && copyModalEnvironment) {
+        environmentToUse = copyModalEnvironment;
+    }
 
     let baseUrl = API_BASE_URL;
-    if (currentEnvironment && currentEnvironment.url) {
-        baseUrl = currentEnvironment.url;
+    if (environmentToUse && environmentToUse.url) {
+        baseUrl = environmentToUse.url;
     }
 
     // Create the base query with the dynamic URL
@@ -47,8 +55,13 @@ export const reportsApi = createApi({
     endpoints: (builder) => ({
 
         // Companies API
-        getCompanies: builder.query<Company[], void>({
-            query: () => 'companies',
+        getCompanies: builder.query<Company[], { useCopyModalEnvironment?: boolean }>({
+            query: (params = {}) => ({
+                url: 'companies',
+                ...(params.useCopyModalEnvironment && {
+                    meta: { useCopyModalEnvironment: true }
+                })
+            }),
             transformResponse: (response: ApiResponse<Company[]>) => response.data,
             providesTags: ['Company'],
         }),

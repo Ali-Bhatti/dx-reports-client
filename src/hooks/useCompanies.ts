@@ -1,7 +1,7 @@
 import { useSelector } from 'react-redux';
 import { useGetCompaniesQuery } from '../services/report';
 import { selectCurrentEnvironment } from '../features/app/appSelectors';
-import type { Company } from '../types';
+import type { Company, Environment } from '../types';
 
 interface UseCompaniesReturn {
     companies: Company[];
@@ -10,8 +10,14 @@ interface UseCompaniesReturn {
     refetch: () => void;
 }
 
-export const useCompanies = (): UseCompaniesReturn => {
-    const currentEnvironment = useSelector(selectCurrentEnvironment);
+interface UseCompaniesOptions {
+    environment?: Environment | null;
+    useCopyModalEnvironment?: boolean;
+}
+
+export const useCompanies = (options?: UseCompaniesOptions): UseCompaniesReturn => {
+    const globalEnvironment = useSelector(selectCurrentEnvironment);
+    const currentEnvironment = options?.environment !== undefined ? options.environment : globalEnvironment;
 
     const {
         data: companies = [],
@@ -19,9 +25,12 @@ export const useCompanies = (): UseCompaniesReturn => {
         isError,
         error,
         refetch,
-    } = useGetCompaniesQuery(undefined, {
-        skip: !currentEnvironment,
-    });
+    } = useGetCompaniesQuery(
+        { useCopyModalEnvironment: options?.useCopyModalEnvironment || false },
+        {
+            skip: !currentEnvironment,
+        }
+    );
 
     return {
         companies: currentEnvironment ? companies : [],

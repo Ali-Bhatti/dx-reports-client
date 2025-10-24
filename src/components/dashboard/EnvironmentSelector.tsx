@@ -8,28 +8,35 @@ type Props = {
   disabled?: boolean;
   className?: string;
   restoreSavedEnvironment?: boolean;
+  selectedEnvironment?: Environment | null;
+  allowClear?: boolean;
 };
 
 export const EnvironmentSelector = ({
   onEnvironmentChange,
   disabled = false,
   className = '',
-  restoreSavedEnvironment = false
+  restoreSavedEnvironment = false,
+  selectedEnvironment,
+  allowClear = false
 }: Props) => {
   const [selected, setSelected] = useState<Environment | null>(null);
   const [value, setValue] = useState<string>('');
 
+  const currentSelected = selectedEnvironment !== undefined ? selectedEnvironment : selected;
+  const currentValue = currentSelected ? currentSelected.name : value;
+
   const filteredEnvironments = useMemo(() => {
     let filtered = environments;
 
-    if (value && value !== selected?.name) {
+    if (value && value !== currentSelected?.name) {
       filtered = filtered.filter(environment =>
         environment.name.toLowerCase().includes(value.toLowerCase())
       );
     }
 
     return filtered;
-  }, [value, selected]);
+  }, [value, currentSelected]);
 
   const handleChange = (e: AutoCompleteChangeEvent) => {
     const inputValue = e.target.value;
@@ -82,13 +89,13 @@ export const EnvironmentSelector = ({
           data={filteredEnvironments}
           textField="name"
           dataItemKey="id"
-          value={value}
+          value={currentValue}
           onChange={handleChange}
           placeholder="Select Environment"
           disabled={disabled}
           className="k-rounded-lg !h-10 flex-1 custom-autocomplete"
           suggest={false}
-          clearButton={false}
+          clearButton={allowClear}
           fillMode="outline"
         />
       </div>

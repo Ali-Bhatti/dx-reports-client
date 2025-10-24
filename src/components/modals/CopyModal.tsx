@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Input } from '@progress/kendo-react-inputs';
 import { DropDownList } from '@progress/kendo-react-dropdowns';
 import { Checkbox } from '@progress/kendo-react-inputs';
@@ -7,8 +8,11 @@ import { infoCircleIcon, fileIcon, xCircleIcon } from '@progress/kendo-svg-icons
 import BaseModal from '../shared/BaseModal';
 import BaseButton from '../shared/BaseButton';
 import CompanySelector from '../dashboard/CompanySelector';
-import { useGetReportVersionsQuery } from '../../services/report';
-import type { Company, Report, ReportVersion } from '../../types';
+import EnvironmentSelector from '../dashboard/EnvironmentSelector';
+import { useGetReportVersionsQuery, reportsApi } from '../../services/report';
+import { selectCurrentEnvironment } from '../../features/app/appSelectors';
+import { setCopyModalEnvironment } from '../../features/app/appSlice';
+import type { Company, Report, ReportVersion, Environment } from '../../types';
 
 export interface CopyReportData {
     ReportId: number;
@@ -34,6 +38,9 @@ export default function CopyModal({
     isMultiple = false,
     isLoading = false
 }: CopyModalProps) {
+    const dispatch = useDispatch();
+    const currentGlobalEnvironment = useSelector(selectCurrentEnvironment);
+    const [selectedEnvironment, setSelectedEnvironment] = useState<Environment | null>(null);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
     const [reportData, setReportData] = useState<Map<number, CopyReportData>>(new Map());
 
@@ -44,23 +51,35 @@ export default function CopyModal({
         { skip: !isOpen || !firstReport || isMultiple }
     );
 
+    // Initialize environment and report data when modal opens
     useEffect(() => {
-        if (isOpen && reports.length > 0 && reportData.size === 0) {
-            const newReportData = new Map<number, CopyReportData>();
-            reports.forEach(report => {
-                newReportData.set(Number(report.id), {
-                    ReportId: Number(report.id),
-                    ReportVersionId: 0,
-                    ReportName: report.reportName,
-                    RenderWhenNoData: report.renderWhenNoData || false
+        if (isOpen) {
+            // Set environment to current global environment ONLY on first open
+            setSelectedEnvironment(currentGlobalEnvironment);
+            dispatch(setCopyModalEnvironment(currentGlobalEnvironment));
+
+            // Initialize report data
+            if (reports.length > 0 && reportData.size === 0) {
+                const newReportData = new Map<number, CopyReportData>();
+                reports.forEach(report => {
+                    newReportData.set(Number(report.id), {
+                        ReportId: Number(report.id),
+                        ReportVersionId: 0,
+                        ReportName: report.reportName,
+                        RenderWhenNoData: report.renderWhenNoData || false
+                    });
                 });
-            });
-            setReportData(newReportData);
-        } else if (!isOpen) {
+                setReportData(newReportData);
+            }
+        } else {
+            // Clear all state when modal closes
             setReportData(new Map());
             setSelectedCompany(null);
+            setSelectedEnvironment(null);
+            dispatch(setCopyModalEnvironment(null));
         }
-    }, [isOpen, reports]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, reports]); // Removed currentGlobalEnvironment from deps to prevent re-triggering
 
     // Set the latest version when versions are loaded
     useEffect(() => {
@@ -80,6 +99,13 @@ export default function CopyModal({
             });
         }
     }, [versions, firstReport, isMultiple]);
+
+    const handleEnvironmentChange = (environment: Environment | null) => {
+        setSelectedEnvironment(environment);
+        dispatch(setCopyModalEnvironment(environment));
+        setSelectedCompany(null);
+        dispatch(reportsApi.util.invalidateTags(['Company']));
+    };
 
     const handleCompanyChange = (company: Company | null) => {
         setSelectedCompany(company);
@@ -142,13 +168,34 @@ export default function CopyModal({
             customWidth={500}
             body={
                 <div className="space-y-6">
+                    {/* Environment Selector */}
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">
+                            Destination Environment <span className="text-red-500">*</span>
+                        </label>
+                        <EnvironmentSelector
+                            onEnvironmentChange={handleEnvironmentChange}
+                            restoreSavedEnvironment={false}
+                            selectedEnvironment={selectedEnvironment}
+                        />
+                        <p className="text-xs text-gray-500 mt-2 flex items-center gap-1.5">
+                            <SvgIcon icon={infoCircleIcon} className="text-gray-400 flex-shrink-0" size="small" />
+                            <span>Select the environment for the destination company</span>
+                        </p>
+                    </div>
+
+                    {/* Company Selector */}
                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                         <label className="block text-sm font-semibold text-gray-900 mb-3">
                             Destination Company <span className="text-red-500">*</span>
                         </label>
                         <CompanySelector
                             onCompanyChange={handleCompanyChange}
-                            restoreSavedCompany={true}
+                            restoreSavedCompany={false}
+                            currentEnvironment={selectedEnvironment}
+                            disabled={!selectedEnvironment}
+                            showEnvironmentMessage={!selectedEnvironment}
+                            useCopyModalEnvironment={true}
                         />
                         <p className="text-xs text-gray-500 mt-2 flex items-center gap-1.5">
                             <SvgIcon icon={infoCircleIcon} className="text-gray-400 flex-shrink-0" size="small" />

@@ -89,4 +89,5 @@ export interface LinkedPage {
 
 export interface AppState {
     currentEnvironment: Environment | null;
+    copyModalEnvironment: Environment | null;
 }

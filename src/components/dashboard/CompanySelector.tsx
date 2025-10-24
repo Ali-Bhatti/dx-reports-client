@@ -11,6 +11,8 @@ type Props = {
   excludeCompanyIds?: number[];
   showEnvironmentMessage?: boolean;
   currentEnvironment?: Environment | null;
+  allowClear?: boolean;
+  useCopyModalEnvironment?: boolean;
 };
 
 export const CompanySelector = ({
@@ -20,9 +22,14 @@ export const CompanySelector = ({
   restoreSavedCompany = false,
   excludeCompanyIds = [],
   showEnvironmentMessage = false,
-  currentEnvironment = null
+  currentEnvironment = null,
+  allowClear = false,
+  useCopyModalEnvironment = false
 }: Props) => {
-  const { companies, loading, error } = useCompanies();
+  const { companies, loading, error } = useCompanies({
+    environment: currentEnvironment,
+    useCopyModalEnvironment
+  });
   const [selected, setSelected] = useState<Company | null>(null);
   const [value, setValue] = useState<string>('');
 
@@ -106,7 +113,7 @@ export const CompanySelector = ({
           disabled={disabled || loading}
           className="k-rounded-lg !h-10 flex-1 custom-autocomplete"
           suggest={false}
-          clearButton={false}
+          clearButton={allowClear}
           fillMode="outline"
         />
       </div>
