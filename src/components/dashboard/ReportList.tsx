@@ -82,7 +82,7 @@ export default function ReportsList() {
   const currentEnvironment = useSelector(selectCurrentEnvironment);
 
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
-  const [copyModal, setCopyModal] = useState<ReportModalsState>({ isOpen: false, reportId: null, isMultiple: false, versionId: null });
+  const [copyModal, setCopyModal] = useState<ReportModalsState>({ isOpen: false, reportId: null, isMultiple: false });
   const [deleteModal, setDeleteModal] = useState<ReportModalsState>({ isOpen: false, reportId: null, isMultiple: false });
   const [linkModal, setLinkModal] = useState<ReportModalsState>({ isOpen: false, reportId: null });
   const [copyLoadingText, setCopyLoadingText] = useState<string>('Copying...');
@@ -233,12 +233,12 @@ export default function ReportsList() {
     const newQuery = e.value;
     dispatch(setQuery(newQuery));
     // Show notification after data is loaded
-    if (newQuery && newQuery.length > 2 && !isLoadingReports) {
-      const resultCount = searchFilteredReports.length;
-      if (resultCount === 0) {
-        showNotification('warning', `No reports found matching "<strong>${newQuery}</strong>"`);
-      }
-    }
+    // if (newQuery && newQuery.length > 2 && !isLoadingReports) {
+    //   const resultCount = searchFilteredReports.length;
+    //   if (resultCount === 0) {
+    //     showNotification('warning', `No reports found matching "<strong>${newQuery}</strong>"`);
+    //   }
+    // }
   };
 
   const handleRowClicked = (e: RowClickedEvent<ReportRow>) => {
@@ -470,9 +470,9 @@ export default function ReportsList() {
     }
   };
 
-  // const tableKey = useMemo(() => {
-  //   return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}`;
-  // }, [selectedReportId, selectedReportIds.length, currentCompany]);
+  const tableKey = useMemo(() => {
+    return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}-${query}`;
+  }, [query]);
 
   return (
     <>
@@ -532,7 +532,7 @@ export default function ReportsList() {
           </div>
 
           <BaseTable<ReportRow>
-            //key={tableKey}
+            key={tableKey}
             onGridReady={onGridReady}
             rowData={searchFilteredReports}
             columnDefs={columnDefs}

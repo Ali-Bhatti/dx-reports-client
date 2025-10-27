@@ -167,6 +167,7 @@ export default function CopyModal({
                             Destination Company <span className="text-red-500">*</span>
                         </label>
                         <CompanySelector
+                            key={`company-selector-${selectedEnvironment?.id || 'none'}`}
                             onCompanyChange={handleCompanyChange}
                             restoreSavedCompany={true}
                             currentEnvironment={selectedEnvironment}

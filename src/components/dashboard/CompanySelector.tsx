@@ -26,7 +26,7 @@ export const CompanySelector = ({
   allowClear = false,
   useCopyModalEnvironment = false
 }: Props) => {
-  const { companies, loading, error, fetching } = useCompanies({
+  let { companies, loading, error, fetching } = useCompanies({
     environment: currentEnvironment,
     useCopyModalEnvironment
   });
@@ -73,7 +73,8 @@ export const CompanySelector = ({
   useEffect(() => {
     setSelected(null);
     setValue('');
-  }, [currentEnvironment?.id]);
+    onCompanyChange?.(null);
+  }, [currentEnvironment]);
 
   useEffect(() => {
     if (restoreSavedCompany && !loading && !error && companies.length > 0) {
@@ -87,7 +88,7 @@ export const CompanySelector = ({
         }
       }
     }
-  }, [companies, loading, error]);
+  }, [companies, loading, error, fetching]);
 
 
   return (
