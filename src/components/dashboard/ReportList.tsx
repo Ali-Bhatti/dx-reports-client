@@ -20,7 +20,7 @@ import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 import { getReportListColumnDefs } from '../table/columnDefs';
 import { useNotifications } from '../../hooks/useNotifications';
 
-import { useGetReportsQuery, useDeleteReportsMutation, useCopyReportsMutation, useGetLinkedPagesQuery, useSaveLinkedPagesMutation } from '../../services/report';
+import { useGetReportsQuery, useDeleteReportsMutation, useCopyReportsMutation, useGetLinkedPagesQuery, useSaveLinkedPagesMutation } from '../../services/reportsApi';
 
 import type { Company, Report as ReportRow } from '../../types';
 import type { CopyReportData } from '../modals/CopyModal';

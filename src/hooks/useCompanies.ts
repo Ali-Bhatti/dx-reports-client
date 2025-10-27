@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux';
-import { useGetCompaniesQuery } from '../services/report';
+import { useGetCompaniesQuery } from '../services/reportsApi';
 import { selectCurrentEnvironment } from '../features/app/appSelectors';
 import type { Company, Environment } from '../types';
 

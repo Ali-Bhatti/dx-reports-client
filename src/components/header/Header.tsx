@@ -7,7 +7,7 @@ import { EnvironmentSelector } from '../dashboard/EnvironmentSelector';
 import { useAppDispatch } from '../../app/hooks';
 import { setCurrentEnvironment, clearCurrentEnvironment } from '../../features/app/appSlice';
 import { resetReportState } from '../../features/reports/reportsSlice';
-import { reportsApi } from '../../services/report';
+import { reportsApi } from '../../services/reportsApi';
 import type { Environment } from '../../types';
 
 // Default User type for the component

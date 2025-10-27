@@ -42,7 +42,7 @@ import {
     useUnpublishVersionMutation,
     useDownloadReportVersionMutation,
     useDeleteReportVersionMutation,
-} from '../../services/report';
+} from '../../services/reportsApi';
 
 import {
     trashIcon,

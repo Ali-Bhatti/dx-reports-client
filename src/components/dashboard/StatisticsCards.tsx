@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux';
-import { useGetReportStatisticsQuery } from '../../services/report';
+import { useGetReportStatisticsQuery } from '../../services/reportsApi';
 import BaseCard from '../shared/BaseCard';
 import { selectCurrentCompany } from '../../features/reports/reportsSelectors';
 

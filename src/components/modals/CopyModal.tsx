@@ -9,7 +9,7 @@ import BaseModal from '../shared/BaseModal';
 import BaseButton from '../shared/BaseButton';
 import CompanySelector from '../dashboard/CompanySelector';
 import EnvironmentSelector from '../dashboard/EnvironmentSelector';
-import { useGetReportVersionsQuery } from '../../services/report';
+import { useGetReportVersionsQuery } from '../../services/reportsApi';
 import { selectCurrentEnvironment } from '../../features/app/appSelectors';
 import { setCopyModalEnvironment } from '../../features/app/appSlice';
 import type { Company, Report, Environment } from '../../types';
@@ -108,13 +108,13 @@ export default function CopyModal({
 
     const handleReportDataChange = (reportId: number, updatedData: Partial<CopyReportData>) => {
         setReportData(prev => {
-                const newData = new Map(prev);
-                const existing = newData.get(reportId);
-                if (existing) {
-                    newData.set(reportId, { ...existing, ...updatedData });
-                }
-                return newData;
-            });
+            const newData = new Map(prev);
+            const existing = newData.get(reportId);
+            if (existing) {
+                newData.set(reportId, { ...existing, ...updatedData });
+            }
+            return newData;
+        });
     };
 
     const handleConfirm = () => {
