@@ -8,6 +8,7 @@ interface UseCompaniesReturn {
     loading: boolean;
     error: string | null;
     refetch: () => void;
+    fetching: boolean;
 }
 
 interface UseCompaniesOptions {
@@ -25,8 +26,12 @@ export const useCompanies = (options?: UseCompaniesOptions): UseCompaniesReturn 
         isError,
         error,
         refetch,
+        isFetching,
     } = useGetCompaniesQuery(
-        { useCopyModalEnvironment: options?.useCopyModalEnvironment || false },
+        {
+            useCopyModalEnvironment: options?.useCopyModalEnvironment || false,
+            environmentId: currentEnvironment?.id
+        },
         {
             skip: !currentEnvironment,
         }
@@ -37,5 +42,6 @@ export const useCompanies = (options?: UseCompaniesOptions): UseCompaniesReturn 
         loading: isLoading,
         error: isError ? (error as any)?.message || 'Failed to fetch companies' : null,
         refetch: () => refetch(),
+        fetching: isFetching,
     };
 };

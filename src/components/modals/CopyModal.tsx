@@ -4,15 +4,15 @@ import { Input } from '@progress/kendo-react-inputs';
 import { DropDownList } from '@progress/kendo-react-dropdowns';
 import { Checkbox } from '@progress/kendo-react-inputs';
 import { SvgIcon } from '@progress/kendo-react-common';
-import { infoCircleIcon, fileIcon, xCircleIcon } from '@progress/kendo-svg-icons';
+import { infoCircleIcon, xCircleIcon } from '@progress/kendo-svg-icons';
 import BaseModal from '../shared/BaseModal';
 import BaseButton from '../shared/BaseButton';
 import CompanySelector from '../dashboard/CompanySelector';
 import EnvironmentSelector from '../dashboard/EnvironmentSelector';
-import { useGetReportVersionsQuery, reportsApi } from '../../services/report';
+import { useGetReportVersionsQuery } from '../../services/report';
 import { selectCurrentEnvironment } from '../../features/app/appSelectors';
 import { setCopyModalEnvironment } from '../../features/app/appSlice';
-import type { Company, Report, ReportVersion, Environment } from '../../types';
+import type { Company, Report, Environment } from '../../types';
 
 export interface CopyReportData {
     ReportId: number;
@@ -44,9 +44,8 @@ export default function CopyModal({
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
     const [reportData, setReportData] = useState<Map<number, CopyReportData>>(new Map());
 
-    // Fetch versions for the first report (for single report case)
     const firstReport = reports[0];
-    const { data: versions = [] } = useGetReportVersionsQuery(
+    const { data: versions = [], isLoading: versionsLoading, isFetching: versionsFetching } = useGetReportVersionsQuery(
         String(firstReport?.id),
         { skip: !isOpen || !firstReport || isMultiple }
     );
@@ -54,12 +53,10 @@ export default function CopyModal({
     // Initialize environment and report data when modal opens
     useEffect(() => {
         if (isOpen) {
-            // Set environment to current global environment ONLY on first open
             setSelectedEnvironment(currentGlobalEnvironment);
             dispatch(setCopyModalEnvironment(currentGlobalEnvironment));
 
-            // Initialize report data
-            if (reports.length > 0 && reportData.size === 0) {
+            if (reports.length > 0) {
                 const newReportData = new Map<number, CopyReportData>();
                 reports.forEach(report => {
                     newReportData.set(Number(report.id), {
@@ -78,18 +75,17 @@ export default function CopyModal({
             setSelectedEnvironment(null);
             dispatch(setCopyModalEnvironment(null));
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen, reports]); // Removed currentGlobalEnvironment from deps to prevent re-triggering
+    }, [isOpen]);
 
-    // Set the latest version when versions are loaded
+    // Set the latest version when versions are loaded or modal opens
     useEffect(() => {
-        if (versions.length > 0 && firstReport && !isMultiple) {
-            //const latestVersion = versions.find(v => v.isPublished) || versions[0];
+        if (isOpen && !versionsLoading && !versionsFetching && versions.length > 0 && firstReport && !isMultiple) {
             const latestVersion = versions[versions.length - 1];
             setReportData(prev => {
                 const newData = new Map(prev);
                 const existing = newData.get(Number(firstReport.id));
-                if (existing && existing.ReportVersionId === 0) {
+
+                if (existing && (existing.ReportVersionId === 0 || !existing.ReportVersionId)) {
                     newData.set(Number(firstReport.id), {
                         ...existing,
                         ReportVersionId: Number(latestVersion.id)
@@ -98,50 +94,27 @@ export default function CopyModal({
                 return newData;
             });
         }
-    }, [versions, firstReport, isMultiple]);
+    }, [isOpen, versions, firstReport, isMultiple, versionsLoading, versionsFetching]);
 
     const handleEnvironmentChange = (environment: Environment | null) => {
         setSelectedEnvironment(environment);
         dispatch(setCopyModalEnvironment(environment));
         setSelectedCompany(null);
-        dispatch(reportsApi.util.invalidateTags(['Company']));
     };
 
     const handleCompanyChange = (company: Company | null) => {
         setSelectedCompany(company);
     };
 
-    const handleReportNameChange = (reportId: number, newName: string) => {
+    const handleReportDataChange = (reportId: number, updatedData: Partial<CopyReportData>) => {
         setReportData(prev => {
-            const newData = new Map(prev);
-            const existing = newData.get(reportId);
-            if (existing) {
-                newData.set(reportId, { ...existing, ReportName: newName });
-            }
-            return newData;
-        });
-    };
-
-    const handleVersionChange = (reportId: number, version: ReportVersion) => {
-        setReportData(prev => {
-            const newData = new Map(prev);
-            const existing = newData.get(reportId);
-            if (existing) {
-                newData.set(reportId, { ...existing, ReportVersionId: Number(version.id) });
-            }
-            return newData;
-        });
-    };
-
-    const handleRenderCheckboxChange = (reportId: number, checked: boolean) => {
-        setReportData(prev => {
-            const newData = new Map(prev);
-            const existing = newData.get(reportId);
-            if (existing) {
-                newData.set(reportId, { ...existing, RenderWhenNoData: checked });
-            }
-            return newData;
-        });
+                const newData = new Map(prev);
+                const existing = newData.get(reportId);
+                if (existing) {
+                    newData.set(reportId, { ...existing, ...updatedData });
+                }
+                return newData;
+            });
     };
 
     const handleConfirm = () => {
@@ -166,6 +139,7 @@ export default function CopyModal({
             onClose={handleClose}
             size="lg"
             customWidth={500}
+            autoHeight={true}
             body={
                 <div className="space-y-6">
                     {/* Environment Selector */}
@@ -191,7 +165,7 @@ export default function CopyModal({
                         </label>
                         <CompanySelector
                             onCompanyChange={handleCompanyChange}
-                            restoreSavedCompany={false}
+                            restoreSavedCompany={true}
                             currentEnvironment={selectedEnvironment}
                             disabled={!selectedEnvironment}
                             showEnvironmentMessage={!selectedEnvironment}
@@ -217,7 +191,7 @@ export default function CopyModal({
                                         </label>
                                         <Input
                                             value={currentReport.ReportName}
-                                            onChange={(e) => handleReportNameChange(Number(firstReport.id), e.value || '')}
+                                            onChange={(e) => handleReportDataChange(Number(firstReport.id), { ReportName: e.value || '' })}
                                             className="w-full"
                                             disabled={isLoading}
                                             placeholder="Enter report name"
@@ -234,7 +208,7 @@ export default function CopyModal({
                                             textField="version"
                                             dataItemKey="id"
                                             value={selectedVersion}
-                                            onChange={(e) => handleVersionChange(Number(firstReport.id), e.value)}
+                                            onChange={(e) => handleReportDataChange(Number(firstReport.id), { ReportVersionId: Number(e.value.id) })}
                                             className="w-full"
                                             disabled={versions.length === 0 || isLoading}
                                         />
@@ -246,7 +220,7 @@ export default function CopyModal({
                                         )}
                                         {selectedVersion && (
                                             <p className="text-xs text-gray-500 mt-1.5">
-                                                {selectedVersion.isPublished && '✓ Published • '}
+                                                {selectedVersion.isPublished ? '✓ Published • ' : '✗ Unpublished • '}
                                                 Created: {new Date(selectedVersion.creationDate).toLocaleDateString()}
                                             </p>
                                         )}
@@ -258,9 +232,9 @@ export default function CopyModal({
                                             <Checkbox
                                                 checked={currentReport.RenderWhenNoData}
                                                 disabled={isLoading}
-                                                onChange={(e) => handleRenderCheckboxChange(Number(firstReport.id), e.value || false)}
+                                                onChange={(e) => handleReportDataChange(Number(firstReport.id), { RenderWhenNoData: e.value || false })}
                                             />
-                                            <label className="text-sm text-gray-900 cursor-pointer" onClick={() => !isLoading && handleRenderCheckboxChange(Number(firstReport.id), !currentReport.RenderWhenNoData)}>
+                                            <label className="text-sm text-gray-900 cursor-pointer" onClick={() => !isLoading && handleReportDataChange(Number(firstReport.id), { RenderWhenNoData: !currentReport.RenderWhenNoData })}>
                                                 Render with no Data
                                             </label>
                                         </div>
@@ -268,30 +242,6 @@ export default function CopyModal({
                                             Enable this to generate the report even when no data is available
                                         </p>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : isMultiple && reports.length > 0 ? (
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                            <div className="flex items-start gap-3">
-                                <SvgIcon icon={infoCircleIcon} className="text-blue-600 mt-0.5" />
-                                <div className="flex-1">
-                                    <p className="text-sm font-semibold text-blue-900 mb-2">
-                                        Copying {reports.length} Report{reports.length > 1 ? 's' : ''}
-                                    </p>
-                                    <div className="bg-white rounded-lg border border-blue-200 p-3 mb-3 max-h-32 overflow-y-auto">
-                                        <ul className="space-y-1.5">
-                                            {reports.map((report) => (
-                                                <li key={report.id} className="text-sm text-gray-700 flex items-center gap-2">
-                                                    <SvgIcon icon={fileIcon} className="text-blue-600" size="small" />
-                                                    {report.reportName}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                    <p className="text-xs text-blue-700">
-                                        The latest published version of each report will be copied with default settings
-                                    </p>
                                 </div>
                             </div>
                         </div>

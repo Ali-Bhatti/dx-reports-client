@@ -55,7 +55,7 @@ export const reportsApi = createApi({
     endpoints: (builder) => ({
 
         // Companies API
-        getCompanies: builder.query<Company[], { useCopyModalEnvironment?: boolean }>({
+        getCompanies: builder.query<Company[], { useCopyModalEnvironment?: boolean; environmentId?: number }>({
             query: (params = {}) => ({
                 url: 'companies',
                 ...(params.useCopyModalEnvironment && {
@@ -64,6 +64,12 @@ export const reportsApi = createApi({
             }),
             transformResponse: (response: ApiResponse<Company[]>) => response.data,
             providesTags: ['Company'],
+            serializeQueryArgs: ({ queryArgs }) => {
+                if (queryArgs.useCopyModalEnvironment && queryArgs.environmentId) {
+                    return `companies-copyModal-${queryArgs.environmentId}`;
+                }
+                return queryArgs.useCopyModalEnvironment ? 'companies-copyModal' : 'companies-main';
+            },
         }),
 
         getCompany: builder.query<Company, string>({
