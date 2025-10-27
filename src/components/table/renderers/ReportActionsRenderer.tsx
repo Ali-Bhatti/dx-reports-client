@@ -1,13 +1,9 @@
 import { type MouseEvent } from 'react';
-import { useDispatch } from 'react-redux';
 import type { ICellRendererParams } from 'ag-grid-community';
 
 import { ActionButton } from './ActionButton';
 import type { Report as ReportRow } from '../../../types';
-import {
-    setSelectedReportId,
-    clearSelectedReportIds,
-} from '../../../features/reports/reportsSlice';
+
 
 import {
     copyIcon,
@@ -27,27 +23,25 @@ const ReportActionsRenderer = ({
     onLink,
     onDelete
 }: ReportActionsRendererProps) => {
-    const dispatch = useDispatch();
     const row = data!;
+
+    // const clearSelectedRows = () => {
+    //     dispatch(clearSelectedReportIds());
+    //     dispatch(setSelectedReportId(null));
+    // }
 
     const handleCopyClick = (e: MouseEvent) => {
         e.stopPropagation();
-        dispatch(clearSelectedReportIds());
-        dispatch(setSelectedReportId(null));
         onCopy?.(Number(row.id));
     };
 
     const handleLinkClick = (e: MouseEvent) => {
         e.stopPropagation();
-        dispatch(clearSelectedReportIds());
-        dispatch(setSelectedReportId(null));
         onLink?.(Number(row.id));
     };
 
     const handleDeleteClick = (e: MouseEvent) => {
         e.stopPropagation();
-        dispatch(clearSelectedReportIds());
-        dispatch(setSelectedReportId(null));
         onDelete?.(Number(row.id));
     };
 

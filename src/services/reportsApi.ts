@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query'
-import type { Report, ReportVersion, Company, ReportStatistics, ApiResponse, PaginatedResponse, LinkedPage } from '../types'
+import type { Report, ReportVersion, Company, ReportStatistics, ApiResponse, PaginatedResponse, LinkedPage, ReportVersionDetails } from '../types'
 import type { RootState } from '../app/store'
 import config from '../config/config';
 
@@ -137,6 +137,15 @@ export const reportsApi = createApi({
             invalidatesTags: [{ type: 'Report', id: 'LIST' }],
         }),
 
+        copyReportWithMetaData: builder.mutation<{ message: string }, ReportVersionDetails>({
+            query: (reportDetails) => ({
+                url: 'copy-with-metadata',
+                method: 'POST',
+                body: reportDetails,
+            }),
+            invalidatesTags: [{ type: 'Report', id: 'LIST' }],
+        }),
+
         getLinkedPages: builder.query<LinkedPage[], string>({
             query: (reportId) => `${reportId}/linked-pages`,
             transformResponse: (response: ApiResponse<LinkedPage[]>) => response.data,
@@ -165,6 +174,29 @@ export const reportsApi = createApi({
                         { type: 'ReportVersion', id: `LIST-${reportId}` },
                     ]
                     : [{ type: 'ReportVersion', id: `LIST-${reportId}` }],
+        }),
+
+        getVersionDetails: builder.query<ReportVersionDetails, { versionId: string | number; useCopyModalEnvironment?: boolean; environmentId?: number }>({
+            query: ({ versionId, useCopyModalEnvironment }) => ({
+                url: `versions/${versionId}`,
+                ...(useCopyModalEnvironment && {
+                    meta: { useCopyModalEnvironment: false }
+                })
+            }),
+            transformResponse: (response: any) => {
+                if (response && typeof response === 'object' && 'data' in response) {
+                    return response.data;
+                }
+                return response;
+            },
+            providesTags: (_result, _error, { versionId }) => [{ type: 'ReportVersion', id: versionId }],
+            serializeQueryArgs: ({ queryArgs }) => {
+                const { versionId, useCopyModalEnvironment, environmentId } = queryArgs;
+                if (useCopyModalEnvironment && environmentId) {
+                    return `version-${versionId}-copyModal-${environmentId}`;
+                }
+                return useCopyModalEnvironment ? `version-${versionId}-copyModal` : `version-${versionId}-main`;
+            },
         }),
 
         publishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: number | string }>({
@@ -238,9 +270,11 @@ export const {
     useCopyReportsMutation,
     useGetLinkedPagesQuery,
     useSaveLinkedPagesMutation,
+    useCopyReportWithMetaDataMutation,
 
     // Report Versions
     useGetReportVersionsQuery,
+    useGetVersionDetailsQuery,
     useDownloadReportVersionMutation,
     usePublishVersionMutation,
     useUnpublishVersionMutation,

@@ -7,6 +7,7 @@ import { SvgIcon } from '@progress/kendo-react-common';
 import { infoCircleIcon, xCircleIcon } from '@progress/kendo-svg-icons';
 import BaseModal from '../shared/BaseModal';
 import BaseButton from '../shared/BaseButton';
+import BaseLoader from '../shared/BaseLoader';
 import CompanySelector from '../dashboard/CompanySelector';
 import EnvironmentSelector from '../dashboard/EnvironmentSelector';
 import { useGetReportVersionsQuery } from '../../services/reportsApi';
@@ -24,10 +25,11 @@ export interface CopyReportData {
 interface CopyModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (destinationCompany: Company, reports: CopyReportData[]) => void;
+    onConfirm: (destinationEnvironment: Environment, destinationCompany: Company, reports: CopyReportData[]) => void;
     reports?: Report[];
     isMultiple?: boolean;
     isLoading?: boolean;
+    loadingText?: string;
 }
 
 export default function CopyModal({
@@ -36,7 +38,8 @@ export default function CopyModal({
     onConfirm,
     reports = [],
     isMultiple = false,
-    isLoading = false
+    isLoading = false,
+    loadingText = ''
 }: CopyModalProps) {
     const dispatch = useDispatch();
     const currentGlobalEnvironment = useSelector(selectCurrentEnvironment);
@@ -118,9 +121,9 @@ export default function CopyModal({
     };
 
     const handleConfirm = () => {
-        if (selectedCompany) {
+        if (selectedEnvironment && selectedCompany) {
             const reportsToSubmit = Array.from(reportData.values());
-            onConfirm(selectedCompany, reportsToSubmit);
+            onConfirm(selectedEnvironment, selectedCompany, reportsToSubmit);
         }
     };
 
@@ -149,7 +152,7 @@ export default function CopyModal({
                         </label>
                         <EnvironmentSelector
                             onEnvironmentChange={handleEnvironmentChange}
-                            restoreSavedEnvironment={false}
+                            restoreSavedEnvironment={true}
                             selectedEnvironment={selectedEnvironment}
                         />
                         <p className="text-xs text-gray-500 mt-2 flex items-center gap-1.5">
@@ -242,6 +245,20 @@ export default function CopyModal({
                                             Enable this to generate the report even when no data is available
                                         </p>
                                     </div>
+
+                                    {/* Loading Indicator */}
+                                    {isLoading && (
+                                        <div className="flex flex-col items-center justify-center">
+                                            <BaseLoader
+                                                type="pulsing"
+                                                size="medium"
+                                                themeColor="primary"
+                                                loadingText={loadingText}
+                                                loadingTextSize="text-sm"
+                                                bottomPadding={false}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

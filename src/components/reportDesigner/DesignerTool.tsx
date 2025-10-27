@@ -263,9 +263,9 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
                         />
                         <DesignerModelSettings allowMDI={false}>
                             <DataSourceSettings
-                                allowAddDataSource={true}
+                                allowAddDataSource={false}
                                 allowRemoveDataSource={false}
-                                allowEditDataSource={false}
+                                allowEditDataSource={true}
                             />
                             <PreviewSettings>
                                 <WizardSettings useFullscreenWizard={false} />

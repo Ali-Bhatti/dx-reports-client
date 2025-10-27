@@ -91,3 +91,14 @@ export interface AppState {
     currentEnvironment: Environment | null;
     copyModalEnvironment: Environment | null;
 }
+
+export interface ReportVersionDetails {
+    reportLayout: Object | null;
+    layoutData: String | null;
+}
+
+export interface ReportModalsState {
+    isOpen: boolean,
+    reportId: number | null,
+    isMultiple?: boolean,
+}

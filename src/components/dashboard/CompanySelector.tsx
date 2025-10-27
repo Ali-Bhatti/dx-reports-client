@@ -26,7 +26,7 @@ export const CompanySelector = ({
   allowClear = false,
   useCopyModalEnvironment = false
 }: Props) => {
-  const { companies, loading, error } = useCompanies({
+  const { companies, loading, error, fetching } = useCompanies({
     environment: currentEnvironment,
     useCopyModalEnvironment
   });
@@ -34,6 +34,7 @@ export const CompanySelector = ({
   const [value, setValue] = useState<string>('');
 
   const filteredCompanies = useMemo(() => {
+    if (error) return [];
     let filtered = companies;
 
     if (excludeCompanyIds.length > 0) {
@@ -76,21 +77,17 @@ export const CompanySelector = ({
 
   useEffect(() => {
     if (restoreSavedCompany && !loading && !error && companies.length > 0) {
-      if (!selected) {
-        const savedCompanyId = localStorage.getItem('selectedCompanyId');
-        if (savedCompanyId) {
-          const foundCompany = companies.find(c => String(c.id) === savedCompanyId);
-          if (foundCompany) {
-            setSelected(foundCompany);
-            setValue(foundCompany.name);
-            onCompanyChange?.(foundCompany);
-          }
+      const savedCompanyId = localStorage.getItem('selectedCompanyId');
+      if (savedCompanyId) {
+        const foundCompany = companies.find(c => String(c.id) === savedCompanyId);
+        if (foundCompany) {
+          setSelected(foundCompany);
+          setValue(foundCompany.name);
+          onCompanyChange?.(foundCompany);
         }
-      } else {
-        setValue(selected.name);
       }
     }
-  }, [companies, loading, error, selected, onCompanyChange]);
+  }, [companies, loading, error]);
 
 
   return (
@@ -106,11 +103,11 @@ export const CompanySelector = ({
           placeholder={
             disabled && !loading
               ? 'Select environment first'
-              : loading
+              : loading || fetching
                 ? 'Loading companies...'
                 : 'Search or select company'
           }
-          disabled={disabled || loading}
+          disabled={disabled || loading || fetching}
           className="k-rounded-lg !h-10 flex-1 custom-autocomplete"
           suggest={false}
           clearButton={allowClear}

@@ -24,7 +24,6 @@ export const EnvironmentSelector = ({
   const [value, setValue] = useState<string>('');
 
   const currentSelected = selectedEnvironment !== undefined ? selectedEnvironment : selected;
-  const currentValue = currentSelected ? currentSelected.name : value;
 
   const filteredEnvironments = useMemo(() => {
     let filtered = environments;
@@ -60,7 +59,7 @@ export const EnvironmentSelector = ({
 
   useEffect(() => {
     if (restoreSavedEnvironment && environments.length > 0) {
-      if (!selected) {
+      
         const savedEnvironmentJson = localStorage.getItem('selectedEnvironment');
         if (savedEnvironmentJson) {
           try {
@@ -76,11 +75,9 @@ export const EnvironmentSelector = ({
             localStorage.removeItem('selectedEnvironment');
           }
         }
-      } else {
-        setValue(selected.name);
-      }
+     
     }
-  }, [selected, onEnvironmentChange, restoreSavedEnvironment]);
+  }, []);
 
   return (
     <div className={className}>
@@ -89,7 +86,7 @@ export const EnvironmentSelector = ({
           data={filteredEnvironments}
           textField="name"
           dataItemKey="id"
-          value={currentValue}
+          value={value}
           onChange={handleChange}
           placeholder="Select Environment"
           disabled={disabled}
