@@ -20,4 +20,7 @@
     --fg-dark-red: #fb2c36;
     --fg-red: #FFCDD2;
     --fg-info: #178892;
+    --fg-row-select-primary: #e0f7fa;
+    --fg-row-select: #c8e6c971;
+    --fg-row-hover: #c8e6c9B3;
 }

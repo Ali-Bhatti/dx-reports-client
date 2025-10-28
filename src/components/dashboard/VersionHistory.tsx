@@ -42,7 +42,7 @@ import {
     useUnpublishVersionMutation,
     useDownloadReportVersionMutation,
     useDeleteReportVersionMutation,
-} from '../../services/report';
+} from '../../services/reportsApi';
 
 import {
     trashIcon,
@@ -96,8 +96,8 @@ export default function VersionHistory() {
             return {
                 ...version,
                 reportLayoutID: version.reportLayoutID || version?.reportId,
-                modifiedBy: version.modifiedBy || version?.createdBy || '',
-                modifiedOn: version.modifiedOn || version?.createdOn,
+                modifiedBy: version.editorId || version?.creatorId || '',
+                modifiedOn: version.modificationDate || version?.creationDate || '',
             };
         });
     }, [versionsResponse, selectedReportId, selectedReportIds.length, currentCompany, versionsError]);

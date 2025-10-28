@@ -20,9 +20,17 @@ import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 import { getReportListColumnDefs } from '../table/columnDefs';
 import { useNotifications } from '../../hooks/useNotifications';
 
-import { useGetReportsQuery, useDeleteReportsMutation, useCopyReportsMutation, useGetLinkedPagesQuery, useSaveLinkedPagesMutation } from '../../services/report';
+import {
+  useGetReportsQuery,
+  useDeleteReportsMutation,
+  useCopyReportsMutation,
+  useGetLinkedPagesQuery,
+  useSaveLinkedPagesMutation,
+  useCopyReportWithMetaDataMutation,
+  reportsApi
+} from '../../services/reportsApi';
 
-import type { Company, Report as ReportRow } from '../../types';
+import type { Company, Report as ReportRow, Environment, ReportVersionDetails, ReportModalsState } from '../../types';
 import type { CopyReportData } from '../modals/CopyModal';
 import { pluralize } from '../../utils/pluralize';
 
@@ -41,6 +49,8 @@ import {
   selectSelectedReportId,
   selectSelectedReportIds,
 } from '../../features/reports/reportsSelectors';
+
+import { selectCurrentEnvironment } from '../../features/app/appSelectors';
 
 import {
   copyIcon,
@@ -69,11 +79,13 @@ export default function ReportsList() {
   const query = useSelector(selectQuery);
   const selectedReportId = useSelector(selectSelectedReportId);
   const selectedReportIds = useSelector(selectSelectedReportIds);
+  const currentEnvironment = useSelector(selectCurrentEnvironment);
 
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
-  const [copyModal, setCopyModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, reportId: null as number | null, isMultiple: false });
-  const [linkModal, setLinkModal] = useState({ isOpen: false, reportId: null as number | null });
+  const [copyModal, setCopyModal] = useState<ReportModalsState>({ isOpen: false, reportId: null, isMultiple: false });
+  const [deleteModal, setDeleteModal] = useState<ReportModalsState>({ isOpen: false, reportId: null, isMultiple: false });
+  const [linkModal, setLinkModal] = useState<ReportModalsState>({ isOpen: false, reportId: null });
+  const [copyLoadingText, setCopyLoadingText] = useState<string>('Copying...');
 
   // Restore selected company from localStorage on mount
   useEffect(() => {
@@ -106,6 +118,7 @@ export default function ReportsList() {
   const [deleteReports, { isLoading: isDeleting }] = useDeleteReportsMutation();
   const [copyReports, { isLoading: isCopying }] = useCopyReportsMutation();
   const [saveLinkedPages, { isLoading: isSavingLinkedPages }] = useSaveLinkedPagesMutation();
+  const [copyReportWithMetaData, { isLoading: isReportCopying }] = useCopyReportWithMetaDataMutation();
 
   const { data: linkedPages = [], isLoading: isLoadingLinkedPages, isFetching: isFetchingLinkedPages } = useGetLinkedPagesQuery(
     String(linkModal.reportId),
@@ -213,21 +226,19 @@ export default function ReportsList() {
       dispatch(setCurrentCompany(null));
     }
     // Clear selected reports when company changes
-    dispatch(setSelectedReportId(null));
-    dispatch(setSelectedReport(null));
-    dispatch(clearSelectedReportIds());
+    clearSelectedRows();
   };
 
   const handleQueryChange = (e: any) => {
     const newQuery = e.value;
     dispatch(setQuery(newQuery));
     // Show notification after data is loaded
-    if (newQuery && newQuery.length > 2 && !isLoadingReports) {
-      const resultCount = searchFilteredReports.length;
-      if (resultCount === 0) {
-        showNotification('warning', `No reports found matching "<strong>${newQuery}</strong>"`);
-      }
-    }
+    // if (newQuery && newQuery.length > 2 && !isLoadingReports) {
+    //   const resultCount = searchFilteredReports.length;
+    //   if (resultCount === 0) {
+    //     showNotification('warning', `No reports found matching "<strong>${newQuery}</strong>"`);
+    //   }
+    // }
   };
 
   const handleRowClicked = (e: RowClickedEvent<ReportRow>) => {
@@ -254,8 +265,7 @@ export default function ReportsList() {
     dispatch(setSelectedReportIds(selectedIds));
 
     if (selectedIds.length > 0) {
-      dispatch(setSelectedReportId(null));
-      dispatch(setSelectedReport(null));
+      clearSelectedRows();
     }
   };
 
@@ -293,6 +303,12 @@ export default function ReportsList() {
     }
   };
 
+  const clearSelectedRows = () => {
+    dispatch(clearSelectedReportIds());
+    dispatch(setSelectedReportId(null));
+    dispatch(setSelectedReport(null));
+  }
+
   const checkFilterState = () => {
     console.log('Checking filter state...', gridRef.current);
     if (!gridRef.current) return;
@@ -318,18 +334,24 @@ export default function ReportsList() {
   };
 
   // Modal handlers
-  const handleCopyConfirm = async (destinationCompany: Company, reportsData: CopyReportData[]) => {
+  const handleCopyConfirm = async (destinationEnvironment: Environment, destinationCompany: Company, reportsData: CopyReportData[]) => {
     try {
-      if (!currentCompany) {
+      if (!currentCompany || !destinationEnvironment) {
         showNotification('error', 'No source company selected');
         return;
       }
 
-      await copyReports({
-        destination_company_ids: [destinationCompany.id],
-        source_company_id: currentCompany,
-        reports: reportsData
-      }).unwrap();
+      setCopyLoadingText('Copying...');
+
+      if (currentEnvironment?.id == destinationEnvironment.id) {
+        await copyReports({
+          destination_company_ids: [destinationCompany.id],
+          source_company_id: currentCompany,
+          reports: reportsData
+        }).unwrap();
+      } else {
+        await copyReportAcrossEnvironments(reportsData[0], destinationCompany);
+      }
 
       const reportCount = reportsData.length;
       showNotification('success', `Successfully copied <strong>${reportCount} ${pluralize(reportCount, 'report')}</strong> to <strong>${destinationCompany.name}</strong>`);
@@ -342,8 +364,53 @@ export default function ReportsList() {
           gridRef.current.deselectAll();
         }
       }
+      clearSelectedRows();
     } catch (error: any) {
-      showNotification('error', `Failed to copy reports. Please try again. <br/> ${error?.data?.message || ''}`);
+      showNotification('error', `Failed to copy reports.<br/> ${error?.data?.message || ''}`);
+    } finally {
+      setCopyLoadingText('');
+    }
+  };
+
+  const copyReportAcrossEnvironments = async (reportData: CopyReportData, destinationCompany: Company) => {
+    try {
+      if (!reportData?.ReportVersionId) {
+        throw new Error('Report version ID is required');
+      }
+      setCopyLoadingText('Generating Report...');
+
+      const result = await dispatch(
+        reportsApi.endpoints.getVersionDetails.initiate({
+          versionId: reportData.ReportVersionId,
+          useCopyModalEnvironment: false,
+        }) as any
+      );
+
+      if (!result.data) {
+        throw new Error('Failed to fetch report version details');
+      }
+
+      const versionDetails: ReportVersionDetails = result.data;
+
+      const reportLayout = {
+        ...(versionDetails.reportLayout as any || {}),
+        reportLayoutName: reportData.ReportName,
+        companyId: destinationCompany.id,
+        renderWhenNoData: reportData.RenderWhenNoData,
+      };
+
+      const layoutData = versionDetails.layoutData || '';
+
+      setCopyLoadingText(`Copying Report to ${destinationCompany.name}`);
+
+      await copyReportWithMetaData({
+        reportLayout: reportLayout as any,
+        layoutData: layoutData as string,
+      }).unwrap();
+
+    } catch (error) {
+      console.error("Error copying report across environments:", error);
+      throw error;
     }
   };
 
@@ -361,8 +428,7 @@ export default function ReportsList() {
 
       setDeleteModal({ isOpen: false, reportId: null, isMultiple: false });
 
-      dispatch(setSelectedReportId(null));
-      dispatch(setSelectedReport(null));
+      clearSelectedRows();
 
       if (deleteModal.isMultiple) {
         dispatch(clearSelectedReportIds());
@@ -404,16 +470,23 @@ export default function ReportsList() {
     }
   };
 
-  // const tableKey = useMemo(() => {
-  //   return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}`;
-  // }, [selectedReportId, selectedReportIds.length, currentCompany]);
+  const tableKey = useMemo(() => {
+    return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}-${query}`;
+  }, [query]);
 
   return (
     <>
       <BaseCard dividers={false}>
         <BaseCard.Header>
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <CompanySelector onCompanyChange={handleCompanyChange} restoreSavedCompany={true} className="flex-1 sm:flex-initial" />
+            <CompanySelector
+              onCompanyChange={handleCompanyChange}
+              restoreSavedCompany={true}
+              className="flex-1 sm:flex-initial"
+              showEnvironmentMessage={!currentEnvironment}
+              disabled={!currentEnvironment}
+              currentEnvironment={currentEnvironment}
+            />
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {false && (<BaseButton
@@ -459,7 +532,7 @@ export default function ReportsList() {
           </div>
 
           <BaseTable<ReportRow>
-            //key={tableKey}
+            key={tableKey}
             onGridReady={onGridReady}
             rowData={searchFilteredReports}
             columnDefs={columnDefs}
@@ -486,9 +559,12 @@ export default function ReportsList() {
       {/* Modals */}
       <CopyModal
         isOpen={copyModal.isOpen}
-        onClose={() => setCopyModal({ isOpen: false, reportId: null, isMultiple: false })}
+        onClose={() => {
+          setCopyModal({ isOpen: false, reportId: null, isMultiple: false });
+          setCopyLoadingText('');
+        }}
         onConfirm={handleCopyConfirm}
-        isLoading={isCopying}
+        isLoading={isCopying || isReportCopying}
         reports={
           copyModal.isMultiple
             ? allReports.filter(r => selectedReportIds.includes(Number(r.id)))
@@ -497,6 +573,7 @@ export default function ReportsList() {
               : []
         }
         isMultiple={copyModal.isMultiple}
+        loadingText={copyLoadingText}
       />
 
       <DeleteModal

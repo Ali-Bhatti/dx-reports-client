@@ -1,26 +1,47 @@
-import { useGetCompaniesQuery } from '../services/report';
-import type { Company } from '../types';
+import { useSelector } from 'react-redux';
+import { useGetCompaniesQuery } from '../services/reportsApi';
+import { selectCurrentEnvironment } from '../features/app/appSelectors';
+import type { Company, Environment } from '../types';
 
 interface UseCompaniesReturn {
     companies: Company[];
     loading: boolean;
     error: string | null;
     refetch: () => void;
+    fetching: boolean;
 }
 
-export const useCompanies = (): UseCompaniesReturn => {
+interface UseCompaniesOptions {
+    environment?: Environment | null;
+    useCopyModalEnvironment?: boolean;
+}
+
+export const useCompanies = (options?: UseCompaniesOptions): UseCompaniesReturn => {
+    const globalEnvironment = useSelector(selectCurrentEnvironment);
+    const currentEnvironment = options?.environment !== undefined ? options.environment : globalEnvironment;
+
     const {
         data: companies = [],
         isLoading,
         isError,
         error,
         refetch,
-    } = useGetCompaniesQuery();
+        isFetching,
+    } = useGetCompaniesQuery(
+        {
+            useCopyModalEnvironment: options?.useCopyModalEnvironment || false,
+            environmentId: currentEnvironment?.id
+        },
+        {
+            skip: !currentEnvironment,
+        }
+    );
 
     return {
-        companies,
+        companies: currentEnvironment ? companies : [],
         loading: isLoading,
         error: isError ? (error as any)?.message || 'Failed to fetch companies' : null,
         refetch: () => refetch(),
+        fetching: isFetching,
     };
 };

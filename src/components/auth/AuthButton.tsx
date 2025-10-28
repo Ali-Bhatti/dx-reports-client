@@ -8,7 +8,7 @@ const AuthButton = () => {
   if (isAuthenticated && account) {
     return (
       <div className="flex items-center gap-3">
-        <span className="text-sm text-gray-500 ">
+        <span className="text-sm text-gray-500 hidden sm:inline">
           Welcome, <span className="font-bold">{account.name || account.username}</span>
         </span>
         <BaseButton

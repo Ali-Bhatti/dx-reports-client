@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux';
-import { useGetReportStatisticsQuery } from '../../services/report';
+import { useGetReportStatisticsQuery } from '../../services/reportsApi';
 import BaseCard from '../shared/BaseCard';
 import { selectCurrentCompany } from '../../features/reports/reportsSelectors';
 
@@ -14,13 +14,14 @@ const StatisticsCards = ({ onClick }: StatisticsCardsProps) => {
     const {
         data: statistics = [],
         isLoading: loading,
+        isFetching: fetching,
     } = useGetReportStatisticsQuery(
         currentCompany?.toString() || '',
         { skip: !currentCompany }
     );
 
     // Handle loading state
-    if (loading) {
+    if (loading || fetching) {
         return (
             <div className="grid grid-cols-3 gap-6 mb-6">
                 {[1, 2, 3].map((i) => (

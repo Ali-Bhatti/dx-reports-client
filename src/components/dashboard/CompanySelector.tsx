@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { AutoComplete, type AutoCompleteChangeEvent } from '@progress/kendo-react-dropdowns';
 import { useCompanies } from '../../hooks/useCompanies';
-import type { Company } from '../../types';
+import type { Company, Environment } from '../../types';
 
 type Props = {
   onCompanyChange?: (company: Company | null) => void;
@@ -9,6 +9,10 @@ type Props = {
   className?: string;
   restoreSavedCompany?: boolean;
   excludeCompanyIds?: number[];
+  showEnvironmentMessage?: boolean;
+  currentEnvironment?: Environment | null;
+  allowClear?: boolean;
+  useCopyModalEnvironment?: boolean;
 };
 
 export const CompanySelector = ({
@@ -16,13 +20,22 @@ export const CompanySelector = ({
   disabled = false,
   className = '',
   restoreSavedCompany = false,
-  excludeCompanyIds = []
+  excludeCompanyIds = [],
+  showEnvironmentMessage = false,
+  currentEnvironment = null,
+  allowClear = false,
+  useCopyModalEnvironment = false
 }: Props) => {
-  const { companies, loading, error } = useCompanies();
+  let { companies, loading, error, fetching } = useCompanies({
+    environment: currentEnvironment,
+    useCopyModalEnvironment
+  });
   const [selected, setSelected] = useState<Company | null>(null);
   const [value, setValue] = useState<string>('');
+  const previousEnvId = useRef<number | undefined>(currentEnvironment?.id);
 
   const filteredCompanies = useMemo(() => {
+    if (error) return [];
     let filtered = companies;
 
     if (excludeCompanyIds.length > 0) {
@@ -58,25 +71,29 @@ export const CompanySelector = ({
     }
   };
 
+  useEffect(() => {
+    const currentEnvId = currentEnvironment?.id;
+    if (previousEnvId.current !== undefined && previousEnvId.current !== currentEnvId) {
+      setSelected(null);
+      setValue('');
+      onCompanyChange?.(null);
+    }
+    previousEnvId.current = currentEnvId;
+  }, [currentEnvironment?.id]);
 
   useEffect(() => {
     if (restoreSavedCompany && !loading && !error && companies.length > 0) {
-      // Restore selected company from localStorage if not already selected
-      if (!selected) {
-        const savedCompanyId = localStorage.getItem('selectedCompanyId');
-        if (savedCompanyId) {
-          const foundCompany = companies.find(c => String(c.id) === savedCompanyId);
-          if (foundCompany) {
-            setSelected(foundCompany);
-            setValue(foundCompany.name);
-            onCompanyChange?.(foundCompany);
-          }
+      const savedCompanyId = localStorage.getItem('selectedCompanyId');
+      if (savedCompanyId) {
+        const foundCompany = companies.find(c => String(c.id) === savedCompanyId);
+        if (foundCompany) {
+          setSelected(foundCompany);
+          setValue(foundCompany.name);
+          onCompanyChange?.(foundCompany);
         }
-      } else {
-        setValue(selected.name);
       }
     }
-  }, [companies, loading, error, selected, onCompanyChange]);
+  }, [companies, loading, error, fetching]);
 
 
   return (
@@ -89,14 +106,26 @@ export const CompanySelector = ({
           dataItemKey="id"
           value={value}
           onChange={handleChange}
-          placeholder={loading ? 'Loading companies...' : 'Search or select company'}
-          disabled={disabled || loading}
+          placeholder={
+            disabled && !loading
+              ? 'Select environment first'
+              : loading || fetching
+                ? 'Loading companies...'
+                : 'Search or select company'
+          }
+          disabled={disabled || loading || fetching}
           className="k-rounded-lg !h-10 flex-1 custom-autocomplete"
           suggest={false}
-          clearButton={false}
+          clearButton={allowClear}
           fillMode="outline"
         />
       </div>
+
+      {showEnvironmentMessage && (
+        <div className='mt-1 text-sm text-yellow-600'>
+          <span>Select environment to fetch companies</span>
+        </div>
+      )}
 
       {error && (
         <div className='mt-1 text-sm text-fg-red'>

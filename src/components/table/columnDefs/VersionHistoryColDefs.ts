@@ -28,21 +28,21 @@ export const getVersionHistoryColumnDefs = ({
         },
         {
             headerName: 'Creation Date',
-            field: 'createdOn',
+            field: 'creationDate',
             flex: 1,
             minWidth: 140,
-            valueFormatter: (p) => formatDateTime(p.value)
+            valueFormatter: (p) => formatDateTime(p.value, "--")
         },
         {
             headerName: 'Modified On',
-            field: 'modifiedOn',
+            field: 'modificationDate',
             flex: 1,
             minWidth: 140,
-            valueFormatter: (p) => formatDateTime(p.value)
+            valueFormatter: (p) => formatDateTime(p.value, "--")
         },
         {
             headerName: 'Modified By',
-            field: 'modifiedBy',
+            field: 'editorId',
             type: 'text',
             flex: 1,
             minWidth: 120

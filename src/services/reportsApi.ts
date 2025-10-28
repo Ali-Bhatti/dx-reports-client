@@ -1,25 +1,52 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import type { Report, ReportVersion, Company, ReportStatistics, ApiResponse, PaginatedResponse, LinkedPage } from '../types'
+import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query'
+import type { Report, ReportVersion, Company, ReportStatistics, ApiResponse, PaginatedResponse, LinkedPage, ReportVersionDetails } from '../types'
+import type { RootState } from '../app/store'
 import config from '../config/config';
 
 // API Configuration
 const API_BASE_URL = config.apiBaseUrl;
 
-// Custom base query with your existing request logic
-const customBaseQuery = fetchBaseQuery({
-    baseUrl: `${API_BASE_URL}api/report/`,
-    prepareHeaders: (headers) => {
-        headers.set('Content-Type', 'application/json')
-        // Add authentication headers here
-        // headers.set('Authorization', `Bearer ${getToken()}`)
-        return headers
-    },
-    // Transform response to match your ApiResponse structure
-    responseHandler: async (response) => {
-        const data = await response.json()
-        return data
-    },
-})
+// Custom base query with dynamic base URL based on selected environment
+const customBaseQuery: BaseQueryFn<
+    string | FetchArgs,
+    unknown,
+    FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+    const state = api.getState() as RootState;
+    const currentEnvironment = state.app.currentEnvironment;
+    const copyModalEnvironment = state.app.copyModalEnvironment;
+    const useCopyModalEnv = typeof args === 'object' && 'meta' in args && (args.meta as any)?.useCopyModalEnvironment === true;
+
+    // Determine which environment to use for the base URL
+    let environmentToUse = currentEnvironment;
+    if (useCopyModalEnv && copyModalEnvironment) {
+        environmentToUse = copyModalEnvironment;
+    }
+
+    let baseUrl = API_BASE_URL;
+    if (environmentToUse && environmentToUse.url) {
+        baseUrl = environmentToUse.url;
+    }
+
+    // Create the base query with the dynamic URL
+    const baseQuery = fetchBaseQuery({
+        baseUrl: `${baseUrl}api/report/`,
+        prepareHeaders: (headers) => {
+            headers.set('Content-Type', 'application/json')
+            // Add authentication headers here
+            // headers.set('Authorization', `Bearer ${getToken()}`)
+            return headers
+        },
+        // Transform response to match your ApiResponse structure
+        responseHandler: async (response) => {
+            const data = await response.json()
+            return data
+        },
+    });
+
+    return baseQuery(args, api, extraOptions);
+};
 
 export const reportsApi = createApi({
     reducerPath: 'reportsApi',
@@ -28,10 +55,21 @@ export const reportsApi = createApi({
     endpoints: (builder) => ({
 
         // Companies API
-        getCompanies: builder.query<Company[], void>({
-            query: () => 'companies',
+        getCompanies: builder.query<Company[], { useCopyModalEnvironment?: boolean; environmentId?: number }>({
+            query: (params = {}) => ({
+                url: 'companies',
+                ...(params.useCopyModalEnvironment && {
+                    meta: { useCopyModalEnvironment: true }
+                })
+            }),
             transformResponse: (response: ApiResponse<Company[]>) => response.data,
             providesTags: ['Company'],
+            serializeQueryArgs: ({ queryArgs }) => {
+                if (queryArgs.useCopyModalEnvironment && queryArgs.environmentId) {
+                    return `companies-copyModal-${queryArgs.environmentId}`;
+                }
+                return queryArgs.useCopyModalEnvironment ? 'companies-copyModal' : 'companies-main';
+            },
         }),
 
         getCompany: builder.query<Company, string>({
@@ -99,6 +137,15 @@ export const reportsApi = createApi({
             invalidatesTags: [{ type: 'Report', id: 'LIST' }],
         }),
 
+        copyReportWithMetaData: builder.mutation<{ message: string }, ReportVersionDetails>({
+            query: (reportDetails) => ({
+                url: 'copy-with-metadata',
+                method: 'POST',
+                body: { request: reportDetails },
+            }),
+            invalidatesTags: [{ type: 'Report', id: 'LIST' }],
+        }),
+
         getLinkedPages: builder.query<LinkedPage[], string>({
             query: (reportId) => `${reportId}/linked-pages`,
             transformResponse: (response: ApiResponse<LinkedPage[]>) => response.data,
@@ -127,6 +174,29 @@ export const reportsApi = createApi({
                         { type: 'ReportVersion', id: `LIST-${reportId}` },
                     ]
                     : [{ type: 'ReportVersion', id: `LIST-${reportId}` }],
+        }),
+
+        getVersionDetails: builder.query<ReportVersionDetails, { versionId: string | number; useCopyModalEnvironment?: boolean; environmentId?: number }>({
+            query: ({ versionId, useCopyModalEnvironment }) => ({
+                url: `versions/${versionId}`,
+                ...(useCopyModalEnvironment && {
+                    meta: { useCopyModalEnvironment: false }
+                })
+            }),
+            transformResponse: (response: any) => {
+                if (response && typeof response === 'object' && 'data' in response) {
+                    return response.data;
+                }
+                return response;
+            },
+            providesTags: (_result, _error, { versionId }) => [{ type: 'ReportVersion', id: versionId }],
+            serializeQueryArgs: ({ queryArgs }) => {
+                const { versionId, useCopyModalEnvironment, environmentId } = queryArgs;
+                if (useCopyModalEnvironment && environmentId) {
+                    return `version-${versionId}-copyModal-${environmentId}`;
+                }
+                return useCopyModalEnvironment ? `version-${versionId}-copyModal` : `version-${versionId}-main`;
+            },
         }),
 
         publishVersion: builder.mutation<ReportVersion, { reportId: string; versionId: number | string }>({
@@ -200,9 +270,11 @@ export const {
     useCopyReportsMutation,
     useGetLinkedPagesQuery,
     useSaveLinkedPagesMutation,
+    useCopyReportWithMetaDataMutation,
 
     // Report Versions
     useGetReportVersionsQuery,
+    useGetVersionDetailsQuery,
     useDownloadReportVersionMutation,
     usePublishVersionMutation,
     useUnpublishVersionMutation,

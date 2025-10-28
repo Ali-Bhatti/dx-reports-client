@@ -21,7 +21,7 @@ const initialState: NotificationsState = {
 
 const NotificationDelayDefaults: Record<NotificationType, number> = {
     success: 3000,
-    error: 4000,
+    error: 4200,
     warning: 3000,
     info: 2500,
 };

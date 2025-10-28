@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import ReportDesignerTool from "../components/reportDesigner/DesignerTool";
 import BaseButton from "../components/shared/BaseButton";
-import { reportsApi } from "../services/report";
+import { reportsApi } from "../services/reportsApi";
 
 
 function ReportDesignerPage() {

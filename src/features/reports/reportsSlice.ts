@@ -90,6 +90,16 @@ const reportsSlice = createSlice({
     },
     setCompanyKPIs: (state, action: PayloadAction<ReportStatistics[]>) => {
       state.companyKPIs = action.payload;
+    },
+    resetReportState: (state) => {
+      state.currentCompany = null;
+      state.query = '';
+      state.selectedReportId = null;
+      state.selectedReport = null;
+      state.selectedReportVersion = null;
+      state.selectedReportIds = [];
+      state.selectedVersionIds = [];
+      state.actionContext = { type: null };
     }
   },
 });
@@ -110,6 +120,7 @@ export const {
   clearSelectedVersionIds,
   setActionContext,
   clearActionContext,
+  resetReportState,
 } = reportsSlice.actions;
 
 export default reportsSlice.reducer;

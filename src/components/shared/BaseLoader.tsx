@@ -3,6 +3,7 @@ import { Loader, type LoaderProps } from '@progress/kendo-react-indicators';
 interface BaseLoaderProps extends LoaderProps {
     loadingText?: string;
     loadingTextSize?: string;
+    bottomPadding?: boolean;
 }
 
 const BaseLoader = ({
@@ -10,6 +11,7 @@ const BaseLoader = ({
     size = 'medium',
     type = 'converging-spinner',
     loadingTextSize = 'text-xl',
+    bottomPadding = false,
     ...rest
 }: BaseLoaderProps) => {
     return (
@@ -20,8 +22,8 @@ const BaseLoader = ({
                 {...rest}
             />
             {loadingText && (
-                <div className="text-center mt-1">
-                    <h3 className={`${loadingTextSize} font-semibold text-gray-800 mb-3`}>
+                <div className={`text-center mt-1 ${bottomPadding ? 'mb-3' : ''}`}>
+                    <h3 className={`${loadingTextSize} font-semibold text-gray-800`}>
                         {loadingText}
                     </h3>
                 </div>
