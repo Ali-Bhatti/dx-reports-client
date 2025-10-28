@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { AutoComplete, type AutoCompleteChangeEvent } from '@progress/kendo-react-dropdowns';
 import { useCompanies } from '../../hooks/useCompanies';
 import type { Company, Environment } from '../../types';
@@ -32,6 +32,7 @@ export const CompanySelector = ({
   });
   const [selected, setSelected] = useState<Company | null>(null);
   const [value, setValue] = useState<string>('');
+  const previousEnvId = useRef<number | undefined>(currentEnvironment?.id);
 
   const filteredCompanies = useMemo(() => {
     if (error) return [];
@@ -71,10 +72,14 @@ export const CompanySelector = ({
   };
 
   useEffect(() => {
-    setSelected(null);
-    setValue('');
-    onCompanyChange?.(null);
-  }, [currentEnvironment]);
+    const currentEnvId = currentEnvironment?.id;
+    if (previousEnvId.current !== undefined && previousEnvId.current !== currentEnvId) {
+      setSelected(null);
+      setValue('');
+      onCompanyChange?.(null);
+    }
+    previousEnvId.current = currentEnvId;
+  }, [currentEnvironment?.id]);
 
   useEffect(() => {
     if (restoreSavedCompany && !loading && !error && companies.length > 0) {
