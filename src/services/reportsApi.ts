@@ -141,7 +141,7 @@ export const reportsApi = createApi({
             query: (reportDetails) => ({
                 url: 'copy-with-metadata',
                 method: 'POST',
-                body: reportDetails,
+                body: { request: reportDetails },
             }),
             invalidatesTags: [{ type: 'Report', id: 'LIST' }],
         }),
