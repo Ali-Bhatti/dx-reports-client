@@ -104,7 +104,6 @@ export default function ReportsList() {
     isLoading: reportsLoading,
     isFetching: reportsFetching,
     isError: reportsError,
-    error: _reportsErrorDetails,
   } = useGetReportsQuery(
     {
       companyId: currentCompany?.toString()
@@ -265,7 +264,8 @@ export default function ReportsList() {
     dispatch(setSelectedReportIds(selectedIds));
 
     if (selectedIds.length > 0) {
-      clearSelectedRows();
+      dispatch(setSelectedReportId(null));
+      dispatch(setSelectedReport(null));
     }
   };
 
@@ -300,6 +300,7 @@ export default function ReportsList() {
     if (gridRef?.current) {
       gridRef.current.setFilterModel(null);
       setHasActiveFilters(false);
+      dispatch(setQuery(''));
     }
   };
 
@@ -471,8 +472,18 @@ export default function ReportsList() {
   };
 
   const tableKey = useMemo(() => {
-    return `${selectedReportId}-${selectedReportIds.length}-${currentCompany}-${query}`;
-  }, [query]);
+    const isEmpty = searchFilteredReports.length === 0;
+    return `${currentCompany}-${isEmpty ? query : 'has-data'}`;
+  }, [searchFilteredReports.length, query]);
+
+  useEffect(() => {
+    if (query.trim().length > 0 && searchFilteredReports.length === 0 && selectedReportIds.length > 0) {
+      clearSelectedRows();
+      if (gridRef?.current) {
+        gridRef.current.deselectAll();
+      }
+    }
+  }, [query, searchFilteredReports.length, selectedReportIds.length]);
 
   return (
     <>
@@ -524,7 +535,7 @@ export default function ReportsList() {
               svgIcon={filterClearIcon}
               title="Clear All Filters"
               onClick={handleClearAllFilters}
-              disabled={!hasActiveFilters}
+              disabled={!hasActiveFilters && query.trim() === ''}
               className="whitespace-nowrap"
             >
               <span className="sm:inline">Clear All Filters</span>

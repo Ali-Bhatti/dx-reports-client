@@ -47,7 +47,7 @@ export default function DeleteModal({
 
         return (
             <div>
-                <p className="mb-2">Are you sure you want to delete these {itemType}:</p>
+                <p className="mb-2">Are you sure you want to delete {itemNames.length} {itemType}:</p>
                 <div
                     className="max-h-48 overflow-y-auto"
                 // style={{
