@@ -137,11 +137,17 @@ export const reportsApi = createApi({
             invalidatesTags: [{ type: 'Report', id: 'LIST' }],
         }),
 
-        copyReportWithMetaData: builder.mutation<{ message: string }, ReportVersionDetails>({
-            query: (reportDetails) => ({
+        copyReportWithMetaData: builder.mutation<
+            { message: string },
+            { reportDetails: ReportVersionDetails; useCopyModalEnvironment?: boolean }
+        >({
+            query: ({ reportDetails, useCopyModalEnvironment = true }) => ({
                 url: 'copy-with-metadata',
                 method: 'POST',
                 body: { request: reportDetails },
+                ...(useCopyModalEnvironment && {
+                    meta: { useCopyModalEnvironment: true }
+                })
             }),
             invalidatesTags: [{ type: 'Report', id: 'LIST' }],
         }),

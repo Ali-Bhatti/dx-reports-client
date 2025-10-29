@@ -405,8 +405,10 @@ export default function ReportsList() {
       setCopyLoadingText(`Copying Report to ${destinationCompany.name}`);
 
       await copyReportWithMetaData({
-        reportLayout: reportLayout as any,
-        layoutData: layoutData as string,
+        reportDetails: {
+          reportLayout: reportLayout as any,
+          layoutData: layoutData as string,
+        }
       }).unwrap();
 
     } catch (error) {
