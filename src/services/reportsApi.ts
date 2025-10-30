@@ -281,6 +281,7 @@ export const {
     // Report Versions
     useGetReportVersionsQuery,
     useGetVersionDetailsQuery,
+    useLazyGetVersionDetailsQuery,
     useDownloadReportVersionMutation,
     usePublishVersionMutation,
     useUnpublishVersionMutation,
