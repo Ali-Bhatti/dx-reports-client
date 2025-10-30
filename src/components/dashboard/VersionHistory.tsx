@@ -11,6 +11,7 @@ import BaseCard from '../shared/BaseCard';
 import BaseButton from '../shared/BaseButton';
 import BaseTable from '../shared/BaseTable';
 import BaseBanner from '../shared/BaseBanner';
+import { SvgIcon } from '@progress/kendo-react-common';
 import {
     EmptyStateRenderer,
     VersionHistoryActionsRenderer,
@@ -46,6 +47,7 @@ import {
 
 import {
     trashIcon,
+    arrowRotateCwIcon,
 } from '@progress/kendo-svg-icons';
 
 import type {
@@ -385,6 +387,21 @@ export default function VersionHistory() {
                         <h3 className="font-bold">Version History</h3>
                     </div>
                     <div className="flex items-center gap-2">
+                        <BaseButton
+                            color="gray"
+                            title="Refetch"
+                            onClick={refetchVersions}
+                            disabled={!selectedReportId || isAnyOperationLoading}
+                        >
+                            <div className="flex items-center gap-1">
+                                <SvgIcon
+                                    icon={arrowRotateCwIcon}
+                                    className={isLoadingVersions ? "animate-spin" : ""}
+                                    size="medium"
+                                />
+                                <span className="hidden sm:inline">Refetch</span>
+                            </div>
+                        </BaseButton>
                         <BaseButton
                             color="red"
                             svgIcon={trashIcon}

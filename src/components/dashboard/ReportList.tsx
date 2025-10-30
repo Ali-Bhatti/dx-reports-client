@@ -19,6 +19,7 @@ import { ReportActionsRenderer } from '../table/renderers';
 import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 import { getReportListColumnDefs } from '../table/columnDefs';
 import { useNotifications } from '../../hooks/useNotifications';
+import { SvgIcon } from '@progress/kendo-react-common';
 
 import {
   useGetReportsQuery,
@@ -56,6 +57,7 @@ import {
   copyIcon,
   trashIcon,
   filterClearIcon,
+  arrowRotateCwIcon,
 } from '@progress/kendo-svg-icons';
 
 import type {
@@ -105,6 +107,7 @@ export default function ReportsList() {
     isLoading: reportsLoading,
     isFetching: reportsFetching,
     isError: reportsError,
+    refetch: refetchReports,
   } = useGetReportsQuery(
     {
       companyId: currentCompany?.toString()
@@ -512,6 +515,21 @@ export default function ReportsList() {
             >
               <span className="hidden sm:inline">Copy</span>
             </BaseButton>)}
+            <BaseButton
+              color="gray"
+              title="Refresh"
+              onClick={refetchReports}
+              disabled={!currentCompany || isLoadingReports}
+            >
+              <div className="flex items-center gap-1">
+                <SvgIcon
+                  icon={arrowRotateCwIcon}
+                  className={isLoadingReports ? "animate-spin" : ""}
+                  size="medium"
+                />
+                <span className="hidden sm:inline">Refetch</span>
+              </div>
+            </BaseButton>
             <BaseButton
               color="red"
               svgIcon={trashIcon}
