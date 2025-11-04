@@ -152,6 +152,36 @@ export default function ReportsList() {
     return reports;
   }, [allReports, query]);
 
+  // Persist selected report id in localStorage
+  useEffect(() => {
+    if (selectedReportId) {
+      localStorage.setItem('dashboardSelectedReportId', String(selectedReportId));
+    } else {
+      localStorage.removeItem('dashboardSelectedReportId');
+    }
+  }, [selectedReportId]);
+
+  // Restore selected report id when reports load
+  useEffect(() => {
+    if (!currentCompany || isLoadingReports || allReports.length === 0) return;
+    const savedReportId = localStorage.getItem('dashboardSelectedReportId');
+    if (savedReportId) {
+      const idNum = Number(savedReportId);
+      const report = allReports.find(r => Number(r.id) === idNum);
+      if (report) {
+        dispatch(setSelectedReportId(idNum));
+        dispatch(setSelectedReport(report as any));
+        // Ensure the row is visible if grid is ready
+        if (gridRef?.current) {
+          const rowNode = gridRef.current.getRowNode(String(idNum));
+          if (rowNode) {
+            gridRef.current.ensureIndexVisible(rowNode.rowIndex!, 'middle');
+          }
+        }
+      }
+    }
+  }, [currentCompany, isLoadingReports, allReports, dispatch]);
+
   // Check if multiple reports are selected
   const hasMultipleSelected = selectedReportIds.length > 0;
 
