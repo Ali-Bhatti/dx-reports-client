@@ -8,6 +8,7 @@ export const selectQuery = (state: RootState) => state.reports.query;
 export const selectSelectedReportId = (state: RootState) => state.reports.selectedReportId;
 export const selectSelectedReportIds = (state: RootState) => state.reports.selectedReportIds;
 export const selectReportSelected = (state: RootState) => state.reports.selectedReport;
+export const selectIsDesignerModified = (state: RootState) => state.reports.isDesignerModified;
 
 // Should show version history (only when single report is clicked, not multiple selected)
 export const selectShouldShowVersionHistory = createSelector(

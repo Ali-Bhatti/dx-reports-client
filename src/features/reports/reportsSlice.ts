@@ -16,6 +16,7 @@ interface ReportsState {
   selectedVersionIds: number[];
   actionContext: ActionContext;
   companyKPIs?: ReportStatistics[];
+  isDesignerModified: boolean;
 }
 
 const initialState: ReportsState = {
@@ -31,6 +32,7 @@ const initialState: ReportsState = {
   actionContext: {
     type: null,
   },
+  isDesignerModified: false,
 };
 
 const reportsSlice = createSlice({
@@ -91,6 +93,9 @@ const reportsSlice = createSlice({
     setCompanyKPIs: (state, action: PayloadAction<ReportStatistics[]>) => {
       state.companyKPIs = action.payload;
     },
+    setDesignerModified: (state, action: PayloadAction<boolean>) => {
+      state.isDesignerModified = action.payload;
+    },
     resetReportState: (state) => {
       state.currentCompany = null;
       state.query = '';
@@ -100,6 +105,7 @@ const reportsSlice = createSlice({
       state.selectedReportIds = [];
       state.selectedVersionIds = [];
       state.actionContext = { type: null };
+      state.isDesignerModified = false;
     }
   },
 });
@@ -120,6 +126,7 @@ export const {
   clearSelectedVersionIds,
   setActionContext,
   clearActionContext,
+  setDesignerModified,
   resetReportState,
 } = reportsSlice.actions;
 
