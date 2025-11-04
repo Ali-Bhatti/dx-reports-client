@@ -145,21 +145,21 @@ function ActionBar({ isLoading = false, isDesignerModified = false, onSave, onDo
                 </div>
 
                 {/* Additional info row */}
-                {selectedReport && (
+                {selectedVersion && (
                     <div className="mt-4 pt-4 border-t border-gray-100">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm text-gray-500 gap-2">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:space-x-4">
                                 <span className="truncate">
-                                    <span className="font-medium">CreatedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedReport.creationDate)}
+                                    <span className="font-medium">CreatedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedVersion.creationDate)}
                                 </span>
-                                {selectedReport.modificationDate && (
+                                {selectedVersion.modificationDate && (
                                     <span className="truncate">
-                                        <span className="font-medium">ModifiedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedReport.modificationDate)}
+                                        <span className="font-medium">ModifiedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedVersion.modificationDate)}
                                     </span>
                                 )}
-                                {selectedReport.editorId && (
+                                {selectedVersion.editorId && (
                                     <span className="truncate">
-                                        <span className="font-medium">ModifiedBy:</span> {selectedReport.editorId}
+                                        <span className="font-medium">ModifiedBy:</span> {selectedVersion.editorId}
                                     </span>
                                 )}
                             </div>

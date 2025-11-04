@@ -44,7 +44,7 @@ export const getReportListColumnDefs = ({
     field: 'editorId',
     flex: 1,
     minWidth: 140,
-    valueFormatter: (params) => formatDateTime(params.value, "--"),
+    valueFormatter: (params) => params.value || '--',
   },
   {
     headerName: 'Migrated',

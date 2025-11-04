@@ -45,7 +45,8 @@ export const getVersionHistoryColumnDefs = ({
             field: 'editorId',
             type: 'text',
             flex: 1,
-            minWidth: 120
+            minWidth: 120,
+            valueFormatter: (p) => p.value || "--"
         },
         {
             headerName: 'Published',

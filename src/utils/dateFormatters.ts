@@ -1,30 +1,36 @@
 import moment from 'moment';
 
-export const formatDateTime = (dateValue: any, emptyReturnValue: string = ''): string => {
+export const formatDateTime = (dateValue: any, emptyReturnValue: string = '', convertToBrowserTimeZone: boolean = true): string => {
     if (!dateValue) return emptyReturnValue;
 
-    const momentDate = moment(dateValue);
+    let momentDate = convertToBrowserTimeZone
+        ? moment.utc(dateValue).local()
+        : moment(dateValue);
 
     if (!momentDate.isValid()) return emptyReturnValue;
 
-    // Format: DD/MM/YYYY HH:MM:SS (24-hour format)
+    // Format: DD/MM/YYYY HH:mm:ss (24-hour format)
     return momentDate.format('DD/MM/YYYY HH:mm:ss');
 };
 
-export const formatDate = (dateValue: any): string => {
+export const formatDate = (dateValue: any, convertToBrowserTimeZone: boolean = false): string => {
     if (!dateValue) return '';
 
-    const momentDate = moment(dateValue);
+    const momentDate = convertToBrowserTimeZone
+        ? moment.utc(dateValue).local()
+        : moment(dateValue);
 
     if (!momentDate.isValid()) return '';
 
     return momentDate.format('DD/MM/YYYY');
 };
 
-export const formatTime = (dateValue: any): string => {
+export const formatTime = (dateValue: any, convertToBrowserTimeZone: boolean = false): string => {
     if (!dateValue) return '';
 
-    const momentDate = moment(dateValue);
+    const momentDate = convertToBrowserTimeZone
+        ? moment.utc(dateValue).local()
+        : moment(dateValue);
 
     if (!momentDate.isValid()) return '';
 

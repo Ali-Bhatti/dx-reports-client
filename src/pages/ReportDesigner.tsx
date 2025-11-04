@@ -1,22 +1,86 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useEffect, useState, useRef } from "react";
+import { useNavigate, useBlocker } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import ReportDesignerTool from "../components/reportDesigner/DesignerTool";
 import BaseButton from "../components/shared/BaseButton";
 import { reportsApi } from "../services/reportsApi";
+import { selectIsDesignerModified } from "../features/reports/reportsSelectors";
+import { setDesignerModified } from "../features/reports/reportsSlice";
 
 
 function ReportDesignerPage() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [isDesignerLoaded, setIsDesignerLoaded] = useState(false);
+    const hasUnsavedChanges = useSelector(selectIsDesignerModified);
+    const isNavigatingRef = useRef(false);
+
+    // Block navigation when there are unsaved changes (except when programmatically navigating)
+    const blocker = useBlocker(
+        ({ currentLocation, nextLocation }) =>
+            hasUnsavedChanges &&
+            currentLocation.pathname !== nextLocation.pathname &&
+            !isNavigatingRef.current
+    );
 
     useEffect(() => {
         // Scroll to top when component mounts
         window.scrollTo(0, 0);
-    }, []);
+
+        // Cleanup: Reset designer modified state when component unmounts
+        return () => {
+            dispatch(setDesignerModified(false));
+            isNavigatingRef.current = false;
+        };
+    }, [dispatch]);
+
+    // Handle browser navigation (refresh, close tab, etc.)
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = ''; // Required for Chrome
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [hasUnsavedChanges]);
+
+    // Handle blocker state changes (for Home link, browser back, etc.)
+    useEffect(() => {
+        if (blocker.state === 'blocked') {
+            const shouldLeave = window.confirm(
+                'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
+            );
+
+            if (shouldLeave) {
+                dispatch(setDesignerModified(false));
+                blocker.proceed();
+            } else {
+                blocker.reset();
+            }
+        }
+    }, [blocker, dispatch]);
 
     const handleBackToDashboard = () => {
+        if (hasUnsavedChanges) {
+            const shouldLeave = window.confirm(
+                'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
+            );
+
+            if (!shouldLeave) {
+                return;
+            }
+        }
+
+        // Set flag to bypass blocker for this programmatic navigation
+        isNavigatingRef.current = true;
+        dispatch(setDesignerModified(false));
+
         // Invalidate the versions cache to force refetch
         dispatch(reportsApi.util.invalidateTags(['ReportVersion']));
         navigate('/');
