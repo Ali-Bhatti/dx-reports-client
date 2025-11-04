@@ -19,6 +19,7 @@ import { ReportActionsRenderer } from '../table/renderers';
 import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 import { getReportListColumnDefs } from '../table/columnDefs';
 import { useNotifications } from '../../hooks/useNotifications';
+import { SvgIcon } from '@progress/kendo-react-common';
 
 import {
   useGetReportsQuery,
@@ -27,7 +28,7 @@ import {
   useGetLinkedPagesQuery,
   useSaveLinkedPagesMutation,
   useCopyReportWithMetaDataMutation,
-  reportsApi
+  useLazyGetVersionDetailsQuery,
 } from '../../services/reportsApi';
 
 import type { Company, Report as ReportRow, Environment, ReportVersionDetails, ReportModalsState } from '../../types';
@@ -56,6 +57,7 @@ import {
   copyIcon,
   trashIcon,
   filterClearIcon,
+  arrowRotateCwIcon,
 } from '@progress/kendo-svg-icons';
 
 import type {
@@ -86,6 +88,7 @@ export default function ReportsList() {
   const [deleteModal, setDeleteModal] = useState<ReportModalsState>({ isOpen: false, reportId: null, isMultiple: false });
   const [linkModal, setLinkModal] = useState<ReportModalsState>({ isOpen: false, reportId: null });
   const [copyLoadingText, setCopyLoadingText] = useState<string>('Copying...');
+  const [isCopyProcessing, setIsCopyProcessing] = useState(false);
 
   // Restore selected company from localStorage on mount
   useEffect(() => {
@@ -104,6 +107,7 @@ export default function ReportsList() {
     isLoading: reportsLoading,
     isFetching: reportsFetching,
     isError: reportsError,
+    refetch: refetchReports,
   } = useGetReportsQuery(
     {
       companyId: currentCompany?.toString()
@@ -118,6 +122,7 @@ export default function ReportsList() {
   const [copyReports, { isLoading: isCopying }] = useCopyReportsMutation();
   const [saveLinkedPages, { isLoading: isSavingLinkedPages }] = useSaveLinkedPagesMutation();
   const [copyReportWithMetaData, { isLoading: isReportCopying }] = useCopyReportWithMetaDataMutation();
+  const [getVersionDetails, { isLoading: isLoadingVersionDetails }] = useLazyGetVersionDetailsQuery();
 
   const { data: linkedPages = [], isLoading: isLoadingLinkedPages, isFetching: isFetchingLinkedPages } = useGetLinkedPagesQuery(
     String(linkModal.reportId),
@@ -336,12 +341,12 @@ export default function ReportsList() {
 
   // Modal handlers
   const handleCopyConfirm = async (destinationEnvironment: Environment, destinationCompany: Company, reportsData: CopyReportData[]) => {
+    setIsCopyProcessing(true);
     try {
       if (!currentCompany || !destinationEnvironment) {
         showNotification('error', 'No source company selected');
         return;
       }
-
       setCopyLoadingText('Copying...');
 
       if (currentEnvironment?.id == destinationEnvironment.id) {
@@ -370,6 +375,7 @@ export default function ReportsList() {
       showNotification('error', `Failed to copy reports.<br/> ${error?.data?.message || ''}`);
     } finally {
       setCopyLoadingText('');
+      setIsCopyProcessing(false);
     }
   };
 
@@ -380,18 +386,16 @@ export default function ReportsList() {
       }
       setCopyLoadingText('Generating Report...');
 
-      const result = await dispatch(
-        reportsApi.endpoints.getVersionDetails.initiate({
-          versionId: reportData.ReportVersionId,
-          useCopyModalEnvironment: false,
-        }) as any
-      );
+      const result = await getVersionDetails({
+        versionId: reportData.ReportVersionId,
+        useCopyModalEnvironment: false,
+      }).unwrap();
 
-      if (!result.data) {
+      if (!result) {
         throw new Error('Failed to fetch report version details');
       }
 
-      const versionDetails: ReportVersionDetails = result.data;
+      const versionDetails: ReportVersionDetails = result;
 
       const reportLayout = {
         ...(versionDetails.reportLayout as any || {}),
@@ -405,8 +409,10 @@ export default function ReportsList() {
       setCopyLoadingText(`Copying Report to ${destinationCompany.name}`);
 
       await copyReportWithMetaData({
-        reportLayout: reportLayout as any,
-        layoutData: layoutData as string,
+        reportDetails: {
+          reportLayout: reportLayout as any,
+          layoutData: layoutData as string,
+        }
       }).unwrap();
 
     } catch (error) {
@@ -510,6 +516,21 @@ export default function ReportsList() {
               <span className="hidden sm:inline">Copy</span>
             </BaseButton>)}
             <BaseButton
+              color="gray"
+              title="Refresh"
+              onClick={refetchReports}
+              disabled={!currentCompany || isLoadingReports}
+            >
+              <div className="flex items-center gap-1">
+                <SvgIcon
+                  icon={arrowRotateCwIcon}
+                  className={isLoadingReports ? "animate-spin" : ""}
+                  size="medium"
+                />
+                <span className="hidden sm:inline">Refetch</span>
+              </div>
+            </BaseButton>
+            <BaseButton
               color="red"
               svgIcon={trashIcon}
               title="Delete"
@@ -573,9 +594,10 @@ export default function ReportsList() {
         onClose={() => {
           setCopyModal({ isOpen: false, reportId: null, isMultiple: false });
           setCopyLoadingText('');
+          setIsCopyProcessing(false);
         }}
         onConfirm={handleCopyConfirm}
-        isLoading={isCopying || isReportCopying}
+        isLoading={isCopyProcessing || isCopying || isReportCopying || isLoadingVersionDetails}
         reports={
           copyModal.isMultiple
             ? allReports.filter(r => selectedReportIds.includes(Number(r.id)))

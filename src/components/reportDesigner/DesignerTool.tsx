@@ -5,7 +5,7 @@ import {
 } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../app/store';
-import { setActionContext } from '../../features/reports/reportsSlice';
+import { setActionContext, setDesignerModified } from '../../features/reports/reportsSlice';
 import ReportDesigner, {
     RequestOptions,
     DesignerModelSettings,
@@ -195,7 +195,7 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
     useEffect(() => {
         const checkModifiedStatus = () => {
             if (designerRef.current?.instance()) {
-                console.log('Checking modified status...', designerRef.current.instance().IsModified());
+                //console.log('Checking modified status...', designerRef.current.instance().IsModified());
                 const isCurrentlyModified = designerRef.current.instance().IsModified();
                 setIsModified(isCurrentlyModified);
             }
@@ -206,6 +206,11 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
 
         return () => clearInterval(interval);
     }, []);
+
+    // Update Redux store when modified state changes
+    useEffect(() => {
+        dispatch(setDesignerModified(isModified));
+    }, [isModified, dispatch]);
 
     useEffect(() => {
         if (actionContext.selectedVersion?.id) {

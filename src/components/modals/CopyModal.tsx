@@ -13,6 +13,7 @@ import EnvironmentSelector from '../dashboard/EnvironmentSelector';
 import { useGetReportVersionsQuery } from '../../services/reportsApi';
 import { selectCurrentEnvironment } from '../../features/app/appSelectors';
 import { setCopyModalEnvironment } from '../../features/app/appSlice';
+import { formatDateTime } from '../../utils/dateFormatters';
 import type { Company, Report, Environment } from '../../types';
 
 export interface CopyReportData {
@@ -225,7 +226,7 @@ export default function CopyModal({
                                         {selectedVersion && (
                                             <p className="text-xs text-gray-500 mt-1.5">
                                                 {selectedVersion.isPublished ? '✓ Published • ' : '✗ Unpublished • '}
-                                                Created: {new Date(selectedVersion.creationDate).toLocaleDateString()}
+                                                Created: {formatDateTime(selectedVersion.creationDate, '--')}
                                             </p>
                                         )}
                                     </div>

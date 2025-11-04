@@ -1,6 +1,7 @@
 
 import { gearIcon, homeIcon } from '@progress/kendo-svg-icons';
 import { SvgIcon } from '@progress/kendo-react-common';
+import { useNavigate, useLocation } from 'react-router-dom';
 import BaseButton from '../shared/BaseButton';
 import AuthButton from '../auth/AuthButton';
 import { EnvironmentSelector } from '../dashboard/EnvironmentSelector';
@@ -29,6 +30,8 @@ export const Header = ({
   disableEnvironmentSelector = false,
 }: HeaderProps) => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleEnvironmentChange = (environment: Environment | null) => {
     dispatch(resetReportState());
@@ -44,6 +47,13 @@ export const Header = ({
     } else {
       localStorage.removeItem('selectedEnvironment');
       dispatch(clearCurrentEnvironment());
+    }
+  };
+
+  const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    if (location.pathname !== '/') {
+      navigate('/');
     }
   };
   return (
@@ -73,6 +83,7 @@ export const Header = ({
           <nav className="sm:block sm:pl-4 sm:border-l sm:border-gray-200">
             <a
               href="/"
+              onClick={handleHomeClick}
               className="px-2 sm:px-4 py-2 fg-primary hover:fg-primary:hover font-medium transition-colors rounded-md hover:bg-gray-50 flex items-center gap-2"
               title="Home"
             >
