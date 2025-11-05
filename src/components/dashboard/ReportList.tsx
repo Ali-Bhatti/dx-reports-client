@@ -173,9 +173,16 @@ export default function ReportsList() {
         dispatch(setSelectedReport(report as any));
         // Ensure the row is visible if grid is ready
         if (gridRef?.current) {
-          const rowNode = gridRef.current.getRowNode(String(idNum));
-          if (rowNode) {
-            gridRef.current.ensureIndexVisible(rowNode.rowIndex!, 'middle');
+          const api = gridRef.current;
+          const rowNode = api.getRowNode(String(idNum));
+          if (rowNode && rowNode.rowIndex != null) {
+            const pageSize = typeof api.paginationGetPageSize === 'function' ? api.paginationGetPageSize() : undefined;
+            const rowIndex = rowNode.rowIndex as number;
+            if (typeof pageSize === 'number' && pageSize > 0 && typeof api.paginationGoToPage === 'function') {
+              const targetPage = Math.floor(rowIndex / pageSize);
+              api.paginationGoToPage(targetPage);
+            }
+            api.ensureIndexVisible(rowIndex, 'middle');
           }
         }
       }
