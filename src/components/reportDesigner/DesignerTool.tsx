@@ -20,6 +20,7 @@ import { ActionId } from 'devexpress-reporting/dx-reportdesigner';
 import BaseCard from '../shared/BaseCard';
 import ActionBar from './ActionBar';
 import BaseLoader from '../shared/BaseLoader';
+import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 
 import {
     ExportSettings,
@@ -218,6 +219,9 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
             if (reportUrl !== newReportUrl) {
                 setReportUrl(newReportUrl);
             }
+        } else {
+            setIsLoading(false);
+            onDesignerLoaded?.();
         }
     }, [actionContext.selectedVersion?.id, actionContext.type]);
 
@@ -282,8 +286,11 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
                         </DesignerModelSettings>
                     </ReportDesigner>
                 ) : (
-                    <div className="flex items-center justify-center p-8">
-                        <p className="text-gray-500">No report layout selected</p>
+                    <div className="flex items-center justify-center p-6">
+                        <EmptyStateRenderer
+                            message="No Report Selected"
+                            subMessage="Please select a report from the dashboard to start editing"
+                        />
                     </div>
                 )}
             </div>

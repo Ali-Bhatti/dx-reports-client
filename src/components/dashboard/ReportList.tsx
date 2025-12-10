@@ -152,6 +152,43 @@ export default function ReportsList() {
     return reports;
   }, [allReports, query]);
 
+  // Persist selected report id in localStorage
+  useEffect(() => {
+    if (selectedReportId) {
+      localStorage.setItem('dashboardSelectedReportId', String(selectedReportId));
+    } else {
+      localStorage.removeItem('dashboardSelectedReportId');
+    }
+  }, [selectedReportId]);
+
+  // Restore selected report id when reports load
+  useEffect(() => {
+    if (!currentCompany || isLoadingReports || allReports.length === 0) return;
+    const savedReportId = localStorage.getItem('dashboardSelectedReportId');
+    if (savedReportId) {
+      const idNum = Number(savedReportId);
+      const report = allReports.find(r => Number(r.id) === idNum);
+      if (report) {
+        dispatch(setSelectedReportId(idNum));
+        dispatch(setSelectedReport(report as any));
+        // Ensure the row is visible if grid is ready
+        if (gridRef?.current) {
+          const api = gridRef.current;
+          const rowNode = api.getRowNode(String(idNum));
+          if (rowNode && rowNode.rowIndex != null) {
+            const pageSize = typeof api.paginationGetPageSize === 'function' ? api.paginationGetPageSize() : undefined;
+            const rowIndex = rowNode.rowIndex as number;
+            if (typeof pageSize === 'number' && pageSize > 0 && typeof api.paginationGoToPage === 'function') {
+              const targetPage = Math.floor(rowIndex / pageSize);
+              api.paginationGoToPage(targetPage);
+            }
+            api.ensureIndexVisible(rowIndex, 'middle');
+          }
+        }
+      }
+    }
+  }, [currentCompany, isLoadingReports, allReports, dispatch]);
+
   // Check if multiple reports are selected
   const hasMultipleSelected = selectedReportIds.length > 0;
 
