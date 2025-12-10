@@ -10,6 +10,7 @@ export interface Report {
     merged: boolean;
     companyId: string | number;
     renderWhenNoData?: boolean;
+    reportLayoutTypeName: string;
 }
 
 export interface ReportVersion {
@@ -93,8 +94,8 @@ export interface AppState {
 }
 
 export interface ReportVersionDetails {
-    reportLayout: Object | null;
-    layoutData: String | null;
+    reportLayout: object | null;
+    layoutData: string | null;
 }
 
 export interface ReportModalsState {
