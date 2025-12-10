@@ -23,6 +23,14 @@ export const getReportListColumnDefs = ({
     pinned: isMobile() ? null : 'left',
   },
   {
+    headerName: 'Report Layout Type',
+    field: 'reportLayoutTypeName',
+    flex: 1,
+    width: 120,
+    minWidth: 80,
+    maxWidth: 400,
+  },
+  {
     headerName: 'Creation Date',
     field: 'creationDate',
     flex: 1,
