@@ -1,14 +1,17 @@
-import { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useState, useMemo } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import BaseButton from '../shared/BaseButton';
 import BaseCard from '../shared/BaseCard';
 import DownloadConfirmationModal from '../modals/DownloadConfirmationModal';
 import SaveConfirmationModal from '../modals/SaveConfirmationModal';
 import BaseChip from '../shared/BaseChip';
 import { useNotifications } from '../../hooks/useNotifications';
+import { useCompanies } from '../../hooks/useCompanies';
 import { VersionDisplay } from '../dashboard/VersionDisplay';
 import { formatDateTime } from '../../utils/dateFormatters';
-import { selectActionBarData } from '../../features/reports/reportsSelectors';
+import { selectActionBarData, selectCurrentCompany } from '../../features/reports/reportsSelectors';
+import { useLazyGetVersionDetailsQuery } from '../../services/reportsApi';
+import { setActionContext } from '../../features/reports/reportsSlice';
 
 import {
     saveIcon,
@@ -29,10 +32,20 @@ function ActionBar({ isLoading = false, isDesignerModified = false, onSave, onDo
     const [isSaving, setIsSaving] = useState(false);
 
     const { showNotification } = useNotifications();
+    const dispatch = useDispatch();
 
     const { actionContext, selectedReport } = useSelector(selectActionBarData);
+    const currentCompanyId = useSelector(selectCurrentCompany);
+    const { companies } = useCompanies();
+    const [getVersionDetails] = useLazyGetVersionDetailsQuery();
 
     const selectedVersion = actionContext.selectedVersion;
+
+    const currentCompanyName = useMemo(() => {
+        if (!currentCompanyId) return null;
+        const company = companies.find(c => c.id === currentCompanyId);
+        return company?.name || null;
+    }, [currentCompanyId, companies]);
 
     // Determine action button text and icon
     const isNewVersion = actionContext.type === 'new_version';
@@ -57,6 +70,8 @@ function ActionBar({ isLoading = false, isDesignerModified = false, onSave, onDo
                 await onSave();
             }
 
+            await refetchVersionDetails();
+
             showNotification('success',
                 isNewVersion
                     ? `New version created successfully for <strong>${selectedReport?.reportName}</strong>`
@@ -64,9 +79,40 @@ function ActionBar({ isLoading = false, isDesignerModified = false, onSave, onDo
             );
             setShowSaveModal(false);
         } catch (error) {
-            showNotification('error', 'Failed to save report. Please try again.');
+            showNotification('error', isNewVersion ? `Failed to create new version. Please try again. ${error}` : `Failed to save report. Please try again. ${error}`);
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const refetchVersionDetails = async () => {
+        // Refetch version details after successful save (only for existing versions, not new ones)
+        if (!isNewVersion && selectedVersion?.id) {
+            try {
+                const result = await getVersionDetails({
+                    versionId: Number(selectedVersion.id),
+                    useCopyModalEnvironment: false,
+                }).unwrap();
+
+                // Update the action context with refreshed version data
+                if (result && result.reportLayout) {
+                    const reportLayout = result.reportLayout as any;
+                    dispatch(setActionContext({
+                        type: actionContext.type,
+                        reportLayoutID: Number(selectedVersion.reportLayoutID),
+                        versionId: Number(selectedVersion.id),
+                        selectedVersion: {
+                            ...selectedVersion,
+                            modificationDate: reportLayout.versionModificationDate || selectedVersion.modificationDate,
+                            editor: reportLayout.versionEditor || selectedVersion.editor,
+                            creator: reportLayout.versionCreator || selectedVersion.creator,
+                        }
+                    }));
+                }
+            } catch (error) {
+                console.error('Failed to refetch version details:', error);
+                // Don't show error to user as the save was successful
+            }
         }
     };
 
@@ -90,6 +136,21 @@ function ActionBar({ isLoading = false, isDesignerModified = false, onSave, onDo
                     <div className="flex items-center justify-between gap-3 sm:flex-1">
                         {/* Left side - Report info */}
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-6 flex-1 min-w-0">
+                            {currentCompanyName && (
+                                <>
+                                    <div className="flex flex-col">
+                                        <span className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide">
+                                            Company
+                                        </span>
+                                        <span className="text-base sm:text-lg font-semibold text-gray-900 mt-1 truncate">
+                                            {currentCompanyName}
+                                        </span>
+                                    </div>
+
+                                    <div className="hidden sm:block h-8 w-px bg-gray-300"></div>
+                                </>
+                            )}
+
                             <div className="flex flex-col">
                                 <span className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide">
                                     Report Name
@@ -152,14 +213,19 @@ function ActionBar({ isLoading = false, isDesignerModified = false, onSave, onDo
                                 <span className="truncate">
                                     <span className="font-medium">CreatedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedVersion.creationDate)}
                                 </span>
-                                {selectedVersion.modificationDate && (
+                                {selectedVersion.creator && (
+                                    <span className="truncate">
+                                        <span className="font-medium">Creator:</span> {selectedVersion.creator}
+                                    </span>
+                                )}
+                                {!isNewVersion && selectedVersion.modificationDate && (
                                     <span className="truncate">
                                         <span className="font-medium">ModifiedOn:</span> {isNewVersion ? '---' : formatDateTime(selectedVersion.modificationDate)}
                                     </span>
                                 )}
-                                {selectedVersion.editorId && (
+                                {!isNewVersion && selectedVersion.editor && (
                                     <span className="truncate">
-                                        <span className="font-medium">ModifiedBy:</span> {selectedVersion.editorId}
+                                        <span className="font-medium">Editor:</span> {selectedVersion.editor}
                                     </span>
                                 )}
                             </div>

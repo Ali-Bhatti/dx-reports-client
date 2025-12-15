@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Header } from './components/header/Header';
 import { Outlet, useLocation } from 'react-router-dom';
 import BaseNotification from './components/shared/BaseNotification';
@@ -6,9 +7,16 @@ import { useAuth } from './hooks/useAuth';
 
 
 const Layout = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, getUserName } = useAuth();
   const location = useLocation();
   const isDesignerPage = location.pathname === '/report-designer';
+
+  // Initialize user name in localStorage when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      getUserName();
+    }
+  }, [isAuthenticated, getUserName]);
 
   return (
     <div className="min-h-screen bg-neutral-100">

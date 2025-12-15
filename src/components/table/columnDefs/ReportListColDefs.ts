@@ -31,12 +31,19 @@ export const getReportListColumnDefs = ({
     maxWidth: 400,
   },
   {
+    headerName: 'Creator',
+    field: 'creator',
+    flex: 1,
+    minWidth: 140,
+    valueFormatter: (params) => params.value || '--',
+  },
+  {
     headerName: 'Creation Date',
     field: 'creationDate',
     flex: 1,
     minWidth: 140,
-    valueFormatter: (params) => { 
-      if(!params.value) return '--';
+    valueFormatter: (params) => {
+      if (!params.value) return '--';
       return formatDateTime(params.value);
     },
   },
@@ -46,13 +53,15 @@ export const getReportListColumnDefs = ({
     flex: 1,
     minWidth: 140,
     valueFormatter: (params) => formatDateTime(params.value, "--"),
+    hide: true,
   },
   {
     headerName: 'Modified By',
-    field: 'editorId',
+    field: 'editor',
     flex: 1,
     minWidth: 140,
     valueFormatter: (params) => params.value || '--',
+    hide: true,
   },
   {
     headerName: 'Migrated',

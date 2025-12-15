@@ -9,7 +9,7 @@ interface VersionHistoryColDefsConfig {
     createVersionActionsRenderer: (props: ICellRendererParams<HistoryRow>) => JSX.Element;
     createPublishedToggleRenderer: (props: ICellRendererParams<HistoryRow>) => JSX.Element;
 }
-const isMobile = () => window.innerWidth < 640; 
+const isMobile = () => window.innerWidth < 640;
 
 export const getVersionHistoryColumnDefs = ({
     createVersionActionsRenderer,
@@ -27,6 +27,14 @@ export const getVersionHistoryColumnDefs = ({
             cellRenderer: VersionNameRenderer,
         },
         {
+            headerName: 'Creator',
+            field: 'creator',
+            type: 'text',
+            flex: 1,
+            minWidth: 120,
+            valueFormatter: (p) => p.value || "--"
+        },
+        {
             headerName: 'Creation Date',
             field: 'creationDate',
             flex: 1,
@@ -42,7 +50,7 @@ export const getVersionHistoryColumnDefs = ({
         },
         {
             headerName: 'Modified By',
-            field: 'editorId',
+            field: 'editor',
             type: 'text',
             flex: 1,
             minWidth: 120,

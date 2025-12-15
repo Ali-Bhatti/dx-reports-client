@@ -5,8 +5,8 @@ export interface Report {
     reportName: string;
     creationDate?: string;
     modificationDate?: string;
-    editorId?: string | number | null;
-    creatorId?: string | number | null;
+    editor?: string | number | null;
+    creator?: string | number | null;
     merged: boolean;
     companyId: string | number;
     renderWhenNoData?: boolean;
@@ -19,9 +19,9 @@ export interface ReportVersion {
     reportLayoutID?: string | number;
     version: string | number;
     creationDate: string;
-    creatorId?: string | number | null;
+    creator?: string | number | null;
     modificationDate?: string | null;
-    editorId?: string | number | null;
+    editor?: string | number | null;
     isPublished: boolean;
     isDefault: boolean;
     content?: any;
@@ -96,6 +96,8 @@ export interface AppState {
 export interface ReportVersionDetails {
     reportLayout: object | null;
     layoutData: string | null;
+    creator?: string;
+    editor?: string;
 }
 
 export interface ReportModalsState {

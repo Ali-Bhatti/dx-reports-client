@@ -15,6 +15,7 @@ export const useAuth = () => {
       },
       isAuthenticated: true,
       account: { name: 'Guest User', username: 'guest' },
+      getUserName: () => 'Guest User',
     };
   }
 
@@ -38,10 +39,19 @@ export const useAuth = () => {
     return accounts[0];
   };
 
+  const getUserName = () => {
+    const account = getAccount();
+    const userName = account?.name || account?.username || 'Unknown User';
+    // Store in localStorage for use in API requests
+    localStorage.setItem('currentUserName', userName);
+    return userName;
+  };
+
   return {
     login,
     logout,
     isAuthenticated,
     account: getAccount(),
+    getUserName,
   };
 };

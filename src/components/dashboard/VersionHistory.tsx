@@ -98,7 +98,7 @@ export default function VersionHistory() {
             return {
                 ...version,
                 reportLayoutID: version.reportLayoutID || version?.reportId,
-                modifiedBy: version.editorId || version?.creatorId || '',
+                modifiedBy: version.editor || version?.creator || '',
                 modifiedOn: version.modificationDate || version?.creationDate || '',
             };
         });

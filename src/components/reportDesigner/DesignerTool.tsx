@@ -21,6 +21,8 @@ import BaseCard from '../shared/BaseCard';
 import ActionBar from './ActionBar';
 import BaseLoader from '../shared/BaseLoader';
 import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
+import { fetchSetup } from '@devexpress/analytics-core/analytics-utils';
+import { useAuth } from '../../hooks/useAuth';
 
 import {
     ExportSettings,
@@ -43,6 +45,7 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
     const [isModified, setIsModified] = useState(false);
     const designerRef = useRef<DxReportDesignerRef>(null);
     const dispatch = useDispatch();
+    const { getUserName } = useAuth();
 
     const actionContext = useSelector((state: RootState) => state.reports.actionContext);
     const dxHost = useSelector((state: RootState) => state.app.currentEnvironment?.url);
@@ -94,13 +97,15 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
                             version: result.version,
                             reportLayoutID,
                             creationDate: moment().toISOString(),
+                            creator: result?.creator || (getUserName ? getUserName() : ''),
                             isPublished: false,
                             isDefault: false,
                         }
                     }));
                 }
-            } catch (error) {
+            } catch (error: Object | any) {
                 console.error('Error saving new report version:', error);
+                throw error?.responseJSON?.error || error;
             }
         } else {
             //clickMenuItem(ActionId.Save);
@@ -128,6 +133,22 @@ function DesignerTool({ onDesignerLoaded }: DesignerToolProps) {
         // For example, you might want to export the report
         // designerRef.current?.instance().ExportReport(...);
     };
+
+    // Ensure all DXXR requests carry the logged-in username for backend auditing.
+    useEffect(() => {
+        // Prefer the current auth context, fall back to what was cached.
+        const resolvedUserName =
+            (typeof getUserName === 'function' && getUserName()) ||
+            localStorage.getItem('currentUserName') ||
+            'Unknown User';
+
+        const header = { 'X-user-name': resolvedUserName };
+
+        fetchSetup.fetchSettings = {
+            ...fetchSetup.fetchSettings,
+            headers: { ...(fetchSetup.fetchSettings?.headers || {}), ...header },
+        };
+    }, [getUserName]);
 
     const onCustomizeMenuActions = ({ args }: { args: any }) => {
         const hideMenuItems = [

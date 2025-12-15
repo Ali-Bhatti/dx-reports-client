@@ -36,6 +36,13 @@ const customBaseQuery: BaseQueryFn<
             headers.set('Content-Type', 'application/json')
             // Add authentication headers here
             // headers.set('Authorization', `Bearer ${getToken()}`)
+
+            // Add current user name for creator/editor tracking
+            const currentUserName = localStorage.getItem('currentUserName');
+            if (currentUserName) {
+                headers.set('X-User-Name', currentUserName);
+            }
+
             return headers
         },
         // Transform response to match your ApiResponse structure

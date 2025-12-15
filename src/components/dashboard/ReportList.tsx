@@ -19,6 +19,7 @@ import { ReportActionsRenderer } from '../table/renderers';
 import EmptyStateRenderer from '../table/renderers/EmptyStateRenderer';
 import { getReportListColumnDefs } from '../table/columnDefs';
 import { useNotifications } from '../../hooks/useNotifications';
+import { useAuth } from '../../hooks/useAuth';
 import { SvgIcon } from '@progress/kendo-react-common';
 
 import {
@@ -70,6 +71,7 @@ import type {
 export default function ReportsList() {
   const dispatch = useDispatch();
   const { showNotification } = useNotifications();
+  const { getUserName } = useAuth();
   const gridRef = useRef<any>(null);
 
   const onGridReady = (params: any) => {
@@ -386,11 +388,20 @@ export default function ReportsList() {
       }
       setCopyLoadingText('Copying...');
 
+      const currentUserName = getUserName();
+
       if (currentEnvironment?.id == destinationEnvironment.id) {
+        // Add creator and editor to each report data
+        const reportsWithUser = reportsData.map(report => ({
+          ...report,
+          Creator: currentUserName,
+          Editor: currentUserName
+        }));
+
         await copyReports({
           destination_company_ids: [destinationCompany.id],
           source_company_id: currentCompany,
-          reports: reportsData
+          reports: reportsWithUser
         }).unwrap();
       } else {
         await copyReportAcrossEnvironments(reportsData[0], destinationCompany);
